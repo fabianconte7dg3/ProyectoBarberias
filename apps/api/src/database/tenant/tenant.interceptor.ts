@@ -43,7 +43,7 @@ export class TenantInterceptor implements NestInterceptor {
       new Promise((resolve, reject) => {
         this.db
           .transaction(async (tx) => {
-            await tx.execute(sql.raw(`SET ROLE app_user`));
+            await tx.execute(sql.raw(`SET LOCAL ROLE app_user`));
             await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
 
             const result = await TenantContext.run({ tenantId, db: tx }, () =>

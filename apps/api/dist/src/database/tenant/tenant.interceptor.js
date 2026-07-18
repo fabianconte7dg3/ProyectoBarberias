@@ -44,7 +44,7 @@ let TenantInterceptor = class TenantInterceptor {
         return (0, rxjs_1.from)(new Promise((resolve, reject) => {
             this.db
                 .transaction(async (tx) => {
-                await tx.execute(drizzle_orm_1.sql.raw(`SET ROLE app_user`));
+                await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL ROLE app_user`));
                 await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
                 const result = await tenant_context_1.TenantContext.run({ tenantId, db: tx }, () => firstValueFromObservable(next.handle()));
                 resolve(result);

@@ -104,6 +104,16 @@ let UsuariosService = class UsuariosService {
         const db = tenant_context_1.TenantContext.getDb();
         return db.query.usuarios.findMany();
     }
+    async findOne(id) {
+        const db = tenant_context_1.TenantContext.getDb();
+        const usuario = await db.query.usuarios.findFirst({
+            where: (0, drizzle_orm_1.eq)(schema.usuarios.id, id),
+        });
+        if (!usuario) {
+            throw new common_1.NotFoundException(`Usuario con ID ${id} no encontrado.`);
+        }
+        return usuario;
+    }
 };
 exports.UsuariosService = UsuariosService;
 exports.UsuariosService = UsuariosService = __decorate([

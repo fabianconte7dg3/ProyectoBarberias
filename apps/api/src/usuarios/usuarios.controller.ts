@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req, Get } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Param } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
@@ -26,5 +26,11 @@ export class UsuariosController {
   @Get()
   findAll() {
     return this.usuariosService.findAll();
+  }
+
+  @Roles('admin', 'barbero', 'recepcion')
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.usuariosService.findOne(id);
   }
 }

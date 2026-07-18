@@ -33,6 +33,9 @@ let UsuariosController = class UsuariosController {
     findAll() {
         return this.usuariosService.findAll();
     }
+    findOne(id) {
+        return this.usuariosService.findOne(id);
+    }
 };
 exports.UsuariosController = UsuariosController;
 __decorate([
@@ -59,6 +62,14 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], UsuariosController.prototype, "findAll", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin', 'barbero', 'recepcion'),
+    (0, common_1.Get)(':id'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], UsuariosController.prototype, "findOne", null);
 exports.UsuariosController = UsuariosController = __decorate([
     (0, common_1.Controller)('usuarios'),
     __metadata("design:paramtypes", [usuarios_service_1.UsuariosService])

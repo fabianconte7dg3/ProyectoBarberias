@@ -12,4 +12,5 @@ export declare class UsuariosController {
         message: string;
     }>;
     findAll(): Promise<any>;
+    findOne(id: string): Promise<any>;
 }

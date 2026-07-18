@@ -65,6 +65,8 @@ export class AuthService {
     const admin = await this.db.query.usuarios.findFirst({
       where: and(eq(schema.usuarios.email, dto.email), eq(schema.usuarios.rol, 'admin')),
     });
+    
+    console.log("loginAdmin buscó email:", dto.email, "encontró:", admin);
 
     if (!admin || !admin.activo || !admin.password) {
       throw new UnauthorizedException('Credenciales inválidas o usuario inactivo.');

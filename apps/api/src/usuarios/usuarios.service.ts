@@ -77,4 +77,17 @@ export class UsuariosService {
     // El RLS a nivel de base de datos filtrará automáticamente solo los usuarios del tenant actual!
     return db.query.usuarios.findMany();
   }
+
+  async findOne(id: string) {
+    const db = TenantContext.getDb();
+    const usuario = await db.query.usuarios.findFirst({
+      where: eq(schema.usuarios.id, id),
+    });
+
+    if (!usuario) {
+      throw new NotFoundException(`Usuario con ID ${id} no encontrado.`);
+    }
+    
+    return usuario;
+  }
 }

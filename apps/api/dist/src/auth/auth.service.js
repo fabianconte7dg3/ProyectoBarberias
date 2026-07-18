@@ -98,6 +98,7 @@ let AuthService = class AuthService {
         const admin = await this.db.query.usuarios.findFirst({
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.email, dto.email), (0, drizzle_orm_1.eq)(schema.usuarios.rol, 'admin')),
         });
+        console.log("loginAdmin buscó email:", dto.email, "encontró:", admin);
         if (!admin || !admin.activo || !admin.password) {
             throw new common_1.UnauthorizedException('Credenciales inválidas o usuario inactivo.');
         }
