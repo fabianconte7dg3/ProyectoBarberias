@@ -10,10 +10,15 @@ exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
+const throttler_1 = require("@nestjs/throttler");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
 const database_module_1 = require("./database/database.module");
 const tenant_interceptor_1 = require("./database/tenant/tenant.interceptor");
+const auth_module_1 = require("./auth/auth.module");
+const usuarios_module_1 = require("./usuarios/usuarios.module");
+const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
+const roles_guard_1 = require("./common/guards/roles.guard");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -21,11 +26,25 @@ exports.AppModule = AppModule = __decorate([
     (0, common_1.Module)({
         imports: [
             config_1.ConfigModule.forRoot({ isGlobal: true }),
+            throttler_1.ThrottlerModule.forRoot([{
+                    ttl: 60000,
+                    limit: 10,
+                }]),
             database_module_1.DatabaseModule,
+            auth_module_1.AuthModule,
+            usuarios_module_1.UsuariosModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
             app_service_1.AppService,
+            {
+                provide: core_1.APP_GUARD,
+                useClass: jwt_auth_guard_1.JwtAuthGuard,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: roles_guard_1.RolesGuard,
+            },
             {
                 provide: core_1.APP_INTERCEPTOR,
                 useClass: tenant_interceptor_1.TenantInterceptor,

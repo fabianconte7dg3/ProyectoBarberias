@@ -19,12 +19,23 @@ const drizzle_orm_1 = require("drizzle-orm");
 const common_2 = require("@nestjs/common");
 const database_constants_1 = require("./database.constants");
 const tenant_context_1 = require("./tenant-context");
+const core_1 = require("@nestjs/core");
+const public_decorator_1 = require("../../common/decorators/public.decorator");
 let TenantInterceptor = class TenantInterceptor {
     db;
-    constructor(db) {
+    reflector;
+    constructor(db, reflector) {
         this.db = db;
+        this.reflector = reflector;
     }
     intercept(context, next) {
+        const isPublic = this.reflector.getAllAndOverride(public_decorator_1.IS_PUBLIC_KEY, [
+            context.getHandler(),
+            context.getClass(),
+        ]);
+        if (isPublic) {
+            return next.handle();
+        }
         const request = context.switchToHttp().getRequest();
         const tenantId = request.user?.tenantId;
         if (!tenantId) {
@@ -33,7 +44,8 @@ let TenantInterceptor = class TenantInterceptor {
         return (0, rxjs_1.from)(new Promise((resolve, reject) => {
             this.db
                 .transaction(async (tx) => {
-                await tx.execute((0, drizzle_orm_1.sql) `SET LOCAL app.current_tenant_id = ${tenantId}`);
+                await tx.execute(drizzle_orm_1.sql.raw(`SET ROLE app_user`));
+                await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
                 const result = await tenant_context_1.TenantContext.run({ tenantId, db: tx }, () => firstValueFromObservable(next.handle()));
                 resolve(result);
             })
@@ -45,7 +57,7 @@ exports.TenantInterceptor = TenantInterceptor;
 exports.TenantInterceptor = TenantInterceptor = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_2.Inject)(database_constants_1.DRIZZLE_POOL_DB)),
-    __metadata("design:paramtypes", [Function])
+    __metadata("design:paramtypes", [Function, core_1.Reflector])
 ], TenantInterceptor);
 function firstValueFromObservable(obs) {
     return new Promise((resolve, reject) => {

@@ -1,0 +1,1422 @@
+{
+  "id": "678698bf-cf92-4957-9495-8fad712fd865",
+  "prevId": "00000000-0000-0000-0000-000000000000",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.audit_logs": {
+      "name": "audit_logs",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "usuario_id": {
+          "name": "usuario_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "tabla_afectada": {
+          "name": "tabla_afectada",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "registro_id": {
+          "name": "registro_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "accion": {
+          "name": "accion",
+          "type": "accion_audit",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "payload_antes": {
+          "name": "payload_antes",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "payload_despues": {
+          "name": "payload_despues",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ip_origen": {
+          "name": "ip_origen",
+          "type": "varchar(45)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "audit_logs_tenant_id_barberias_id_fk": {
+          "name": "audit_logs_tenant_id_barberias_id_fk",
+          "tableFrom": "audit_logs",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "audit_logs_usuario_id_usuarios_id_fk": {
+          "name": "audit_logs_usuario_id_usuarios_id_fk",
+          "tableFrom": "audit_logs",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "usuario_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.barberias": {
+      "name": "barberias",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "nombre_comercial": {
+          "name": "nombre_comercial",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ruc": {
+          "name": "ruc",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "telefono_negocio": {
+          "name": "telefono_negocio",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "plan_suscripcion": {
+          "name": "plan_suscripcion",
+          "type": "plan_suscripcion",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'basico'"
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_barberia",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'activo'"
+        },
+        "slug": {
+          "name": "slug",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "color_primario": {
+          "name": "color_primario",
+          "type": "varchar(7)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "barberias_slug_unique": {
+          "name": "barberias_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.bloqueos_temporales": {
+      "name": "bloqueos_temporales",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "barbero_id": {
+          "name": "barbero_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inicio": {
+          "name": "inicio",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fin": {
+          "name": "fin",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_bloqueo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expira_en": {
+          "name": "expira_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "origen": {
+          "name": "origen",
+          "type": "origen_bloqueo",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notas": {
+          "name": "notas",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "bloqueos_temporales_tenant_id_barberias_id_fk": {
+          "name": "bloqueos_temporales_tenant_id_barberias_id_fk",
+          "tableFrom": "bloqueos_temporales",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "bloqueos_temporales_barbero_id_usuarios_id_fk": {
+          "name": "bloqueos_temporales_barbero_id_usuarios_id_fk",
+          "tableFrom": "bloqueos_temporales",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "barbero_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cierres_de_caja": {
+      "name": "cierres_de_caja",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declarado_por_id": {
+          "name": "declarado_por_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fecha_cierre": {
+          "name": "fecha_cierre",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "efectivo_declarado": {
+          "name": "efectivo_declarado",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "efectivo_esperado": {
+          "name": "efectivo_esperado",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_cierre",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "notas_admin": {
+          "name": "notas_admin",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "cierres_de_caja_tenant_id_barberias_id_fk": {
+          "name": "cierres_de_caja_tenant_id_barberias_id_fk",
+          "tableFrom": "cierres_de_caja",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "cierres_de_caja_declarado_por_id_usuarios_id_fk": {
+          "name": "cierres_de_caja_declarado_por_id_usuarios_id_fk",
+          "tableFrom": "cierres_de_caja",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "declarado_por_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.citas": {
+      "name": "citas",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cliente_id": {
+          "name": "cliente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "barbero_id": {
+          "name": "barbero_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "servicio_id": {
+          "name": "servicio_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "inicio_estimado": {
+          "name": "inicio_estimado",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fin_estimado": {
+          "name": "fin_estimado",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "origen": {
+          "name": "origen",
+          "type": "origen_cita",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_cita",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'programada'"
+        },
+        "idempotency_key": {
+          "name": "idempotency_key",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "token_cliente": {
+          "name": "token_cliente",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_expira_en": {
+          "name": "token_expira_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "citas_tenant_id_barberias_id_fk": {
+          "name": "citas_tenant_id_barberias_id_fk",
+          "tableFrom": "citas",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "citas_cliente_id_clientes_id_fk": {
+          "name": "citas_cliente_id_clientes_id_fk",
+          "tableFrom": "citas",
+          "tableTo": "clientes",
+          "columnsFrom": [
+            "cliente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "citas_barbero_id_usuarios_id_fk": {
+          "name": "citas_barbero_id_usuarios_id_fk",
+          "tableFrom": "citas",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "barbero_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "citas_servicio_id_servicios_id_fk": {
+          "name": "citas_servicio_id_servicios_id_fk",
+          "tableFrom": "citas",
+          "tableTo": "servicios",
+          "columnsFrom": [
+            "servicio_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "citas_idempotency_key_unique": {
+          "name": "citas_idempotency_key_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "idempotency_key"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.clientes": {
+      "name": "clientes",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "telefono_whatsapp": {
+          "name": "telefono_whatsapp",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_completo": {
+          "name": "nombre_completo",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "barbero_frecuente_id": {
+          "name": "barbero_frecuente_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "notas_preferencia": {
+          "name": "notas_preferencia",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "total_asistencias": {
+          "name": "total_asistencias",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "ausencias_strikes": {
+          "name": "ausencias_strikes",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "total_gastado": {
+          "name": "total_gastado",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "email_facturacion": {
+          "name": "email_facturacion",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "bloqueado": {
+          "name": "bloqueado",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "clientes_tenant_id_barberias_id_fk": {
+          "name": "clientes_tenant_id_barberias_id_fk",
+          "tableFrom": "clientes",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "clientes_barbero_frecuente_id_usuarios_id_fk": {
+          "name": "clientes_barbero_frecuente_id_usuarios_id_fk",
+          "tableFrom": "clientes",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "barbero_frecuente_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "clientes_tenant_id_telefono_whatsapp_unique": {
+          "name": "clientes_tenant_id_telefono_whatsapp_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id",
+            "telefono_whatsapp"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.horarios": {
+      "name": "horarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "barbero_id": {
+          "name": "barbero_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dia_semana": {
+          "name": "dia_semana",
+          "type": "dia_semana",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_inicio": {
+          "name": "hora_inicio",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_fin": {
+          "name": "hora_fin",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "hora_almuerzo_inicio": {
+          "name": "hora_almuerzo_inicio",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "hora_almuerzo_fin": {
+          "name": "hora_almuerzo_fin",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "horarios_tenant_id_barberias_id_fk": {
+          "name": "horarios_tenant_id_barberias_id_fk",
+          "tableFrom": "horarios",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "horarios_barbero_id_usuarios_id_fk": {
+          "name": "horarios_barbero_id_usuarios_id_fk",
+          "tableFrom": "horarios",
+          "tableTo": "usuarios",
+          "columnsFrom": [
+            "barbero_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.plantillas_whatsapp": {
+      "name": "plantillas_whatsapp",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "tipo": {
+          "name": "tipo",
+          "type": "tipo_plantilla",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contenido": {
+          "name": "contenido",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "plantillas_whatsapp_tenant_id_barberias_id_fk": {
+          "name": "plantillas_whatsapp_tenant_id_barberias_id_fk",
+          "tableFrom": "plantillas_whatsapp",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.servicios": {
+      "name": "servicios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre": {
+          "name": "nombre",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "duracion_minutos": {
+          "name": "duracion_minutos",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "precio_base": {
+          "name": "precio_base",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "servicios_tenant_id_barberias_id_fk": {
+          "name": "servicios_tenant_id_barberias_id_fk",
+          "tableFrom": "servicios",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.transacciones": {
+      "name": "transacciones",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "cita_id": {
+          "name": "cita_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "metodo_pago": {
+          "name": "metodo_pago",
+          "type": "metodo_pago",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "total_facturado": {
+          "name": "total_facturado",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "monto_efectivo_ingresado": {
+          "name": "monto_efectivo_ingresado",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "comision_barbero": {
+          "name": "comision_barbero",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "propina_barbero": {
+          "name": "propina_barbero",
+          "type": "numeric(10, 2)",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'0'"
+        },
+        "estado_dgi": {
+          "name": "estado_dgi",
+          "type": "estado_dgi",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendiente'"
+        },
+        "numero_factura_dgi": {
+          "name": "numero_factura_dgi",
+          "type": "varchar(100)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "ruc_cliente": {
+          "name": "ruc_cliente",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "nombre_fiscal_cliente": {
+          "name": "nombre_fiscal_cliente",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yappy_transaction_id": {
+          "name": "yappy_transaction_id",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yappy_webhook_received_at": {
+          "name": "yappy_webhook_received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "yappy_webhook_payload": {
+          "name": "yappy_webhook_payload",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "transacciones_tenant_id_barberias_id_fk": {
+          "name": "transacciones_tenant_id_barberias_id_fk",
+          "tableFrom": "transacciones",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "transacciones_cita_id_citas_id_fk": {
+          "name": "transacciones_cita_id_citas_id_fk",
+          "tableFrom": "transacciones",
+          "tableTo": "citas",
+          "columnsFrom": [
+            "cita_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "transacciones_cita_id_unique": {
+          "name": "transacciones_cita_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "cita_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.usuarios": {
+      "name": "usuarios",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "nombre_completo": {
+          "name": "nombre_completo",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "rol": {
+          "name": "rol",
+          "type": "rol_usuario",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "porcentaje_comision": {
+          "name": "porcentaje_comision",
+          "type": "numeric(4, 2)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pin_acceso": {
+          "name": "pin_acceso",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_activacion": {
+          "name": "token_activacion",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "token_expira_en": {
+          "name": "token_expira_en",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "webauthn_credential_id": {
+          "name": "webauthn_credential_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "activo": {
+          "name": "activo",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "usuarios_tenant_id_barberias_id_fk": {
+          "name": "usuarios_tenant_id_barberias_id_fk",
+          "tableFrom": "usuarios",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "usuarios_email_unique": {
+          "name": "usuarios_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.whatsapp_config": {
+      "name": "whatsapp_config",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "tenant_id": {
+          "name": "tenant_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "numero_whatsapp": {
+          "name": "numero_whatsapp",
+          "type": "varchar(30)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evolution_instance_name": {
+          "name": "evolution_instance_name",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "evolution_server_url": {
+          "name": "evolution_server_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "estado": {
+          "name": "estado",
+          "type": "estado_whatsapp",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pendiente_qr'"
+        },
+        "ultimo_ping": {
+          "name": "ultimo_ping",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "qr_code_url": {
+          "name": "qr_code_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "whatsapp_config_tenant_id_barberias_id_fk": {
+          "name": "whatsapp_config_tenant_id_barberias_id_fk",
+          "tableFrom": "whatsapp_config",
+          "tableTo": "barberias",
+          "columnsFrom": [
+            "tenant_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "whatsapp_config_tenant_id_unique": {
+          "name": "whatsapp_config_tenant_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "tenant_id"
+          ]
+        }
+      },
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.accion_audit": {
+      "name": "accion_audit",
+      "schema": "public",
+      "values": [
+        "login",
+        "logout",
+        "cobro",
+        "update_intento",
+        "delete_intento",
+        "kill_switch",
+        "cambio_comision",
+        "cierre_emergencia",
+        "conciliacion_yappy"
+      ]
+    },
+    "public.dia_semana": {
+      "name": "dia_semana",
+      "schema": "public",
+      "values": [
+        "lunes",
+        "martes",
+        "miercoles",
+        "jueves",
+        "viernes",
+        "sabado",
+        "domingo"
+      ]
+    },
+    "public.estado_barberia": {
+      "name": "estado_barberia",
+      "schema": "public",
+      "values": [
+        "activo",
+        "suspendido_pago",
+        "cancelado"
+      ]
+    },
+    "public.estado_cierre": {
+      "name": "estado_cierre",
+      "schema": "public",
+      "values": [
+        "cuadrado",
+        "faltante",
+        "sobrante"
+      ]
+    },
+    "public.estado_cita": {
+      "name": "estado_cita",
+      "schema": "public",
+      "values": [
+        "programada",
+        "en_curso",
+        "completada",
+        "ausente_strike",
+        "cancelada",
+        "revision_manual"
+      ]
+    },
+    "public.estado_dgi": {
+      "name": "estado_dgi",
+      "schema": "public",
+      "values": [
+        "pendiente",
+        "procesando",
+        "emitida",
+        "error_pac"
+      ]
+    },
+    "public.estado_whatsapp": {
+      "name": "estado_whatsapp",
+      "schema": "public",
+      "values": [
+        "conectado",
+        "desconectado",
+        "pendiente_qr",
+        "suspendido"
+      ]
+    },
+    "public.metodo_pago": {
+      "name": "metodo_pago",
+      "schema": "public",
+      "values": [
+        "efectivo",
+        "yappy",
+        "mixto",
+        "deuda"
+      ]
+    },
+    "public.origen_bloqueo": {
+      "name": "origen_bloqueo",
+      "schema": "public",
+      "values": [
+        "sistema",
+        "barbero",
+        "admin"
+      ]
+    },
+    "public.origen_cita": {
+      "name": "origen_cita",
+      "schema": "public",
+      "values": [
+        "bot_whatsapp",
+        "walk_in",
+        "manual_admin"
+      ]
+    },
+    "public.plan_suscripcion": {
+      "name": "plan_suscripcion",
+      "schema": "public",
+      "values": [
+        "basico",
+        "premium"
+      ]
+    },
+    "public.rol_usuario": {
+      "name": "rol_usuario",
+      "schema": "public",
+      "values": [
+        "admin",
+        "barbero",
+        "recepcion"
+      ]
+    },
+    "public.tipo_bloqueo": {
+      "name": "tipo_bloqueo",
+      "schema": "public",
+      "values": [
+        "almuerzo_dinamico",
+        "walk_in",
+        "lock_reserva",
+        "emergencia",
+        "extension_turno"
+      ]
+    },
+    "public.tipo_plantilla": {
+      "name": "tipo_plantilla",
+      "schema": "public",
+      "values": [
+        "confirmacion_reserva",
+        "recordatorio_24h",
+        "confirmacion_pago",
+        "recordatorio_deuda",
+        "cierre_emergencia",
+        "bienvenida_bot"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}

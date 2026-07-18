@@ -124,6 +124,25 @@ export declare const barberias: import("drizzle-orm/pg-core").PgTableWithColumns
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        slug: import("drizzle-orm/pg-core").PgColumn<{
+            name: "slug";
+            tableName: "barberias";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 255;
+        }>;
         colorPrimario: import("drizzle-orm/pg-core").PgColumn<{
             name: "color_primario";
             tableName: "barberias";
@@ -237,6 +256,44 @@ export declare const usuarios: import("drizzle-orm/pg-core").PgTableWithColumns<
         }, {}, {
             length: 255;
         }>;
+        email: import("drizzle-orm/pg-core").PgColumn<{
+            name: "email";
+            tableName: "usuarios";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 255;
+        }>;
+        password: import("drizzle-orm/pg-core").PgColumn<{
+            name: "password";
+            tableName: "usuarios";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 255;
+        }>;
         rol: import("drizzle-orm/pg-core").PgColumn<{
             name: "rol";
             tableName: "usuarios";
@@ -278,7 +335,7 @@ export declare const usuarios: import("drizzle-orm/pg-core").PgTableWithColumns<
             columnType: "PgVarchar";
             data: string;
             driverParam: string;
-            notNull: true;
+            notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;

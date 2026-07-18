@@ -59,6 +59,7 @@ export const barberias = pgTable('barberias', {
   telefonoNegocio: varchar('telefono_negocio', { length: 30 }),
   planSuscripcion: planSuscripcionEnum('plan_suscripcion').notNull().default('basico'),
   estado: estadoBarberiaEnum('estado').notNull().default('activo'),
+  slug: varchar('slug', { length: 255 }).notNull().unique(),
   colorPrimario: varchar('color_primario', { length: 7 }),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -72,9 +73,11 @@ export const usuarios = pgTable('usuarios', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
   nombreCompleto: varchar('nombre_completo', { length: 255 }).notNull(),
+  email: varchar('email', { length: 255 }).unique(),
+  password: varchar('password', { length: 255 }),
   rol: rolUsuarioEnum('rol').notNull(),
   porcentajeComision: decimal('porcentaje_comision', { precision: 4, scale: 2 }),
-  pinAcceso: varchar('pin_acceso', { length: 255 }).notNull(), // hash
+  pinAcceso: varchar('pin_acceso', { length: 255 }), // hash (nullable para admin)
   tokenActivacion: varchar('token_activacion', { length: 255 }),
   tokenExpiraEn: timestamp('token_expira_en', { withTimezone: true }),
   webauthnCredentialId: text('webauthn_credential_id'),
