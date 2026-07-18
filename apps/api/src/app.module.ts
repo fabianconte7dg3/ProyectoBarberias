@@ -8,6 +8,9 @@ import { DatabaseModule } from './database/database.module';
 import { TenantInterceptor } from './database/tenant/tenant.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
+import { ServiciosModule } from './servicios/servicios.module';
+import { ClientesModule } from './clientes/clientes.module';
+import { HorariosModule } from './horarios/horarios.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -21,6 +24,9 @@ import { RolesGuard } from './common/guards/roles.guard';
     DatabaseModule,
     AuthModule,
     UsuariosModule,
+    ServiciosModule,
+    ClientesModule,
+    HorariosModule,
   ],
   controllers: [AppController],
   providers: [

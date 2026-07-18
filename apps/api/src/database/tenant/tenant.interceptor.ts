@@ -50,9 +50,13 @@ export class TenantInterceptor implements NestInterceptor {
               firstValueFromObservable(next.handle()),
             );
 
-            resolve(result);
+            return result;
           })
-          .catch(reject);
+          .then(resolve)
+          .catch((err) => {
+            console.error("Interceptor caught error:", err, "Code:", err?.code);
+            reject(err);
+          });
       }),
     ).pipe(switchMap((result) => from(Promise.resolve(result))));
   }

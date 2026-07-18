@@ -17,6 +17,9 @@ const database_module_1 = require("./database/database.module");
 const tenant_interceptor_1 = require("./database/tenant/tenant.interceptor");
 const auth_module_1 = require("./auth/auth.module");
 const usuarios_module_1 = require("./usuarios/usuarios.module");
+const servicios_module_1 = require("./servicios/servicios.module");
+const clientes_module_1 = require("./clientes/clientes.module");
+const horarios_module_1 = require("./horarios/horarios.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 let AppModule = class AppModule {
@@ -33,6 +36,9 @@ exports.AppModule = AppModule = __decorate([
             database_module_1.DatabaseModule,
             auth_module_1.AuthModule,
             usuarios_module_1.UsuariosModule,
+            servicios_module_1.ServiciosModule,
+            clientes_module_1.ClientesModule,
+            horarios_module_1.HorariosModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

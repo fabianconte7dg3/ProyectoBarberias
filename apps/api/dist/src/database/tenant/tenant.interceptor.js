@@ -47,9 +47,13 @@ let TenantInterceptor = class TenantInterceptor {
                 await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL ROLE app_user`));
                 await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
                 const result = await tenant_context_1.TenantContext.run({ tenantId, db: tx }, () => firstValueFromObservable(next.handle()));
-                resolve(result);
+                return result;
             })
-                .catch(reject);
+                .then(resolve)
+                .catch((err) => {
+                console.error("Interceptor caught error:", err, "Code:", err?.code);
+                reject(err);
+            });
         })).pipe((0, rxjs_1.switchMap)((result) => (0, rxjs_1.from)(Promise.resolve(result))));
     }
 };
