@@ -7,9 +7,9 @@ El objetivo es tener la base de datos corriendo y el ORM listo para recibir cons
 
 - `[x]` Inicializar el proyecto NestJS (`apps/api`).
 - `[x]` Configurar Drizzle ORM y políticas RLS (Aislamiento Multi-tenant).
-- `[ ]` Crear el archivo `docker-compose.yml` en la carpeta `infrastructure` (PostgreSQL + Redis).
-- `[ ]` Levantar contenedores Docker locales y sincronizar el esquema (`db:push`).
-- `[ ]` Aplicar manualmente el archivo `0001_rls_policies.sql` en la base de datos local.
+- `[x]` Crear el archivo `docker-compose.yml` en la carpeta `infrastructure` (PostgreSQL + Redis).
+- `[x]` Levantar contenedores Docker locales y sincronizar el esquema (`db:push`).
+- `[x]` Aplicar manualmente el archivo `0001_rls_policies.sql` en la base de datos local.
 
 ## Hito 2: Módulo de Autenticación y Gestión de Usuarios
 Asegurar el acceso y crear los perfiles que operarán el sistema.
