@@ -1,0 +1,64 @@
+# 🚀 Roadmap del Backend: BarberOS
+
+Este es el plan de acción estructurado para el desarrollo del backend. Seguir este orden garantiza que las dependencias lógicas estén resueltas antes de avanzar (ej. no podemos crear citas sin antes tener usuarios y base de datos).
+
+## Hito 1: Cimientos e Infraestructura (En progreso)
+El objetivo es tener la base de datos corriendo y el ORM listo para recibir consultas.
+
+- `[x]` Inicializar el proyecto NestJS (`apps/api`).
+- `[x]` Configurar Drizzle ORM y políticas RLS (Aislamiento Multi-tenant).
+- `[ ]` Crear el archivo `docker-compose.yml` en la carpeta `infrastructure` (PostgreSQL + Redis).
+- `[ ]` Levantar contenedores Docker locales y sincronizar el esquema (`db:push`).
+- `[ ]` Aplicar manualmente el archivo `0001_rls_policies.sql` en la base de datos local.
+
+## Hito 2: Módulo de Autenticación y Gestión de Usuarios
+Asegurar el acceso y crear los perfiles que operarán el sistema.
+
+- `[ ]` **AuthModule:** Implementar inicio de sesión (JWT inicial, con miras a WebAuthn después).
+- `[ ]` Crear endpoint para creación/registro de la Barbería (`barberias`).
+- `[ ]` Crear endpoints CRUD para `usuarios` (Administradores y Barberos) y configurar sus PIN de acceso.
+- `[ ]` **TenantInterceptor:** Conectar la validación del JWT para inyectar automáticamente el `tenantId` en cada request.
+
+## Hito 3: Núcleo Operativo (Servicios, Clientes y Horarios)
+Los datos maestros necesarios antes de poder agendar una sola cita.
+
+- `[ ]` **ServiciosModule:** Endpoints para definir los servicios de la barbería (Corte, Barba, etc.), duración y precio.
+- `[ ]` **HorariosModule:** Endpoints para que el barbero defina su horario laboral y hora de almuerzo (`horarios`).
+- `[ ]` **ClientesModule (CRM):** Endpoints para registrar y leer clientes por número de WhatsApp.
+
+## Hito 4: Motor de Reservas y Agenda (El corazón del sistema)
+La lógica pesada para agendar sin errores ni superposiciones.
+
+- `[ ]` **CitasModule:** Endpoint para crear citas (Validar `idempotencyKey` para evitar doble click).
+- `[ ]` Implementar Bloqueo Optimista (Reservar espacio temporal por 3 minutos).
+- `[ ]` Implementar lógica de validación para evitar solapamientos de turnos entre barberos.
+- `[ ]` Implementar auto-almuerzo dinámico (Desplazar horario de almuerzo si hay retrasos).
+- `[ ]` Endpoint para Cancelar/Reprogramar (Aplica los "strikes" automáticos al CRM del cliente).
+
+## Hito 5: Motor Financiero e Integraciones (Yappy + DGI)
+Cobros inmutables y cierres ciegos.
+
+- `[ ]` **TransaccionesModule:** Generación del registro en `transacciones` tras cada cita completada.
+- `[ ]` **YappyModule:** Generar URL de pago y exponer un Webhook seguro (validado con firmas criptográficas) para recibir la confirmación de pago.
+- `[ ]` **DgiModule:** Lógica asíncrona para enviar transacciones al PAC (Alegra/GuruSoft).
+- `[ ]` **CajaModule:** Lógica del Cierre Ciego de Caja (Comparar efectivo_declarado vs esperado) y registrar desviaciones.
+
+## Hito 6: Asincronía y WhatsApp (BullMQ + Evolution API)
+Liberar el hilo principal y enviar notificaciones.
+
+- `[ ]` **QueueModule:** Configurar workers de BullMQ y conectarlos a Redis.
+- `[ ]` **WhatsappModule:** Configurar la conexión con Evolution API y exponer webhook para mensajes entrantes (bot).
+- `[ ]` Crear *Jobs* programados: Enviar recordatorio 24 horas antes de la cita.
+- `[ ]` Crear *Jobs* programados: Cancelación automática si pasan 15 min de retraso.
+
+## Hito 7: Auditoría y Seguridad Final
+Blindar las finanzas.
+
+- `[ ]` Asegurar que todos los intentos de alteración financiera se graben en `audit_logs` usando el `accionAuditEnum`.
+- `[ ]` Probar el "Kill Switch" temporal (para frenar operaciones en caso de emergencia).
+
+---
+
+> [!NOTE]
+> **Siguiente Acción Sugerida:**
+> Iniciar el **Hito 1 (Finalización)** creando el `docker-compose.yml` para levantar PostgreSQL y Redis y aplicar las migraciones. ¿Estás de acuerdo?
