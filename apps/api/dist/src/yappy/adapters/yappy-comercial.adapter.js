@@ -13,7 +13,7 @@ class YappyComercialAdapter {
         this.domain = domain;
     }
     async initiatePayment(orderId, monto) {
-        if (this.merchantId === 'MERCH-123') {
+        if (this.merchantId === 'MERCH-123' && process.env.NODE_ENV === 'test') {
             return {
                 modo: 'comercial',
                 orderId,

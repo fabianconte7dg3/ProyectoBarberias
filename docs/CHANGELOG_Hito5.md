@@ -7,7 +7,7 @@ Este documento detalla los cambios realizados y los errores solucionados durante
 - **Solución:** Se editó el archivo de migración `0003_financiero.sql` para añadir explícitamente los permisos necesarios al rol `app_user`:
   ```sql
   GRANT SELECT, INSERT, UPDATE, DELETE ON yappy_config TO app_user;
-  GRANT UPDATE ON transacciones TO app_user;
+  GRANT UPDATE (yappy_order_id, yappy_transaction_id, yappy_webhook_received_at, yappy_webhook_payload, estado_dgi, numero_factura_dgi, confirmado_por_id) ON transacciones TO app_user;
   ```
 - Tras este cambio, el script de verificación y la aplicación en ejecución adquirieron el acceso correcto para registrar cobros y emitir facturas en segundo plano.
 

@@ -11,7 +11,7 @@ export class YappyComercialAdapter implements IYappyPort {
   ) {}
 
   async initiatePayment(orderId: string, monto: number): Promise<IYappyInitResponse> {
-    if (this.merchantId === 'MERCH-123') {
+    if (this.merchantId === 'MERCH-123' && process.env.NODE_ENV === 'test') {
       return {
         modo: 'comercial',
         orderId,

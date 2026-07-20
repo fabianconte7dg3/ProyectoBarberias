@@ -29,4 +29,4 @@ CREATE POLICY tenant_isolation_yappy_config ON yappy_config
 
 -- Otorgar permisos al rol de aplicación
 GRANT SELECT, INSERT, UPDATE, DELETE ON yappy_config TO app_user;
-GRANT UPDATE ON transacciones TO app_user;
+GRANT UPDATE (yappy_order_id, yappy_transaction_id, yappy_webhook_received_at, yappy_webhook_payload, estado_dgi, numero_factura_dgi, confirmado_por_id) ON transacciones TO app_user;
