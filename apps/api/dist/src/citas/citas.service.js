@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const drizzle_orm_1 = require("drizzle-orm");
 const schema_1 = require("../database/schema");
 const tenant_context_1 = require("../database/tenant/tenant-context");
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 const database_constants_1 = require("../database/tenant/database.constants");
 let CitasService = class CitasService {
     globalDb;
@@ -58,9 +59,9 @@ let CitasService = class CitasService {
                     .select()
                     .from(schema_1.citas)
                     .where((0, drizzle_orm_1.eq)(schema_1.citas.idempotencyKey, idempotencyKey));
-                return citaExistente;
+                return { cita: citaExistente, isExisting: true };
             }
-            return nuevaCita;
+            return { cita: nuevaCita, isExisting: false };
         }
         catch (error) {
             const code = error.code || error.cause?.code;
@@ -71,37 +72,39 @@ let CitasService = class CitasService {
         }
     }
     async bloquearTurno(data) {
-        this.globalDb.delete(schema_1.bloqueosTemporales)
-            .where((0, drizzle_orm_1.lte)(schema_1.bloqueosTemporales.expiraEn, new Date()))
-            .execute()
-            .catch((err) => console.error('Error en cleanup de bloqueos:', err));
+        const [barbero] = await this.globalDb.select().from(schema_1.usuarios).where((0, drizzle_orm_1.eq)(schema_1.usuarios.id, data.barberoId));
+        if (!barbero)
+            throw new common_1.NotFoundException('Barbero no encontrado');
         const expiraEn = new Date(Date.now() + 3 * 60000);
-        try {
-            const [barbero] = await this.globalDb.select().from(schema_1.usuarios).where((0, drizzle_orm_1.eq)(schema_1.usuarios.id, data.barberoId));
-            if (!barbero)
-                throw new common_1.NotFoundException('Barbero no encontrado');
-            const [bloqueo] = await this.globalDb
-                .insert(schema_1.bloqueosTemporales)
-                .values({
-                tenantId: barbero.tenantId,
-                barberoId: data.barberoId,
-                inicio: new Date(data.inicio),
-                fin: new Date(data.fin),
-                tipo: 'lock_reserva',
-                origen: 'sistema',
-                notas: data.notas,
-                expiraEn,
-            })
-                .returning();
-            return bloqueo;
-        }
-        catch (error) {
-            const code = error.code || error.cause?.code;
-            if (code === '23P01') {
-                throw new common_1.ConflictException('Ese horario ya no está disponible para bloqueo.');
+        return await (0, tenant_utils_1.runInTenantScope)(this.globalDb, barbero.tenantId, async (tx) => {
+            tx.delete(schema_1.bloqueosTemporales)
+                .where((0, drizzle_orm_1.lte)(schema_1.bloqueosTemporales.expiraEn, new Date()))
+                .execute()
+                .catch((err) => console.error('Error en cleanup de bloqueos:', err));
+            try {
+                const [bloqueo] = await tx
+                    .insert(schema_1.bloqueosTemporales)
+                    .values({
+                    tenantId: barbero.tenantId,
+                    barberoId: data.barberoId,
+                    inicio: new Date(data.inicio),
+                    fin: new Date(data.fin),
+                    tipo: 'lock_reserva',
+                    origen: 'sistema',
+                    notas: data.notas,
+                    expiraEn,
+                })
+                    .returning();
+                return bloqueo;
             }
-            throw error;
-        }
+            catch (error) {
+                const code = error.code || error.cause?.code;
+                if (code === '23P01') {
+                    throw new common_1.ConflictException('Ese horario ya no está disponible para bloqueo.');
+                }
+                throw error;
+            }
+        });
     }
     async cambiarEstado(citaId, nuevoEstado) {
         const db = tenant_context_1.TenantContext.getDb();
@@ -126,14 +129,20 @@ let CitasService = class CitasService {
         });
     }
     async cancelarPorCliente(citaId) {
-        const [cita] = await this.globalDb
-            .update(schema_1.citas)
-            .set({ estado: 'cancelada' })
-            .where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId))
-            .returning();
-        if (!cita)
+        const [citaOriginal] = await this.globalDb
+            .select()
+            .from(schema_1.citas)
+            .where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId));
+        if (!citaOriginal)
             throw new common_1.NotFoundException('Cita no encontrada');
-        return cita;
+        return await (0, tenant_utils_1.runInTenantScope)(this.globalDb, citaOriginal.tenantId, async (tx) => {
+            const [citaCancelada] = await tx
+                .update(schema_1.citas)
+                .set({ estado: 'cancelada' })
+                .where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId))
+                .returning();
+            return citaCancelada;
+        });
     }
 };
 exports.CitasService = CitasService;

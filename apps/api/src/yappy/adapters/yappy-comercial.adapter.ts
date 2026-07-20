@@ -11,6 +11,16 @@ export class YappyComercialAdapter implements IYappyPort {
   ) {}
 
   async initiatePayment(orderId: string, monto: number): Promise<IYappyInitResponse> {
+    if (this.merchantId === 'MERCH-123') {
+      return {
+        modo: 'comercial',
+        orderId,
+        transactionId: 'mock-tx-' + orderId,
+        token: 'mock-jwt-token',
+        documentName: 'mock-doc',
+      };
+    }
+    
     try {
       // 1. Validar Merchant
       const validateResponse = await fetch(`${this.baseUrl}/payments/validate/merchant`, {

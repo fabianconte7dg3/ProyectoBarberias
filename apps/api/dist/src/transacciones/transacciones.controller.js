@@ -17,8 +17,8 @@ const common_1 = require("@nestjs/common");
 const transacciones_service_1 = require("./transacciones.service");
 const cobrar_cita_dto_1 = require("./dto/cobrar-cita.dto");
 const tenant_interceptor_1 = require("../database/tenant/tenant.interceptor");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
+const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
+const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 let TransaccionesController = class TransaccionesController {
     transaccionesService;
@@ -27,6 +27,10 @@ let TransaccionesController = class TransaccionesController {
     }
     async cobrarCita(id, cobrarCitaDto) {
         return this.transaccionesService.cobrarCita(id, cobrarCitaDto);
+    }
+    async confirmarPagoManual(id, req) {
+        const usuarioId = req.user.userId;
+        return this.transaccionesService.confirmarPagoManual(id, usuarioId);
     }
     async findAll(page = '1', limit = '20') {
         return this.transaccionesService.findAll(Number(page), Number(limit));
@@ -42,6 +46,15 @@ __decorate([
     __metadata("design:paramtypes", [String, cobrar_cita_dto_1.CobrarCitaDto]),
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "cobrarCita", null);
+__decorate([
+    (0, common_1.Post)('citas/:id/confirmar-pago-manual'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", Promise)
+], TransaccionesController.prototype, "confirmarPagoManual", null);
 __decorate([
     (0, common_1.Get)('transacciones'),
     (0, roles_decorator_1.Roles)('admin'),

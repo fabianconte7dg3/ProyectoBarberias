@@ -16,8 +16,8 @@ exports.CajaController = void 0;
 const common_1 = require("@nestjs/common");
 const caja_service_1 = require("./caja.service");
 const cerrar_caja_dto_1 = require("./dto/cerrar-caja.dto");
-const jwt_auth_guard_1 = require("../auth/guards/jwt-auth.guard");
-const roles_guard_1 = require("../auth/guards/roles.guard");
+const jwt_auth_guard_1 = require("../common/guards/jwt-auth.guard");
+const roles_guard_1 = require("../common/guards/roles.guard");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const tenant_interceptor_1 = require("../database/tenant/tenant.interceptor");
 let CajaController = class CajaController {
@@ -29,7 +29,7 @@ let CajaController = class CajaController {
         return this.cajaService.getBalanceDelDia();
     }
     async cerrarCaja(req, dto) {
-        const usuarioId = req.user.sub;
+        const usuarioId = req.user.userId;
         return this.cajaService.cerrarCaja(usuarioId, dto);
     }
 };

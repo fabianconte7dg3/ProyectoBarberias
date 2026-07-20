@@ -4,7 +4,7 @@ export declare class CajaController {
     private readonly cajaService;
     constructor(cajaService: CajaService);
     getBalance(): Promise<{
-        fecha: any;
+        fecha: Date;
         efectivoEsperado: number;
         cantidadTransaccionesEfectivo: any;
     }>;

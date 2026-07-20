@@ -9,6 +9,9 @@ export declare class TransaccionesService {
         transaccion: any;
         yappyData: import("../yappy/adapters/yappy.port").IYappyInitResponse | null;
     }>;
+    confirmarPagoManual(citaId: string, confirmadoPorId: string): Promise<{
+        success: boolean;
+    }>;
     findAll(page?: number, limit?: number): Promise<{
         data: any;
         page: number;

@@ -1,4 +1,5 @@
-import { Controller, Post, Body, Headers, Patch, Param, UnauthorizedException, Inject } from '@nestjs/common';
+import { Controller, Post, Body, Headers, Patch, Param, UnauthorizedException, Inject, Res, HttpStatus } from '@nestjs/common';
+import type { Response } from 'express';
 import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
@@ -23,11 +24,18 @@ export class CitasController {
   async crearCita(
     @Body() data: CreateCitaDto,
     @Headers('idempotency-key') idempotencyKey: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
     if (!idempotencyKey) {
       idempotencyKey = crypto.randomUUID();
     }
-    return this.citasService.crearCita(data, idempotencyKey);
+    const result = await this.citasService.crearCita(data, idempotencyKey);
+    
+    if (result.isExisting) {
+      res.status(HttpStatus.OK);
+    }
+    
+    return result.cita;
   }
 
   @Public() // Los clientes bloquean temporalmente desde la web sin auth

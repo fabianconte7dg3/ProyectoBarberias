@@ -30,11 +30,15 @@ let CitasController = class CitasController {
         this.citasService = citasService;
         this.globalDb = globalDb;
     }
-    async crearCita(data, idempotencyKey) {
+    async crearCita(data, idempotencyKey, res) {
         if (!idempotencyKey) {
             idempotencyKey = crypto.randomUUID();
         }
-        return this.citasService.crearCita(data, idempotencyKey);
+        const result = await this.citasService.crearCita(data, idempotencyKey);
+        if (result.isExisting) {
+            res.status(common_1.HttpStatus.OK);
+        }
+        return result.cita;
     }
     async bloquearTurno(data) {
         return this.citasService.bloquearTurno(data);
@@ -61,8 +65,9 @@ __decorate([
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Headers)('idempotency-key')),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [create_cita_dto_1.CreateCitaDto, String]),
+    __metadata("design:paramtypes", [create_cita_dto_1.CreateCitaDto, String, Object]),
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "crearCita", null);
 __decorate([

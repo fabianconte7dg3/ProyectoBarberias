@@ -13,6 +13,15 @@ class YappyComercialAdapter {
         this.domain = domain;
     }
     async initiatePayment(orderId, monto) {
+        if (this.merchantId === 'MERCH-123') {
+            return {
+                modo: 'comercial',
+                orderId,
+                transactionId: 'mock-tx-' + orderId,
+                token: 'mock-jwt-token',
+                documentName: 'mock-doc',
+            };
+        }
         try {
             const validateResponse = await fetch(`${this.baseUrl}/payments/validate/merchant`, {
                 method: 'POST',

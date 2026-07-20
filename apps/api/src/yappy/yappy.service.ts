@@ -1,14 +1,36 @@
 import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import * as crypto from 'crypto';
-import { yappy_config, citas } from '../database/schema';
+import { yappyConfig, citas, transacciones } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
+import { runInTenantScope } from '../database/tenant/tenant.utils';
 import { IYappyPort, IYappyInitResponse } from './adapters/yappy.port';
 import { YappyManualAdapter } from './adapters/yappy-manual.adapter';
 import { YappyComercialAdapter } from './adapters/yappy-comercial.adapter';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 import { DgiService } from '../dgi/dgi.service';
+
+const ENCRYPTION_KEY = process.env.APP_SECRET || '12345678901234567890123456789012'; // 32 bytes
+const IV_LENGTH = 16;
+
+function encrypt(text: string) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text: string) {
+  const textParts = text.split(':');
+  const iv = Buffer.from(textParts.shift()!, 'hex');
+  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
+}
 
 @Injectable()
 export class YappyService {
@@ -19,8 +41,8 @@ export class YappyService {
    */
   async getAdapter(tenantId: string, db?: NodePgDatabase<typeof schema>): Promise<IYappyPort> {
     const currentDb = db || TenantContext.getDb();
-    const config = await currentDb.query.yappy_config.findFirst({
-      where: eq(yappy_config.tenantId, tenantId),
+    const config = await currentDb.query.yappyConfig.findFirst({
+      where: eq(yappyConfig.tenantId, tenantId),
     });
 
     if (!config) {
@@ -36,9 +58,13 @@ export class YappyService {
         throw new InternalServerErrorException('Configuración de Yappy Comercial incompleta');
       }
       
-      // En un entorno real, `secretKeyCifrada` se descifra aquí. 
-      // Por simplicidad en este prototipo, asumimos que se puede usar o descifrar.
-      const secretKey = config.secretKeyCifrada;
+      let secretKey: string;
+      try {
+        secretKey = decrypt(config.secretKeyCifrada);
+      } catch (e) {
+        throw new InternalServerErrorException('Error descifrando la llave secreta de Yappy');
+      }
+      
       const domain = process.env.APP_DOMAIN || 'https://midominio.com';
 
       return new YappyComercialAdapter(config.merchantId, secretKey, domain);
@@ -69,20 +95,26 @@ export class YappyService {
     }
 
     // Buscamos la config del tenant
-    const config = await globalDb.query.yappy_config.findFirst({
-      where: eq(yappy_config.tenantId, txInfo.tenantId),
+    const config = await globalDb.query.yappyConfig.findFirst({
+      where: eq(yappyConfig.tenantId, txInfo.tenantId),
     });
 
     if (!config || config.modo !== 'comercial' || !config.secretKeyCifrada) {
       throw new UnauthorizedException('Configuración Yappy inválida para este tenant');
     }
 
+    // Descifrar la llave para verificar el hash
+    let secretKey: string;
+    try {
+      secretKey = decrypt(config.secretKeyCifrada);
+    } catch (e) {
+      throw new InternalServerErrorException('Error descifrando la llave secreta');
+    }
+
     // Generar hash HMAC-SHA256 esperado
-    // La documentación de Yappy suele requerir concatenar los parámetros (ej: orderId + status + domain) y firmarlos con el secretKey
-    // Asumimos un payload de validación estándar:
     const dataToHash = `${orderId}${status}${domain}`; 
     const expectedHash = crypto
-      .createHmac('sha256', config.secretKeyCifrada)
+      .createHmac('sha256', secretKey)
       .update(dataToHash)
       .digest('hex');
 
@@ -90,27 +122,44 @@ export class YappyService {
       throw new UnauthorizedException('Hash inválido');
     }
 
-    // Procesar estado
-    if (status === 'E') {
-      console.log(`Pago Yappy ${orderId} exitoso`);
-      
-      // Marcar cita como completada usando runInTenantScope o directamente
-      await globalDb.update(citas)
-        .set({ estado: 'completada' })
-        .where(eq(citas.id, txInfo.citaId));
+    // Procesar estado de forma segura usando runInTenantScope
+    await runInTenantScope(globalDb, txInfo.tenantId, async (tenantDb) => {
+      if (status === 'E') {
+        console.log(`Pago Yappy ${orderId} exitoso`);
+        
+        // Marcar cita como completada
+        await tenantDb.update(citas)
+          .set({ estado: 'completada' })
+          .where(eq(citas.id, txInfo.citaId));
 
-      // Emitir factura DGI
-      this.dgiService.emitirFacturaAsync(
-        txInfo.tenantId,
-        txInfo.id,
-        txInfo.totalFacturado,
-        txInfo.rucCliente,
-        txInfo.nombreFiscalCliente
-      ).catch(err => console.error('Error al emitir factura a DGI desde Yappy IPN:', err));
-      
-    } else {
-      console.log(`Pago Yappy ${orderId} falló/cancelado con estado: ${status}`);
-    }
+        // Emitir factura DGI
+        this.dgiService.emitirFacturaAsync(
+          txInfo.tenantId,
+          txInfo.id,
+          txInfo.totalFacturado,
+          txInfo.rucCliente,
+          txInfo.nombreFiscalCliente
+        ).catch(err => console.error('Error al emitir factura a DGI desde Yappy IPN:', err));
+        
+      } else if (status === 'R' || status === 'C' || status === 'X') {
+        console.log(`Pago Yappy ${orderId} falló con estado: ${status}`);
+        
+        // Marcar cita como pendiente otra vez o dejarla en estado previo si Yappy falló.
+        // Asumiendo que la cita no se completó, la devolvemos a "programada" si estaba en algún estado intermedio,
+        // o la cancelamos si expiró (X). Por simplicidad, si fue cancelada por usuario (C) o expiró (X)
+        // se puede liberar el turno:
+        if (status === 'C' || status === 'X') {
+          await tenantDb.update(citas)
+            .set({ estado: 'cancelada' })
+            .where(eq(citas.id, txInfo.citaId));
+        }
+
+        // Podríamos también tener un campo estado en transacciones, pero como no lo tenemos en el schema actual,
+        // al menos revertimos la cita.
+      } else {
+        console.warn(`Estado Yappy desconocido: ${status}`);
+      }
+    });
 
     return { success: true };
   }

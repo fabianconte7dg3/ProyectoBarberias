@@ -1,7 +1,7 @@
 import { CerrarCajaDto } from './dto/cerrar-caja.dto';
 export declare class CajaService {
     getBalanceDelDia(): Promise<{
-        fecha: any;
+        fecha: Date;
         efectivoEsperado: number;
         cantidadTransaccionesEfectivo: any;
     }>;

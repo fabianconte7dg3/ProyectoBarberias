@@ -1,7 +1,8 @@
 import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common';
-import { eq, and, lte, or } from 'drizzle-orm';
+import { eq, and, lte, or, between, ne, desc } from 'drizzle-orm';
 import { citas, bloqueosTemporales, servicios, clientes, usuarios } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
+import { runInTenantScope } from '../database/tenant/tenant.utils';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
@@ -58,10 +59,10 @@ export class CitasService {
           .select()
           .from(citas)
           .where(eq(citas.idempotencyKey, idempotencyKey));
-        return citaExistente;
+        return { cita: citaExistente, isExisting: true };
       }
 
-      return nuevaCita;
+      return { cita: nuevaCita, isExisting: false };
     } catch (error: any) {
       const code = error.code || error.cause?.code;
       
@@ -78,43 +79,44 @@ export class CitasService {
    * Bloqueo optimista (3 minutos).
    */
   async bloquearTurno(data: BloquearTurnoDto) {
-    // Es public, no hay TenantContext, usamos globalDb
-    
-    // Cleanup oportunista
-    this.globalDb.delete(bloqueosTemporales)
-      .where(lte(bloqueosTemporales.expiraEn, new Date()))
-      .execute()
-      .catch((err: any) => console.error('Error en cleanup de bloqueos:', err));
+    // Es public, no hay TenantContext en el interceptor, usamos globalDb para buscar el barbero
+    const [barbero] = await this.globalDb.select().from(usuarios).where(eq(usuarios.id, data.barberoId));
+    if (!barbero) throw new NotFoundException('Barbero no encontrado');
 
     const expiraEn = new Date(Date.now() + 3 * 60000); // +3 minutos
 
-    try {
-      // Deducir tenantId del barbero
-      const [barbero] = await this.globalDb.select().from(usuarios).where(eq(usuarios.id, data.barberoId));
-      if (!barbero) throw new NotFoundException('Barbero no encontrado');
+    // Usamos runInTenantScope para aplicar RLS
+    return await runInTenantScope(this.globalDb, barbero.tenantId, async (tx) => {
+      // Cleanup oportunista
+      tx.delete(bloqueosTemporales)
+        .where(lte(bloqueosTemporales.expiraEn, new Date()))
+        .execute()
+        .catch((err: any) => console.error('Error en cleanup de bloqueos:', err));
 
-      const [bloqueo] = await this.globalDb
-        .insert(bloqueosTemporales)
-        .values({
-          tenantId: barbero.tenantId,
-          barberoId: data.barberoId,
-          inicio: new Date(data.inicio),
-          fin: new Date(data.fin),
-          tipo: 'lock_reserva',
-          origen: 'sistema',
-          notas: data.notas,
-          expiraEn,
-        })
-        .returning();
+      try {
+        const [bloqueo] = await tx
+          .insert(bloqueosTemporales)
+          .values({
+            tenantId: barbero.tenantId,
+            barberoId: data.barberoId,
+            inicio: new Date(data.inicio),
+            fin: new Date(data.fin),
+            tipo: 'lock_reserva',
+            origen: 'sistema',
+            notas: data.notas,
+            expiraEn,
+          })
+          .returning();
 
-      return bloqueo;
-    } catch (error: any) {
-      const code = error.code || error.cause?.code;
-      if (code === '23P01') {
-        throw new ConflictException('Ese horario ya no está disponible para bloqueo.');
+        return bloqueo;
+      } catch (error: any) {
+        const code = error.code || error.cause?.code;
+        if (code === '23P01') {
+          throw new ConflictException('Ese horario ya no está disponible para bloqueo.');
+        }
+        throw error;
       }
-      throw error;
-    }
+    });
   }
 
   /**
@@ -152,14 +154,23 @@ export class CitasService {
    * Cliente cancela por su cuenta sin strike.
    */
   async cancelarPorCliente(citaId: string) {
-    // Es public, usamos globalDb
-    const [cita] = await this.globalDb
-      .update(citas)
-      .set({ estado: 'cancelada' })
-      .where(eq(citas.id, citaId))
-      .returning();
+    // Es public, usamos globalDb primero para buscar la cita
+    const [citaOriginal] = await this.globalDb
+      .select()
+      .from(citas)
+      .where(eq(citas.id, citaId));
       
-    if (!cita) throw new NotFoundException('Cita no encontrada');
-    return cita;
+    if (!citaOriginal) throw new NotFoundException('Cita no encontrada');
+    
+    // Y luego hacemos el update bajo su tenant scope para validar RLS
+    return await runInTenantScope(this.globalDb, citaOriginal.tenantId, async (tx) => {
+      const [citaCancelada] = await tx
+        .update(citas)
+        .set({ estado: 'cancelada' })
+        .where(eq(citas.id, citaId))
+        .returning();
+        
+      return citaCancelada;
+    });
   }
 }

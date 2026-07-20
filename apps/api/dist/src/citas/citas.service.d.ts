@@ -6,34 +6,11 @@ import * as schema from '../database/schema';
 export declare class CitasService {
     private readonly globalDb;
     constructor(globalDb: NodePgDatabase<typeof schema>);
-    crearCita(data: CreateCitaDto, idempotencyKey: string): Promise<any>;
-    bloquearTurno(data: BloquearTurnoDto): Promise<{
-        id: string;
-        tenantId: string;
-        barberoId: string;
-        origen: "admin" | "barbero" | "sistema";
-        inicio: Date;
-        fin: Date;
-        tipo: "walk_in" | "almuerzo_dinamico" | "lock_reserva" | "emergencia" | "extension_turno";
-        expiraEn: Date | null;
-        notas: string | null;
+    crearCita(data: CreateCitaDto, idempotencyKey: string): Promise<{
+        cita: any;
+        isExisting: boolean;
     }>;
+    bloquearTurno(data: BloquearTurnoDto): Promise<any>;
     cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado): Promise<any>;
-    cancelarPorCliente(citaId: string): Promise<{
-        id: string;
-        tenantId: string;
-        clienteId: string | null;
-        barberoId: string;
-        servicioId: string;
-        inicioEstimado: Date;
-        finEstimado: Date;
-        inicioReal: Date | null;
-        finReal: Date | null;
-        origen: "bot_whatsapp" | "walk_in" | "manual_admin";
-        estado: "programada" | "en_curso" | "completada" | "ausente_strike" | "cancelada" | "revision_manual";
-        idempotencyKey: string;
-        tokenCliente: string | null;
-        tokenExpiraEn: Date | null;
-        createdAt: Date;
-    }>;
+    cancelarPorCliente(citaId: string): Promise<any>;
 }

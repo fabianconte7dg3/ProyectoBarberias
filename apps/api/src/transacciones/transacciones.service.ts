@@ -1,11 +1,11 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, servicios } from '../database/schema';
-import { eq } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { CobrarCitaDto } from './dto/cobrar-cita.dto';
 import { YappyService } from '../yappy/yappy.service';
 import { DgiService } from '../dgi/dgi.service';
-import { nanoid } from 'nanoid';
+import * as crypto from 'crypto';
 
 @Injectable()
 export class TransaccionesService {
@@ -48,7 +48,7 @@ export class TransaccionesService {
     // Asumimos que `db` ya es una transacción o la base de datos principal. 
     // Si viene del TenantInterceptor, ES una transacción.
     
-    const yappyOrderId = dto.metodoPago === 'yappy' ? nanoid(12) : null;
+    const yappyOrderId = dto.metodoPago === 'yappy' ? crypto.randomBytes(6).toString('hex') : null;
 
     const [nuevaTransaccion] = await db.insert(transacciones).values({
       tenantId,
@@ -72,9 +72,8 @@ export class TransaccionesService {
       yappyData = await this.yappyService.initiatePayment(tenantId, yappyOrderId!, totalFacturado);
     }
 
-    // Solo marcamos como completada si NO es comercial, o si lo permitimos asumiendo éxito
-    // Normalmente, si yappyData.modo === 'comercial', esperamos al IPN para completarla.
-    if (dto.metodoPago !== 'yappy' || (yappyData && yappyData.modo === 'manual')) {
+    // Solo marcamos como completada si NO es Yappy
+    if (dto.metodoPago !== 'yappy') {
       await db.update(citas)
         .set({ estado: 'completada' })
         .where(eq(citas.id, cita.id));
@@ -92,6 +91,40 @@ export class TransaccionesService {
     return { transaccion: nuevaTransaccion, yappyData };
   }
 
+  async confirmarPagoManual(citaId: string, confirmadoPorId: string) {
+    const db = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    const [transaccion] = await db.query.transacciones.findMany({
+      where: eq(transacciones.citaId, citaId),
+      orderBy: [desc(transacciones.createdAt)],
+      limit: 1,
+    });
+
+    if (!transaccion) throw new NotFoundException('Transacción no encontrada');
+
+    // Marcamos la transacción como confirmada
+    await db.update(transacciones)
+      .set({ confirmadoPorId })
+      .where(eq(transacciones.id, transaccion.id));
+
+    // Marcamos la cita como completada
+    await db.update(citas)
+      .set({ estado: 'completada' })
+      .where(eq(citas.id, citaId));
+
+    // Emitir factura
+    this.dgiService.emitirFacturaAsync(
+      tenantId,
+      transaccion.id,
+      transaccion.totalFacturado,
+      transaccion.rucCliente,
+      transaccion.nombreFiscalCliente
+    ).catch(err => console.error('Error al emitir factura a DGI:', err));
+
+    return { success: true };
+  }
+
   async findAll(page: number = 1, limit: number = 20) {
     const db = TenantContext.getDb();
     const offset = (page - 1) * limit;
@@ -99,7 +132,7 @@ export class TransaccionesService {
     const data = await db.query.transacciones.findMany({
       limit,
       offset,
-      orderBy: (transacciones, { desc }) => [desc(transacciones.createdAt)],
+      orderBy: [desc(transacciones.createdAt)],
       with: {
         cita: {
           with: {

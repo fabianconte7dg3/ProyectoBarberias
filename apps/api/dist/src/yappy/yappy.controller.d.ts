@@ -1,5 +1,5 @@
 import { YappyService } from './yappy.service';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 export declare class YappyController {

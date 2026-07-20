@@ -1,6 +1,6 @@
 import { Controller, Get, Query, Res, HttpStatus, Inject } from '@nestjs/common';
 import { YappyService } from './yappy.service';
-import { Response } from 'express';
+import type { Response } from 'express';
 import { Public } from '../common/decorators/public.decorator';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import { NodePgDatabase } from 'drizzle-orm/node-postgres';

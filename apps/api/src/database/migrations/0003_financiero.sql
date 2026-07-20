@@ -25,3 +25,8 @@ ALTER TABLE yappy_config FORCE ROW LEVEL SECURITY;
 CREATE POLICY tenant_isolation_yappy_config ON yappy_config
   USING (tenant_id = current_tenant_id())
   WITH CHECK (tenant_id = current_tenant_id());
+--> statement-breakpoint
+
+-- Otorgar permisos al rol de aplicación
+GRANT SELECT, INSERT, UPDATE, DELETE ON yappy_config TO app_user;
+GRANT UPDATE ON transacciones TO app_user;

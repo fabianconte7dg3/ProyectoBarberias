@@ -7,6 +7,9 @@ export declare class TransaccionesController {
         transaccion: any;
         yappyData: import("../yappy/adapters/yappy.port").IYappyInitResponse | null;
     }>;
+    confirmarPagoManual(id: string, req: any): Promise<{
+        success: boolean;
+    }>;
     findAll(page?: string, limit?: string): Promise<{
         data: any;
         page: number;
