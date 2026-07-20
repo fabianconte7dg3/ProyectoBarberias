@@ -11,7 +11,7 @@ import * as crypto from 'crypto';
 export class DgiService {
   private readonly logger = new Logger(DgiService.name);
 
-  constructor(@Inject(DRIZZLE_POOL_DB) private readonly globalDb: NodePgDatabase<typeof schema>) {}
+  constructor(@Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>) {}
 
   /**
    * Simula la emisión de una factura electrónica ante la DGI.
@@ -29,7 +29,7 @@ export class DgiService {
     // Simulamos retardo de red
     setTimeout(async () => {
       try {
-        await runInTenantScope(this.globalDb, tenantId, async (tx) => {
+        await runInTenantScope(this.db, tenantId, async (tx) => {
           const numeroFacturaDgi = `DGI-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
           
           await tx.update(transacciones)

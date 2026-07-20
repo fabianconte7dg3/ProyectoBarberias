@@ -16,7 +16,7 @@ import * as schema from '../database/schema';
 export class CitasController {
   constructor(
     private readonly citasService: CitasService,
-    @Inject(DRIZZLE_POOL_DB) private readonly globalDb: NodePgDatabase<typeof schema>
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>
   ) {}
 
   @Roles('admin', 'recepcion', 'barbero')
@@ -55,8 +55,8 @@ export class CitasController {
   async cancelarPorCliente(@Param('id') id: string, @Body('token') token: string) {
     if (!token) throw new UnauthorizedException('Token de cancelación requerido');
     
-    // Verificación manual simple para el cliente (public route, usa globalDb)
-    const [cita] = await this.globalDb
+    // Verificación manual simple para el cliente (public route, usa db)
+    const [cita] = await this.db
       .select()
       .from(citas)
       .where(

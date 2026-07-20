@@ -74,7 +74,8 @@ src/citas/
 
 ## Puntos resueltos (Hito 4 y 5)
 
-- ✅ **Rol de Postgres**: Los permisos de `app_user` fueron corregidos (migración `0003_financiero`). Tienen permisos exactos granulares y el rol está creado sin BYPASSRLS.
+- ✅ **Rol de Postgres y Privilegios Seguros**: Los permisos de `app_user` fueron corregidos (migración `0003` y `0004`). Tienen permisos exactos granulares, asegurando el diseño Append-Only en `transacciones` (UPDATE permitido solo a nivel de columnas específicas). El rol está creado sin BYPASSRLS.
+- ✅ **Bypass RLS para Autenticación**: Se introdujeron funciones `SECURITY DEFINER` seguras (`auth_get_tenant_by_slug` y `auth_get_user_by_token`) con `SET search_path = public` y `REVOKE EXECUTE FROM PUBLIC`, permitiendo el acceso en login y activación de personal antes de que el `current_tenant_id` esté seteado.
 - ✅ **`idempotency_key` en `citas`**: Resuelto (Hito 4). La función `agendarCita` atrapa el conflicto de violación de unicidad `23505` y devuelve un `200 OK` con la cita pre-existente, erradicando el "Error #12" de doble cobro.
 - ✅ **Aislamiento de Webhooks (Yappy, WhatsApp)**: Resuelto a través del patrón `runInTenantScope` descrito arriba.
 - 🕒 **PgBouncer**: Sigue pendiente confirmar el modo *transaction pooling* al momento de ir a producción para compatibilidad con `SET LOCAL`.

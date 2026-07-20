@@ -20,7 +20,8 @@ export class UsuariosService {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 48); // 48 horas de vigencia
 
-    const [nuevoUsuario] = await this.db.insert(schema.usuarios).values({
+    const txDb = TenantContext.getDb();
+    const [nuevoUsuario] = await txDb.insert(schema.usuarios).values({
       tenantId,
       nombreCompleto: dto.nombreCompleto,
       rol: dto.rol,
@@ -38,9 +39,8 @@ export class UsuariosService {
 
   async activateStaff(dto: ActivateStaffDto) {
     // Buscar globalmente por token (no requiere tenantId en el request, por eso puede ser Public)
-    const usuario = await this.db.query.usuarios.findFirst({
-      where: eq(schema.usuarios.tokenActivacion, dto.token),
-    });
+    const result = await this.db.execute(sql`SELECT id, tenant_id as "tenantId", token_expira_en as "tokenExpiraEn" FROM auth_get_user_by_token(${dto.token})`);
+    const usuario = result.rows[0] as any;
 
     if (!usuario) {
       throw new NotFoundException('Token inválido o no encontrado.');

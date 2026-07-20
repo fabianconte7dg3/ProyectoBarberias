@@ -9,11 +9,11 @@ import * as schema from '../schema';
  * para requests HTTP. Ideal para Webhooks asíncronos o Workers.
  */
 export async function runInTenantScope<T>(
-  globalDb: NodePgDatabase<typeof schema>,
+  db: NodePgDatabase<typeof schema>,
   tenantId: string,
   callback: (tx: any) => Promise<T>,
 ): Promise<T> {
-  return globalDb.transaction(async (tx) => {
+  return db.transaction(async (tx) => {
     await tx.execute(sql.raw(`SET LOCAL ROLE app_user`));
     await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
 

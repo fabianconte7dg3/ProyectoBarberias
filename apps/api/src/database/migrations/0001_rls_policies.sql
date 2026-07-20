@@ -47,6 +47,7 @@ BEGIN
   FOREACH tabla IN ARRAY tablas LOOP
     EXECUTE format('ALTER TABLE %I ENABLE ROW LEVEL SECURITY', tabla);
     EXECUTE format('ALTER TABLE %I FORCE ROW LEVEL SECURITY', tabla); -- aplica incluso al dueño de la tabla
+    EXECUTE format('DROP POLICY IF EXISTS tenant_isolation_%s ON %I', tabla, tabla);
     EXECUTE format(
       'CREATE POLICY tenant_isolation_%s ON %I
          USING (tenant_id = current_tenant_id())
@@ -64,6 +65,7 @@ END $$;
 
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation_audit_logs ON audit_logs;
 
 CREATE POLICY tenant_isolation_audit_logs ON audit_logs
   USING (
@@ -79,6 +81,7 @@ CREATE POLICY tenant_isolation_audit_logs ON audit_logs
 
 ALTER TABLE barberias ENABLE ROW LEVEL SECURITY;
 ALTER TABLE barberias FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation_barberias ON barberias;
 
 CREATE POLICY tenant_isolation_barberias ON barberias
   USING (id = current_tenant_id())

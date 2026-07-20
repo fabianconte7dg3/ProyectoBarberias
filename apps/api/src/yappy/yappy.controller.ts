@@ -10,7 +10,7 @@ import * as schema from '../database/schema';
 export class YappyController {
   constructor(
     private readonly yappyService: YappyService,
-    @Inject(DRIZZLE_POOL_DB) private readonly globalDb: NodePgDatabase<typeof schema>,
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
   ) {}
 
   @Public() // Webhook expuesto públicamente
@@ -27,7 +27,7 @@ export class YappyController {
     }
 
     try {
-      await this.yappyService.processIpn(orderId, status, hash, domain, this.globalDb);
+      await this.yappyService.processIpn(orderId, status, hash, domain, this.db);
       return res.status(HttpStatus.OK).json({ success: true });
     } catch (error) {
       console.error('IPN Error:', error);

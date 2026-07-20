@@ -1,5 +1,5 @@
 import { Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import * as crypto from 'crypto';
 import { yappyConfig, citas, transacciones } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
@@ -83,47 +83,51 @@ export class YappyService {
    * Valida el hash HMAC-SHA256 del IPN de Yappy
    * Status: E (Ejecutado), R (Rechazado), C (Cancelado)
    */
-  async processIpn(orderId: string, status: string, hash: string, domain: string, globalDb: NodePgDatabase<typeof schema>) {
-    // Para validar el IPN, necesitamos encontrar de qué tenant es esta orden
-    // Buscamos la transacción por yappyOrderId (que equivale al orderId aquí)
-    const txInfo = await globalDb.query.transacciones.findFirst({
-      where: eq(schema.transacciones.yappyOrderId, orderId),
-    });
+  async processIpn(orderId: string, status: string, hash: string, domain: string, db: NodePgDatabase<typeof schema>) {
+    // Buscamos el tenant por SECURITY DEFINER
+    const result = await db.execute(sql`SELECT get_tenant_for_yappy_order(${orderId}) as tenant_id`);
+    const tenantId = result.rows[0]?.tenant_id as string | undefined;
 
-    if (!txInfo) {
+    if (!tenantId) {
       throw new UnauthorizedException('Orden no encontrada');
     }
 
-    // Buscamos la config del tenant
-    const config = await globalDb.query.yappyConfig.findFirst({
-      where: eq(yappyConfig.tenantId, txInfo.tenantId),
-    });
+    // Todo se ejecuta dentro del scope del tenant para que RLS permita leer config y transacciones
+    await runInTenantScope(db, tenantId, async (tenantDb) => {
+      // Buscamos la config del tenant
+      const config = await tenantDb.query.yappyConfig.findFirst({
+        where: eq(yappyConfig.tenantId, tenantId),
+      });
 
-    if (!config || config.modo !== 'comercial' || !config.secretKeyCifrada) {
-      throw new UnauthorizedException('Configuración Yappy inválida para este tenant');
-    }
+      if (!config || config.modo !== 'comercial' || !config.secretKeyCifrada) {
+        throw new UnauthorizedException('Configuración Yappy inválida para este tenant');
+      }
 
-    // Descifrar la llave para verificar el hash
-    let secretKey: string;
-    try {
-      secretKey = decrypt(config.secretKeyCifrada);
-    } catch (e) {
-      throw new InternalServerErrorException('Error descifrando la llave secreta');
-    }
+      // Descifrar la llave para verificar el hash
+      let secretKey: string;
+      try {
+        secretKey = decrypt(config.secretKeyCifrada);
+      } catch (e) {
+        throw new InternalServerErrorException('Error descifrando la llave secreta');
+      }
 
-    // Generar hash HMAC-SHA256 esperado
-    const dataToHash = `${orderId}${status}${domain}`; 
-    const expectedHash = crypto
-      .createHmac('sha256', secretKey)
-      .update(dataToHash)
-      .digest('hex');
+      // Generar hash HMAC-SHA256 esperado
+      const dataToHash = `${orderId}${status}${domain}`; 
+      const expectedHash = crypto
+        .createHmac('sha256', secretKey)
+        .update(dataToHash)
+        .digest('hex');
 
-    if (hash !== expectedHash) {
-      throw new UnauthorizedException('Hash inválido');
-    }
+      if (hash !== expectedHash) {
+        throw new UnauthorizedException('Hash inválido');
+      }
 
-    // Procesar estado de forma segura usando runInTenantScope
-    await runInTenantScope(globalDb, txInfo.tenantId, async (tenantDb) => {
+      // Necesitamos la info de la tx real
+      const txInfo = await tenantDb.query.transacciones.findFirst({
+        where: eq(schema.transacciones.yappyOrderId, orderId),
+      });
+      if (!txInfo) return;
+
       if (status === 'E') {
         console.log(`Pago Yappy ${orderId} exitoso`);
         
@@ -131,6 +135,14 @@ export class YappyService {
         await tenantDb.update(citas)
           .set({ estado: 'completada' })
           .where(eq(citas.id, txInfo.citaId));
+
+        // Actualizar transacción con payload de Yappy
+        await tenantDb.update(schema.transacciones)
+          .set({
+            yappyWebhookReceivedAt: new Date(),
+            yappyWebhookPayload: { orderId, status, hash, domain },
+          })
+          .where(eq(schema.transacciones.id, txInfo.id));
 
         // Emitir factura DGI
         this.dgiService.emitirFacturaAsync(

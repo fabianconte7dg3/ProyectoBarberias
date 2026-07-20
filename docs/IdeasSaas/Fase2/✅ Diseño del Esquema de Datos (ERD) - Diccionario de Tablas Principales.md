@@ -10,7 +10,7 @@
 - **Aislamiento de Datos (RLS):** Todas las tablas operativas (excepto `barberias`) incluyen obligatoriamente `tenant_id` como Foreign Key. PostgreSQL aplica Row Level Security a nivel de motor, bloqueando fugas de datos entre locales incluso si el código tiene un error.
 - **Tipos de IDs:** UUID v4 en todas las llaves primarias. Previene ataques IDOR (adivinar IDs iterando números en la URL).
 - **Timestamps:** Todas las fechas en `Timestamptz` (con zona horaria). Panamá usa UTC-5 sin cambio de horario estacional.
-- **Append-Only:** La tabla `transacciones` no permite UPDATE ni DELETE. Las correcciones se hacen con notas de crédito (nueva inserción), garantizando integridad contable.
+- **Append-Only:** La tabla `transacciones` no permite UPDATE globales (por política de RLS) para prevenir modificaciones en el monto financiero base, previniendo fraudes contables. Se permite `UPDATE` a nivel de columnas específicas únicamente para la trazabilidad posterior del pago (ej. `yappyOrderId`, `estadoDgi`, `numeroFacturaDgi`), garantizando integridad contable. Las correcciones del monto real se hacen con notas de crédito (nueva inserción).
 
 ---
 
