@@ -15,6 +15,13 @@
       "when": 1784532152294,
       "tag": "0001_citas_modifications",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784534167414,
+      "tag": "0003_financiero",
+      "breakpoints": true
     }
   ]
 }

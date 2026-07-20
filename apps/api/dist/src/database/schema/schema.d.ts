@@ -12,6 +12,7 @@ export declare const accionAuditEnum: import("drizzle-orm/pg-core").PgEnum<["log
 export declare const estadoWhatsappEnum: import("drizzle-orm/pg-core").PgEnum<["conectado", "desconectado", "pendiente_qr", "suspendido"]>;
 export declare const estadoCierreEnum: import("drizzle-orm/pg-core").PgEnum<["cuadrado", "faltante", "sobrante"]>;
 export declare const tipoPlantillaEnum: import("drizzle-orm/pg-core").PgEnum<["confirmacion_reserva", "recordatorio_24h", "confirmacion_pago", "recordatorio_deuda", "cierre_emergencia", "bienvenida_bot"]>;
+export declare const yappyModoEnum: import("drizzle-orm/pg-core").PgEnum<["manual", "comercial"]>;
 export declare const barberias: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "barberias";
     schema: undefined;
@@ -1245,6 +1246,25 @@ export declare const transacciones: import("drizzle-orm/pg-core").PgTableWithCol
         }, {}, {
             length: 255;
         }>;
+        yappyOrderId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "yappy_order_id";
+            tableName: "transacciones";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 15;
+        }>;
         yappyTransactionId: import("drizzle-orm/pg-core").PgColumn<{
             name: "yappy_transaction_id";
             tableName: "transacciones";
@@ -1288,6 +1308,23 @@ export declare const transacciones: import("drizzle-orm/pg-core").PgTableWithCol
             columnType: "PgJsonb";
             data: unknown;
             driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        confirmadoPorId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "confirmado_por_id";
+            tableName: "transacciones";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
             notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
@@ -2252,12 +2289,143 @@ export declare const plantillasWhatsapp: import("drizzle-orm/pg-core").PgTableWi
     };
     dialect: "pg";
 }>;
+export declare const yappyConfig: import("drizzle-orm/pg-core").PgTableWithColumns<{
+    name: "yappy_config";
+    schema: undefined;
+    columns: {
+        id: import("drizzle-orm/pg-core").PgColumn<{
+            name: "id";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: true;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        tenantId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "tenant_id";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        modo: import("drizzle-orm/pg-core").PgColumn<{
+            name: "modo";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "manual" | "comercial";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: ["manual", "comercial"];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        numeroPersonal: import("drizzle-orm/pg-core").PgColumn<{
+            name: "numero_personal";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 30;
+        }>;
+        merchantId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "merchant_id";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 255;
+        }>;
+        secretKeyCifrada: import("drizzle-orm/pg-core").PgColumn<{
+            name: "secret_key_cifrada";
+            tableName: "yappy_config";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        createdAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_at";
+            tableName: "yappy_config";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+    };
+    dialect: "pg";
+}>;
 export declare const barberiasRelations: import("drizzle-orm").Relations<"barberias", {
     usuarios: import("drizzle-orm").Many<"usuarios">;
     servicios: import("drizzle-orm").Many<"servicios">;
     clientes: import("drizzle-orm").Many<"clientes">;
     citas: import("drizzle-orm").Many<"citas">;
     whatsappConfig: import("drizzle-orm").One<"whatsapp_config", false>;
+    yappyConfig: import("drizzle-orm").One<"yappy_config", false>;
 }>;
 export declare const usuariosRelations: import("drizzle-orm").Relations<"usuarios", {
     barberia: import("drizzle-orm").One<"barberias", true>;

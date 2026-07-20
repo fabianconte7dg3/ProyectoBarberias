@@ -40,7 +40,8 @@ DECLARE
     'bloqueos_temporales',
     'whatsapp_config',
     'cierres_de_caja',
-    'plantillas_whatsapp'
+    'plantillas_whatsapp',
+    'yappy_config'
   ];
 BEGIN
   FOREACH tabla IN ARRAY tablas LOOP

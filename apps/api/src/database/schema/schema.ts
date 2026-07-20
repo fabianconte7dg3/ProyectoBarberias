@@ -47,6 +47,7 @@ export const tipoPlantillaEnum = pgEnum('tipo_plantilla', [
   'confirmacion_reserva', 'recordatorio_24h', 'confirmacion_pago',
   'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
+export const yappyModoEnum = pgEnum('yappy_modo', ['manual', 'comercial']);
 
 // ============================================================================
 // TABLA 1: barberias (tenant maestro — NO lleva tenant_id, ES el tenant)
@@ -158,9 +159,11 @@ export const transacciones = pgTable('transacciones', {
   numeroFacturaDgi: varchar('numero_factura_dgi', { length: 100 }),
   rucCliente: varchar('ruc_cliente', { length: 50 }),
   nombreFiscalCliente: varchar('nombre_fiscal_cliente', { length: 255 }),
+  yappyOrderId: varchar('yappy_order_id', { length: 15 }),
   yappyTransactionId: varchar('yappy_transaction_id', { length: 255 }),
   yappyWebhookReceivedAt: timestamp('yappy_webhook_received_at', { withTimezone: true }),
   yappyWebhookPayload: jsonb('yappy_webhook_payload'),
+  confirmadoPorId: uuid('confirmado_por_id').references(() => usuarios.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -260,6 +263,20 @@ export const plantillasWhatsapp = pgTable('plantillas_whatsapp', {
 });
 
 // ============================================================================
+// TABLA 13: yappy_config
+// ============================================================================
+
+export const yappyConfig = pgTable('yappy_config', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().unique().references(() => barberias.id, { onDelete: 'cascade' }),
+  modo: yappyModoEnum('modo').notNull().default('manual'),
+  numeroPersonal: varchar('numero_personal', { length: 30 }),
+  merchantId: varchar('merchant_id', { length: 255 }),
+  secretKeyCifrada: text('secret_key_cifrada'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ============================================================================
 // RELATIONS (para queries anidadas con db.query.*)
 // ============================================================================
 
@@ -269,6 +286,7 @@ export const barberiasRelations = relations(barberias, ({ many, one }) => ({
   clientes: many(clientes),
   citas: many(citas),
   whatsappConfig: one(whatsappConfig),
+  yappyConfig: one(yappyConfig),
 }));
 
 export const usuariosRelations = relations(usuarios, ({ one, many }) => ({

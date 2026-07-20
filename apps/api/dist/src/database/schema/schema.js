@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.usuariosRelations = exports.barberiasRelations = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.transacciones = exports.citas = exports.clientes = exports.servicios = exports.usuarios = exports.barberias = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.transacciones = exports.citas = exports.clientes = exports.servicios = exports.usuarios = exports.barberias = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
@@ -31,6 +31,7 @@ exports.tipoPlantillaEnum = (0, pg_core_1.pgEnum)('tipo_plantilla', [
     'confirmacion_reserva', 'recordatorio_24h', 'confirmacion_pago',
     'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
+exports.yappyModoEnum = (0, pg_core_1.pgEnum)('yappy_modo', ['manual', 'comercial']);
 exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     nombreComercial: (0, pg_core_1.varchar)('nombre_comercial', { length: 255 }).notNull(),
@@ -112,9 +113,11 @@ exports.transacciones = (0, pg_core_1.pgTable)('transacciones', {
     numeroFacturaDgi: (0, pg_core_1.varchar)('numero_factura_dgi', { length: 100 }),
     rucCliente: (0, pg_core_1.varchar)('ruc_cliente', { length: 50 }),
     nombreFiscalCliente: (0, pg_core_1.varchar)('nombre_fiscal_cliente', { length: 255 }),
+    yappyOrderId: (0, pg_core_1.varchar)('yappy_order_id', { length: 15 }),
     yappyTransactionId: (0, pg_core_1.varchar)('yappy_transaction_id', { length: 255 }),
     yappyWebhookReceivedAt: (0, pg_core_1.timestamp)('yappy_webhook_received_at', { withTimezone: true }),
     yappyWebhookPayload: (0, pg_core_1.jsonb)('yappy_webhook_payload'),
+    confirmadoPorId: (0, pg_core_1.uuid)('confirmado_por_id').references(() => exports.usuarios.id),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 exports.horarios = (0, pg_core_1.pgTable)('horarios', {
@@ -181,12 +184,22 @@ exports.plantillasWhatsapp = (0, pg_core_1.pgTable)('plantillas_whatsapp', {
     contenido: (0, pg_core_1.text)('contenido').notNull(),
     activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
 });
+exports.yappyConfig = (0, pg_core_1.pgTable)('yappy_config', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().unique().references(() => exports.barberias.id, { onDelete: 'cascade' }),
+    modo: (0, exports.yappyModoEnum)('modo').notNull().default('manual'),
+    numeroPersonal: (0, pg_core_1.varchar)('numero_personal', { length: 30 }),
+    merchantId: (0, pg_core_1.varchar)('merchant_id', { length: 255 }),
+    secretKeyCifrada: (0, pg_core_1.text)('secret_key_cifrada'),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 exports.barberiasRelations = (0, drizzle_orm_1.relations)(exports.barberias, ({ many, one }) => ({
     usuarios: many(exports.usuarios),
     servicios: many(exports.servicios),
     clientes: many(exports.clientes),
     citas: many(exports.citas),
     whatsappConfig: one(exports.whatsappConfig),
+    yappyConfig: one(exports.yappyConfig),
 }));
 exports.usuariosRelations = (0, drizzle_orm_1.relations)(exports.usuarios, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.usuarios.tenantId], references: [exports.barberias.id] }),
