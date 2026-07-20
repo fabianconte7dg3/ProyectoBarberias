@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param } from '@nestjs/common';
+import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Public } from '../common/decorators/public.decorator';
 import { HorariosService } from './horarios.service';
 import { UpsertHorarioSemanalDto } from './dto/upsert-horario-semanal.dto';
 import { CreateBloqueoDto } from './dto/create-bloqueo.dto';
@@ -37,5 +38,14 @@ export class HorariosController {
   @Get('bloqueos/:barberoId')
   getBloqueos(@Param('barberoId') barberoId: string) {
     return this.horariosService.getBloqueosVigentes(barberoId);
+  }
+
+  @Public() // Para que el widget del frontend o WhatsApp consulte libremente
+  @Get('disponibilidad')
+  getDisponibilidad(
+    @Query('barberoId') barberoId: string,
+    @Query('fecha') fecha: string,
+  ) {
+    return this.horariosService.getDisponibilidad(barberoId, fecha);
   }
 }

@@ -1,11 +1,13 @@
-import { citas } from '../database/schema';
+import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
+import { UpdateEstadoCitaDto } from './dto/update-estado.dto';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
-export declare class CitasService {
+export declare class CitasController {
+    private readonly citasService;
     private readonly globalDb;
-    constructor(globalDb: NodePgDatabase<typeof schema>);
+    constructor(citasService: CitasService, globalDb: NodePgDatabase<typeof schema>);
     crearCita(data: CreateCitaDto, idempotencyKey: string): Promise<any>;
     bloquearTurno(data: BloquearTurnoDto): Promise<{
         id: string;
@@ -18,8 +20,8 @@ export declare class CitasService {
         expiraEn: Date | null;
         notas: string | null;
     }>;
-    cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado): Promise<any>;
-    cancelarPorCliente(citaId: string): Promise<{
+    cambiarEstado(id: string, data: UpdateEstadoCitaDto): Promise<any>;
+    cancelarPorCliente(id: string, token: string): Promise<{
         id: string;
         tenantId: string;
         clienteId: string | null;

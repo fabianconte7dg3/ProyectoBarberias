@@ -13,6 +13,7 @@ import { ClientesModule } from './clientes/clientes.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { CitasModule } from './citas/citas.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ServiciosModule,
     ClientesModule,
     HorariosModule,
+    CitasModule,
   ],
   controllers: [AppController],
   providers: [

@@ -90,6 +90,8 @@ exports.citas = (0, pg_core_1.pgTable)('citas', {
     servicioId: (0, pg_core_1.uuid)('servicio_id').notNull().references(() => exports.servicios.id),
     inicioEstimado: (0, pg_core_1.timestamp)('inicio_estimado', { withTimezone: true }).notNull(),
     finEstimado: (0, pg_core_1.timestamp)('fin_estimado', { withTimezone: true }).notNull(),
+    inicioReal: (0, pg_core_1.timestamp)('inicio_real', { withTimezone: true }),
+    finReal: (0, pg_core_1.timestamp)('fin_real', { withTimezone: true }),
     origen: (0, exports.origenCitaEnum)('origen').notNull(),
     estado: (0, exports.estadoCitaEnum)('estado').notNull().default('programada'),
     idempotencyKey: (0, pg_core_1.varchar)('idempotency_key', { length: 255 }).notNull().unique(),

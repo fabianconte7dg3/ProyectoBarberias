@@ -14,6 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HorariosController = void 0;
 const common_1 = require("@nestjs/common");
+const public_decorator_1 = require("../common/decorators/public.decorator");
 const horarios_service_1 = require("./horarios.service");
 const upsert_horario_semanal_dto_1 = require("./dto/upsert-horario-semanal.dto");
 const create_bloqueo_dto_1 = require("./dto/create-bloqueo.dto");
@@ -34,6 +35,9 @@ let HorariosController = class HorariosController {
     }
     getBloqueos(barberoId) {
         return this.horariosService.getBloqueosVigentes(barberoId);
+    }
+    getDisponibilidad(barberoId, fecha) {
+        return this.horariosService.getDisponibilidad(barberoId, fecha);
     }
 };
 exports.HorariosController = HorariosController;
@@ -70,6 +74,15 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], HorariosController.prototype, "getBloqueos", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('disponibilidad'),
+    __param(0, (0, common_1.Query)('barberoId')),
+    __param(1, (0, common_1.Query)('fecha')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], HorariosController.prototype, "getDisponibilidad", null);
 exports.HorariosController = HorariosController = __decorate([
     (0, common_1.Controller)('horarios'),
     __metadata("design:paramtypes", [horarios_service_1.HorariosService])

@@ -131,6 +131,8 @@ export const citas = pgTable('citas', {
   servicioId: uuid('servicio_id').notNull().references(() => servicios.id),
   inicioEstimado: timestamp('inicio_estimado', { withTimezone: true }).notNull(),
   finEstimado: timestamp('fin_estimado', { withTimezone: true }).notNull(),
+  inicioReal: timestamp('inicio_real', { withTimezone: true }),
+  finReal: timestamp('fin_real', { withTimezone: true }),
   origen: origenCitaEnum('origen').notNull(),
   estado: estadoCitaEnum('estado').notNull().default('programada'),
   idempotencyKey: varchar('idempotency_key', { length: 255 }).notNull().unique(),

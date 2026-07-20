@@ -1,12 +1,15 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import * as schema from '../database/schema';
-import { eq, and, gt, or, isNull, asc } from 'drizzle-orm';
+import { eq, and, gt, or, isNull, asc, lte } from 'drizzle-orm';
 import { UpsertHorarioSemanalDto, DiaHorarioDto } from './dto/upsert-horario-semanal.dto';
 import { CreateBloqueoDto } from './dto/create-bloqueo.dto';
+import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Injectable()
 export class HorariosService {
+  constructor(@Inject(DRIZZLE_POOL_DB) private readonly globalDb: NodePgDatabase<typeof schema>) {}
   
   // Helpers para validación de tiempo "HH:mm"
   private parseTime(timeStr: string): number {
@@ -123,5 +126,109 @@ export class HorariosService {
       ),
       orderBy: [asc(schema.bloqueosTemporales.inicio)],
     });
+  }
+
+  async getDisponibilidad(barberoId: string, fechaYYYYMMDD: string) {
+    // Endpoint @Public(), usamos this.globalDb
+    const db = this.globalDb;
+    const fechaDate = new Date(`${fechaYYYYMMDD}T00:00:00Z`); // UTC start of day
+    
+    const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+    const diaString = diasSemana[fechaDate.getUTCDay()] as typeof schema.diaSemanaEnum.enumValues[number];
+
+    const [horario] = await db.query.horarios.findMany({
+      where: and(
+        eq(schema.horarios.barberoId, barberoId),
+        eq(schema.horarios.diaSemana, diaString),
+        eq(schema.horarios.activo, true)
+      ),
+    });
+
+    if (!horario) {
+      return { disponible: false, jornada: null, ocupados: [], almuerzo: null };
+    }
+
+    // Buscar citas del día
+    const inicioDia = new Date(fechaDate);
+    const finDia = new Date(fechaDate);
+    finDia.setUTCDate(finDia.getUTCDate() + 1);
+
+    const citasHoy = await db.query.citas.findMany({
+      where: and(
+        eq(schema.citas.barberoId, barberoId),
+        gt(schema.citas.finEstimado, inicioDia),
+        lte(schema.citas.inicioEstimado, finDia),
+        or(
+          eq(schema.citas.estado, 'programada'),
+          eq(schema.citas.estado, 'en_curso'),
+          eq(schema.citas.estado, 'completada'),
+          eq(schema.citas.estado, 'revision_manual')
+        )
+      ),
+    });
+
+    const bloqueosHoy = await db.query.bloqueosTemporales.findMany({
+      where: and(
+        eq(schema.bloqueosTemporales.barberoId, barberoId),
+        gt(schema.bloqueosTemporales.fin, inicioDia),
+        lte(schema.bloqueosTemporales.inicio, finDia),
+        or(
+          gt(schema.bloqueosTemporales.expiraEn, new Date()),
+          isNull(schema.bloqueosTemporales.expiraEn)
+        )
+      ),
+    });
+
+    // Calcular máximo retraso acumulado del día
+    let maxRetrasoMinutos = 0;
+    for (const c of citasHoy) {
+      if (c.inicioReal && c.inicioEstimado) {
+        const diffMs = c.inicioReal.getTime() - c.inicioEstimado.getTime();
+        if (diffMs > 0) {
+          const diffMins = Math.floor(diffMs / 60000);
+          if (diffMins > maxRetrasoMinutos) {
+            maxRetrasoMinutos = diffMins;
+          }
+        }
+      }
+    }
+
+    // Calcular auto-almuerzo dinámico
+    let almuerzoCalculado = null;
+    if (horario.horaAlmuerzoInicio && horario.horaAlmuerzoFin) {
+      const almInicioMins = this.parseTime(horario.horaAlmuerzoInicio) + maxRetrasoMinutos;
+      const jornadaFinMins = this.parseTime(horario.horaFin);
+      const duracionOriginalMins = this.parseTime(horario.horaAlmuerzoFin) - this.parseTime(horario.horaAlmuerzoInicio);
+      
+      let almFinMins = almInicioMins + duracionOriginalMins;
+      
+      // Regla de compresión contra horaFin
+      if (almFinMins > jornadaFinMins) {
+        almFinMins = jornadaFinMins;
+      }
+      
+      if (almInicioMins < jornadaFinMins && almFinMins > almInicioMins) {
+        almuerzoCalculado = {
+          inicioMinutos: almInicioMins,
+          finMinutos: almFinMins,
+          strInicio: `${Math.floor(almInicioMins/60).toString().padStart(2,'0')}:${(almInicioMins%60).toString().padStart(2,'0')}`,
+          strFin: `${Math.floor(almFinMins/60).toString().padStart(2,'0')}:${(almFinMins%60).toString().padStart(2,'0')}`,
+        };
+      }
+    }
+
+    // Formatear bloques ocupados para el frontend
+    const ocupados = [
+      ...citasHoy.map((c: any) => ({ tipo: 'cita', id: c.id, inicio: c.inicioEstimado, fin: c.finEstimado })),
+      ...bloqueosHoy.map((b: any) => ({ tipo: 'bloqueo', id: b.id, inicio: b.inicio, fin: b.fin }))
+    ];
+
+    return {
+      disponible: true,
+      jornada: { inicio: horario.horaInicio, fin: horario.horaFin },
+      retrasoActualMinutos: maxRetrasoMinutos,
+      almuerzo: almuerzoCalculado,
+      ocupados,
+    };
   }
 }

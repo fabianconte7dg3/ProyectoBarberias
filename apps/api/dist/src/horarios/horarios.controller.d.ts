@@ -8,4 +8,30 @@ export declare class HorariosController {
     getHorarioSemanal(barberoId: string): Promise<any>;
     createBloqueo(dto: CreateBloqueoDto): Promise<any>;
     getBloqueos(barberoId: string): Promise<any>;
+    getDisponibilidad(barberoId: string, fecha: string): Promise<{
+        disponible: boolean;
+        jornada: null;
+        ocupados: never[];
+        almuerzo: null;
+        retrasoActualMinutos?: undefined;
+    } | {
+        disponible: boolean;
+        jornada: {
+            inicio: string;
+            fin: string;
+        };
+        retrasoActualMinutos: number;
+        almuerzo: {
+            inicioMinutos: number;
+            finMinutos: number;
+            strInicio: string;
+            strFin: string;
+        } | null;
+        ocupados: {
+            tipo: string;
+            id: any;
+            inicio: any;
+            fin: any;
+        }[];
+    }>;
 }

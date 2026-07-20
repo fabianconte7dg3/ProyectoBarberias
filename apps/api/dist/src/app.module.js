@@ -22,6 +22,7 @@ const clientes_module_1 = require("./clientes/clientes.module");
 const horarios_module_1 = require("./horarios/horarios.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
+const citas_module_1 = require("./citas/citas.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -39,6 +40,7 @@ exports.AppModule = AppModule = __decorate([
             servicios_module_1.ServiciosModule,
             clientes_module_1.ClientesModule,
             horarios_module_1.HorariosModule,
+            citas_module_1.CitasModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
