@@ -3,9 +3,17 @@ import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, servicios } from '../database/schema';
 import { eq } from 'drizzle-orm';
 import { CobrarCitaDto } from './dto/cobrar-cita.dto';
+import { YappyService } from '../yappy/yappy.service';
+import { DgiService } from '../dgi/dgi.service';
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class TransaccionesService {
+  constructor(
+    private readonly yappyService: YappyService,
+    private readonly dgiService: DgiService,
+  ) {}
+
   async cobrarCita(citaId: string, dto: CobrarCitaDto) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
@@ -40,6 +48,8 @@ export class TransaccionesService {
     // Asumimos que `db` ya es una transacción o la base de datos principal. 
     // Si viene del TenantInterceptor, ES una transacción.
     
+    const yappyOrderId = dto.metodoPago === 'yappy' ? nanoid(12) : null;
+
     const [nuevaTransaccion] = await db.insert(transacciones).values({
       tenantId,
       citaId: cita.id,
@@ -50,16 +60,36 @@ export class TransaccionesService {
       propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toString() : '0',
       rucCliente: dto.rucCliente,
       nombreFiscalCliente: dto.nombreFiscalCliente,
+      yappyOrderId,
     }).returning();
 
-    await db.update(citas)
-      .set({ estado: 'completada' })
-      .where(eq(citas.id, cita.id));
+    // Si es yappy, iniciamos el pago. La cita no se marca completada hasta que se procese el IPN?
+    // Depende del negocio. Si es manual el pago ya se verificó visualmente. 
+    // Por simplicidad, si es yappy, delegamos al servicio y si es manual se aprueba, 
+    // pero para comercial devolvemos los datos para el frontend.
+    let yappyData = null;
+    if (dto.metodoPago === 'yappy') {
+      yappyData = await this.yappyService.initiatePayment(tenantId, yappyOrderId!, totalFacturado);
+    }
 
-    // TODO: Si el método de pago es Yappy, llamar al servicio de Yappy (YappyPort).
-    // TODO: Llamar a DgiService (async) si aplica.
+    // Solo marcamos como completada si NO es comercial, o si lo permitimos asumiendo éxito
+    // Normalmente, si yappyData.modo === 'comercial', esperamos al IPN para completarla.
+    if (dto.metodoPago !== 'yappy' || (yappyData && yappyData.modo === 'manual')) {
+      await db.update(citas)
+        .set({ estado: 'completada' })
+        .where(eq(citas.id, cita.id));
+        
+      // Emitir factura a DGI asincronamente
+      this.dgiService.emitirFacturaAsync(
+        tenantId,
+        nuevaTransaccion.id,
+        nuevaTransaccion.totalFacturado,
+        dto.rucCliente,
+        dto.nombreFiscalCliente
+      ).catch(err => console.error('Error al emitir factura a DGI:', err));
+    }
 
-    return nuevaTransaccion;
+    return { transaccion: nuevaTransaccion, yappyData };
   }
 
   async findAll(page: number = 1, limit: number = 20) {

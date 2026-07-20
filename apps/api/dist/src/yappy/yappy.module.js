@@ -6,20 +6,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.TransaccionesModule = void 0;
+exports.YappyModule = void 0;
 const common_1 = require("@nestjs/common");
-const transacciones_controller_1 = require("./transacciones.controller");
-const transacciones_service_1 = require("./transacciones.service");
-const yappy_module_1 = require("../yappy/yappy.module");
+const yappy_service_1 = require("./yappy.service");
+const yappy_controller_1 = require("./yappy.controller");
 const dgi_module_1 = require("../dgi/dgi.module");
-let TransaccionesModule = class TransaccionesModule {
+let YappyModule = class YappyModule {
 };
-exports.TransaccionesModule = TransaccionesModule;
-exports.TransaccionesModule = TransaccionesModule = __decorate([
+exports.YappyModule = YappyModule;
+exports.YappyModule = YappyModule = __decorate([
     (0, common_1.Module)({
-        imports: [yappy_module_1.YappyModule, dgi_module_1.DgiModule],
-        controllers: [transacciones_controller_1.TransaccionesController],
-        providers: [transacciones_service_1.TransaccionesService]
+        imports: [dgi_module_1.DgiModule],
+        controllers: [yappy_controller_1.YappyController],
+        providers: [yappy_service_1.YappyService],
+        exports: [yappy_service_1.YappyService],
     })
-], TransaccionesModule);
-//# sourceMappingURL=transacciones.module.js.map
+], YappyModule);
+//# sourceMappingURL=yappy.module.js.map

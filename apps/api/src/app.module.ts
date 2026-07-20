@@ -15,6 +15,9 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { CitasModule } from './citas/citas.module';
 import { TransaccionesModule } from './transacciones/transacciones.module';
+import { YappyModule } from './yappy/yappy.module';
+import { DgiModule } from './dgi/dgi.module';
+import { CajaModule } from './caja/caja.module';
 
 @Module({
   imports: [
@@ -31,6 +34,9 @@ import { TransaccionesModule } from './transacciones/transacciones.module';
     HorariosModule,
     CitasModule,
     TransaccionesModule,
+    YappyModule,
+    DgiModule,
+    CajaModule,
   ],
   controllers: [AppController],
   providers: [

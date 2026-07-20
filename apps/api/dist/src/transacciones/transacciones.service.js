@@ -5,13 +5,25 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TransaccionesService = void 0;
 const common_1 = require("@nestjs/common");
 const tenant_context_1 = require("../database/tenant/tenant-context");
 const schema_1 = require("../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
+const yappy_service_1 = require("../yappy/yappy.service");
+const dgi_service_1 = require("../dgi/dgi.service");
+const nanoid_1 = require("nanoid");
 let TransaccionesService = class TransaccionesService {
+    yappyService;
+    dgiService;
+    constructor(yappyService, dgiService) {
+        this.yappyService = yappyService;
+        this.dgiService = dgiService;
+    }
     async cobrarCita(citaId, dto) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
@@ -31,6 +43,7 @@ let TransaccionesService = class TransaccionesService {
         const totalFacturado = Number(cita.servicio.precioBase);
         const porcentajeComision = Number(cita.barbero.porcentajeComision || 0);
         const comisionBarbero = (totalFacturado * porcentajeComision) / 100;
+        const yappyOrderId = dto.metodoPago === 'yappy' ? (0, nanoid_1.nanoid)(12) : null;
         const [nuevaTransaccion] = await db.insert(schema_1.transacciones).values({
             tenantId,
             citaId: cita.id,
@@ -41,11 +54,19 @@ let TransaccionesService = class TransaccionesService {
             propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toString() : '0',
             rucCliente: dto.rucCliente,
             nombreFiscalCliente: dto.nombreFiscalCliente,
+            yappyOrderId,
         }).returning();
-        await db.update(schema_1.citas)
-            .set({ estado: 'completada' })
-            .where((0, drizzle_orm_1.eq)(schema_1.citas.id, cita.id));
-        return nuevaTransaccion;
+        let yappyData = null;
+        if (dto.metodoPago === 'yappy') {
+            yappyData = await this.yappyService.initiatePayment(tenantId, yappyOrderId, totalFacturado);
+        }
+        if (dto.metodoPago !== 'yappy' || (yappyData && yappyData.modo === 'manual')) {
+            await db.update(schema_1.citas)
+                .set({ estado: 'completada' })
+                .where((0, drizzle_orm_1.eq)(schema_1.citas.id, cita.id));
+            this.dgiService.emitirFacturaAsync(tenantId, nuevaTransaccion.id, nuevaTransaccion.totalFacturado, dto.rucCliente, dto.nombreFiscalCliente).catch(err => console.error('Error al emitir factura a DGI:', err));
+        }
+        return { transaccion: nuevaTransaccion, yappyData };
     }
     async findAll(page = 1, limit = 20) {
         const db = tenant_context_1.TenantContext.getDb();
@@ -69,6 +90,8 @@ let TransaccionesService = class TransaccionesService {
 };
 exports.TransaccionesService = TransaccionesService;
 exports.TransaccionesService = TransaccionesService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [yappy_service_1.YappyService,
+        dgi_service_1.DgiService])
 ], TransaccionesService);
 //# sourceMappingURL=transacciones.service.js.map

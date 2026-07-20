@@ -24,6 +24,9 @@ const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
 const roles_guard_1 = require("./common/guards/roles.guard");
 const citas_module_1 = require("./citas/citas.module");
 const transacciones_module_1 = require("./transacciones/transacciones.module");
+const yappy_module_1 = require("./yappy/yappy.module");
+const dgi_module_1 = require("./dgi/dgi.module");
+const caja_module_1 = require("./caja/caja.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -43,6 +46,9 @@ exports.AppModule = AppModule = __decorate([
             horarios_module_1.HorariosModule,
             citas_module_1.CitasModule,
             transacciones_module_1.TransaccionesModule,
+            yappy_module_1.YappyModule,
+            dgi_module_1.DgiModule,
+            caja_module_1.CajaModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
