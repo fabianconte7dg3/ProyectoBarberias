@@ -63,21 +63,18 @@ src/citas/
    **excluidas** de este interceptor — ahí sí usas el pool global sin RLS
    (o una política separada para la tabla `usuarios` en el login).
 
-6. **En cualquier service**, usa `TenantContext.getDb()` en vez de inyectar
-   el pool de Drizzle directamente. Ver `citas.service.ts` como ejemplo.
+6. **En cualquier service sincronico (con HTTP Request)**, usa `TenantContext.getDb()` en vez de inyectar el pool de Drizzle directamente.
 
-## Puntos de atención pendientes
+7. **Procesos Asíncronos o Webhooks (NUEVO - Hito 5)**:
+   Cuando no se cuenta con un JWT (ej. webhooks públicos, colas de BullMQ, funciones setTimeout simuladas), el ciclo de vida del Request Interceptor de NestJS no funciona. Para esto se introdujo un helper arquitectónico central en `src/database/tenant/`:
+   ```typescript
+   export async function runInTenantScope<T>(tenantId: string, callback: () => Promise<T>): Promise<T>
+   ```
+   Esta función abre internamente su propia transacción con Drizzle, hace `SET LOCAL app.current_tenant_id` y `SET ROLE app_user`, y envuelve la ejecución del callback dentro del `TenantContext.run()`. Todo el sistema debe utilizar esto para operaciones Multi-Tenant en segundo plano.
 
-- **Rol de Postgres**: crear el `app_user` con `NOBYPASSRLS` y revocar
-  `UPDATE`/`DELETE` en `transacciones` y `audit_logs` (son append-only según
-  tu ERD) — el `DO NOT` está comentado al final de `0001_rls_policies.sql`,
-  falta ejecutarlo con las credenciales reales.
-- **`idempotency_key` en `citas`**: ya está como `UNIQUE` en el schema, pero
-  falta la lógica de servicio que la genere y maneje el conflicto (Error #12
-  de tu documentación: doble cobro por doble-click).
-- **PgBouncer**: confirmar modo *transaction pooling* al configurarlo — es
-  compatible con `SET LOCAL`, pero *session pooling* no lo es de forma segura.
-- **Endpoints del bot de WhatsApp**: si el bot llama al backend sin JWT de
-  usuario (webhook de Evolution API), el `tenantId` deberá resolverse por
-  otro medio (ej. el número de WhatsApp de destino → `whatsapp_config`) antes
-  de entrar al mismo patrón de `TenantContext.run(...)`.
+## Puntos resueltos (Hito 4 y 5)
+
+- ✅ **Rol de Postgres**: Los permisos de `app_user` fueron corregidos (migración `0003_financiero`). Tienen permisos exactos granulares y el rol está creado sin BYPASSRLS.
+- ✅ **`idempotency_key` en `citas`**: Resuelto (Hito 4). La función `agendarCita` atrapa el conflicto de violación de unicidad `23505` y devuelve un `200 OK` con la cita pre-existente, erradicando el "Error #12" de doble cobro.
+- ✅ **Aislamiento de Webhooks (Yappy, WhatsApp)**: Resuelto a través del patrón `runInTenantScope` descrito arriba.
+- 🕒 **PgBouncer**: Sigue pendiente confirmar el modo *transaction pooling* al momento de ir a producción para compatibilidad con `SET LOCAL`.
