@@ -2898,6 +2898,10 @@ export declare const transaccionesRelations: import("drizzle-orm").Relations<"tr
     cita: import("drizzle-orm").One<"citas", false>;
     detalles: import("drizzle-orm").Many<"detalles_transaccion">;
 }>;
+export declare const auditLogsRelations: import("drizzle-orm").Relations<"audit_logs", {
+    barberia: import("drizzle-orm").One<"barberias", false>;
+    usuario: import("drizzle-orm").One<"usuarios", false>;
+}>;
 export declare const detallesTransaccionRelations: import("drizzle-orm").Relations<"detalles_transaccion", {
     barberia: import("drizzle-orm").One<"barberias", true>;
     transaccion: import("drizzle-orm").One<"transacciones", true>;

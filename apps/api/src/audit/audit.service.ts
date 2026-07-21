@@ -4,6 +4,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 import * as crypto from 'crypto';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
+import { TenantContext } from '../database/tenant/tenant-context';
+import { eq, desc } from 'drizzle-orm';
 
 @Injectable()
 export class AuditService {
@@ -39,7 +41,7 @@ export class AuditService {
       };
 
       if (params.tenantId) {
-        // Ejecutar bajo el tenant scope si hay tenant (aunque auditLogs no tiene RLS que lo impida si somos DB admin, pero mantiene consistencia)
+        // Ejecutar bajo el tenant scope si hay tenant
         await runInTenantScope(this.db, params.tenantId, async (tx) => {
           await tx.insert(schema.auditLogs).values(registro);
         });
@@ -53,5 +55,28 @@ export class AuditService {
       // Nunca detener el flujo principal por un error de log, pero alertar severamente
       this.logger.error('CRITICAL: Error al escribir log de auditoría', error);
     }
+  }
+
+  /**
+   * Consulta el historial inmutable de auditoría para el tenant actual.
+   */
+  async getAuditLogs(limit = 50) {
+    const db = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    return db.query.auditLogs.findMany({
+      where: eq(schema.auditLogs.tenantId, tenantId),
+      orderBy: [desc(schema.auditLogs.createdAt)],
+      limit,
+      with: {
+        usuario: {
+          columns: {
+            id: true,
+            nombreCompleto: true,
+            rol: true,
+          }
+        }
+      }
+    });
   }
 }

@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 
@@ -28,6 +28,20 @@ interface UsuarioStaff {
   activo: boolean;
 }
 
+interface AuditLog {
+  id: string;
+  accion: string;
+  tablaAfectada: string;
+  usuario?: {
+    nombreCompleto: string;
+    rol: string;
+  };
+  payloadAntes?: any;
+  payloadDespues?: any;
+  ipOrigen?: string;
+  createdAt: string;
+}
+
 export default function AdminConfiguracionPage() {
   const params = useParams();
   const router = useRouter();
@@ -37,6 +51,7 @@ export default function AdminConfiguracionPage() {
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [staff, setStaff] = useState<UsuarioStaff[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [killSwitchActivo, setKillSwitchActivo] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -74,12 +89,14 @@ export default function AdminConfiguracionPage() {
     setLoading(true);
     setError('');
     try {
-      const [resServicios, resStaff] = await Promise.all([
+      const [resServicios, resStaff, resAudit] = await Promise.all([
         fetchApi<Servicio[]>('/servicios'),
         fetchApi<UsuarioStaff[]>('/usuarios'),
+        fetchApi<AuditLog[]>('/audit?limit=25'),
       ]);
       setServicios(resServicios || []);
       setStaff(resStaff || []);
+      setAuditLogs(resAudit || []);
     } catch (err: any) {
       console.error('Error cargando configuración:', err);
       setError(err.message || 'Error al conectar con la configuración.');
@@ -186,6 +203,7 @@ export default function AdminConfiguracionPage() {
 
       setKillSwitchActivo(res.killSwitchActivo);
       setSuccessMsg(res.message);
+      loadData();
     } catch (err: any) {
       setError(err.message || 'Error al cambiar Kill Switch.');
     } finally {
@@ -222,7 +240,7 @@ export default function AdminConfiguracionPage() {
               <span>Configuración del Local</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Catálogo de Servicios · Inventario Retail · Porcentaje de Comisiones (Servicios & Productos)
+              Servicios · Inventario · Comisiones · Horarios · Registro de Auditoría Inmutable
             </p>
           </div>
         </div>
@@ -514,6 +532,83 @@ export default function AdminConfiguracionPage() {
                 )}
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* 5. SECCIÓN: Historial de Auditoría & Trazabilidad Inmutable */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <History size={20} className="text-amber-500" />
+              <div>
+                <h2 className="text-base font-bold">Historial de Auditoría & Trazabilidad Inmutable</h2>
+                <p className="text-xs text-muted-foreground">
+                  Registro cronológico auditable de cambios en comisiones, cierres de caja, pausas de emergencia e IP de origen.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={loadData}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+              title="Refrescar auditoría"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border uppercase text-muted-foreground font-semibold">
+                  <th className="py-2.5 px-3">Fecha / Hora</th>
+                  <th className="py-2.5 px-3">Acción</th>
+                  <th className="py-2.5 px-3">Usuario / Admin</th>
+                  <th className="py-2.5 px-3">Tabla Afectada</th>
+                  <th className="py-2.5 px-3">IP Origen</th>
+                  <th className="py-2.5 px-3 text-right">Detalle Cambio</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border font-mono">
+                {auditLogs.map((log) => (
+                  <tr key={log.id} className="hover:bg-secondary/40 transition-colors">
+                    <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
+                      {new Date(log.createdAt).toLocaleString()}
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-primary/10 text-primary border border-primary/20">
+                        {log.accion}
+                      </span>
+                    </td>
+                    <td className="py-2.5 px-3 font-semibold text-foreground">
+                      {log.usuario?.nombreCompleto || 'Sistema / Admin'}
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground">
+                      {log.tablaAfectada}
+                    </td>
+                    <td className="py-2.5 px-3 text-muted-foreground">
+                      {log.ipOrigen}
+                    </td>
+                    <td className="py-2.5 px-3 text-right text-[11px]">
+                      {log.payloadDespues ? (
+                        <span className="text-emerald-600 dark:text-emerald-400 font-bold">
+                          {JSON.stringify(log.payloadDespues)}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground italic">Sin payload</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {auditLogs.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground italic">
+                      No hay registros de auditoría almacenados para este local.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 

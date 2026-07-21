@@ -52,6 +52,8 @@ const database_constants_1 = require("../database/tenant/database.constants");
 const schema = __importStar(require("../database/schema"));
 const crypto = __importStar(require("crypto"));
 const tenant_utils_1 = require("../database/tenant/tenant.utils");
+const tenant_context_1 = require("../database/tenant/tenant-context");
+const drizzle_orm_1 = require("drizzle-orm");
 let AuditService = AuditService_1 = class AuditService {
     db;
     logger = new common_1.Logger(AuditService_1.name);
@@ -84,6 +86,24 @@ let AuditService = AuditService_1 = class AuditService {
         catch (error) {
             this.logger.error('CRITICAL: Error al escribir log de auditoría', error);
         }
+    }
+    async getAuditLogs(limit = 50) {
+        const db = tenant_context_1.TenantContext.getDb();
+        const tenantId = tenant_context_1.TenantContext.getTenantId();
+        return db.query.auditLogs.findMany({
+            where: (0, drizzle_orm_1.eq)(schema.auditLogs.tenantId, tenantId),
+            orderBy: [(0, drizzle_orm_1.desc)(schema.auditLogs.createdAt)],
+            limit,
+            with: {
+                usuario: {
+                    columns: {
+                        id: true,
+                        nombreCompleto: true,
+                        rol: true,
+                    }
+                }
+            }
+        });
     }
 };
 exports.AuditService = AuditService;

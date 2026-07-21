@@ -15,4 +15,5 @@ export declare class AuditService {
         ipOrigen?: string;
         userAgent?: string;
     }): Promise<void>;
+    getAuditLogs(limit?: number): Promise<any>;
 }

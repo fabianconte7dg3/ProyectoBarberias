@@ -361,6 +361,11 @@ export const transaccionesRelations = relations(transacciones, ({ one, many }) =
   detalles: many(detallesTransaccion),
 }));
 
+export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
+  barberia: one(barberias, { fields: [auditLogs.tenantId], references: [barberias.id] }),
+  usuario: one(usuarios, { fields: [auditLogs.usuarioId], references: [usuarios.id] }),
+}));
+
 export const detallesTransaccionRelations = relations(detallesTransaccion, ({ one }) => ({
   barberia: one(barberias, { fields: [detallesTransaccion.tenantId], references: [barberias.id] }),
   transaccion: one(transacciones, { fields: [detallesTransaccion.transaccionId], references: [transacciones.id] }),
