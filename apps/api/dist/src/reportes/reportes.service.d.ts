@@ -32,6 +32,7 @@ export declare class ReportesService {
             totalVendidos: number;
             totalRecaudado: number;
         }[];
+        comparativaProductosStock: any;
         productosStockBajoCount: any;
         productosStockBajoList: any;
         rendimientoBarberos: {
@@ -40,6 +41,8 @@ export declare class ReportesService {
             porcentajeComision: number;
             porcentajeComisionProducto: number;
             totalCitas: number;
+            facturadoServicios: number;
+            facturadoProductos: number;
             totalFacturado: number;
             comisionTotal: number;
             propinaTotal: number;

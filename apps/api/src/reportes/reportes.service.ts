@@ -133,6 +133,8 @@ export class ReportesService {
       porcentajeComision: number;
       porcentajeComisionProducto: number;
       totalCitas: number;
+      facturadoServicios: number;
+      facturadoProductos: number;
       totalFacturado: number;
       comisionTotal: number;
       propinaTotal: number;
@@ -145,6 +147,8 @@ export class ReportesService {
         porcentajeComision: Number(b.porcentajeComision || 0),
         porcentajeComisionProducto: Number(b.porcentajeComisionProducto || 0),
         totalCitas: 0,
+        facturadoServicios: 0,
+        facturadoProductos: 0,
         totalFacturado: 0,
         comisionTotal: 0,
         propinaTotal: 0,
@@ -162,6 +166,8 @@ export class ReportesService {
             porcentajeComision: Number(tx.cita.barbero.porcentajeComision || 0),
             porcentajeComisionProducto: Number(tx.cita.barbero.porcentajeComisionProducto || 0),
             totalCitas: 0,
+            facturadoServicios: 0,
+            facturadoProductos: 0,
             totalFacturado: 0,
             comisionTotal: 0,
             propinaTotal: 0,
@@ -178,6 +184,16 @@ export class ReportesService {
           stats.totalFacturado += montoTx;
           stats.comisionTotal += comisionTx;
           stats.propinaTotal += propinaTx;
+
+          if (tx.detalles && tx.detalles.length > 0) {
+            for (const det of tx.detalles) {
+              const sub = Number(det.subtotal || 0);
+              if (det.tipoItem === 'servicio') stats.facturadoServicios += sub;
+              else if (det.tipoItem === 'producto') stats.facturadoProductos += sub;
+            }
+          } else {
+            stats.facturadoServicios += montoTx;
+          }
         }
       }
     }
@@ -192,14 +208,26 @@ export class ReportesService {
       limit: 10
     });
 
-    // 4. Productos con Stock Bajo (Alerta de Inventario)
-    const productosStockBajo = await db.query.productos.findMany({
+    // 4. Catálogo completo de Productos y Alertas de Stock Bajo
+    const todosProductos = await db.query.productos.findMany({
       where: and(
         eq(productos.tenantId, tenantId),
-        eq(productos.activo, true),
-        sql`${productos.stockActual} <= ${productos.stockMinimo}`
-      ),
-      limit: 10
+        eq(productos.activo, true)
+      )
+    });
+
+    const productosStockBajoList = todosProductos.filter((p: any) => p.stockActual <= p.stockMinimo);
+
+    const comparativaProductosStock = todosProductos.map((p: any) => {
+      const vendidosStats = productosMap.get(p.id);
+      return {
+        productoId: p.id,
+        nombre: p.nombre,
+        unidadesVendidas: vendidosStats ? vendidosStats.totalVendidos : 0,
+        stockActual: Number(p.stockActual || 0),
+        stockMinimo: Number(p.stockMinimo || 0),
+        totalRecaudado: vendidosStats ? vendidosStats.totalRecaudado : 0,
+      };
     });
 
     const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
@@ -216,8 +244,9 @@ export class ReportesService {
       tendenciaDiaria,
       topServicios,
       topProductos,
-      productosStockBajoCount: productosStockBajo.length,
-      productosStockBajoList: productosStockBajo.map((p: any) => ({
+      comparativaProductosStock,
+      productosStockBajoCount: productosStockBajoList.length,
+      productosStockBajoList: productosStockBajoList.map((p: any) => ({
         id: p.id,
         nombre: p.nombre,
         stockActual: p.stockActual,

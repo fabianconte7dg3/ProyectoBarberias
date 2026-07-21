@@ -6,11 +6,11 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3, Layers
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 import { 
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar 
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar, CartesianGrid 
 } from 'recharts';
 
 interface RendimientoBarbero {
@@ -19,6 +19,8 @@ interface RendimientoBarbero {
   porcentajeComision: number;
   porcentajeComisionProducto?: number;
   totalCitas: number;
+  facturadoServicios?: number;
+  facturadoProductos?: number;
   totalFacturado: number;
   comisionTotal: number;
   propinaTotal: number;
@@ -35,6 +37,15 @@ interface TopProducto {
   productoId: string;
   nombre: string;
   totalVendidos: number;
+  totalRecaudado: number;
+}
+
+interface ComparativaProductoStock {
+  productoId: string;
+  nombre: string;
+  unidadesVendidas: number;
+  stockActual: number;
+  stockMinimo: number;
   totalRecaudado: number;
 }
 
@@ -74,6 +85,7 @@ interface DashboardData {
   tendenciaDiaria?: PuntoTendenciaDiaria[];
   topServicios: TopServicio[];
   topProductos?: TopProducto[];
+  comparativaProductosStock?: ComparativaProductoStock[];
   productosStockBajoCount?: number;
   productosStockBajoList?: ProductoStockBajo[];
   rendimientoBarberos: RendimientoBarbero[];
@@ -104,6 +116,7 @@ const PRESETS_LABEL: Record<PeriodoPreset, string> = {
 };
 
 const COLORS_METODOS_PAGO = ['#10b981', '#6366f1', '#3b82f6']; // Efectivo (Verde), Yappy (Indigo), Mixto (Azul)
+const COLORS_PRODUCTOS = ['#10b981', '#6366f1', '#f59e0b', '#3b82f6', '#ec4899', '#8b5cf6'];
 
 export default function AdminDashboardPage() {
   const params = useParams();
@@ -243,6 +256,12 @@ export default function AdminDashboardPage() {
     { name: 'Yappy', value: data.desgloseMetodosPago.yappy },
     { name: 'Mixto / Tarjeta', value: data.desgloseMetodosPago.mixto },
   ].filter(item => item.value > 0) : [];
+
+  // Datos para gráfico Donut de Productos Retail
+  const pieDataProductos = data?.topProductos ? data.topProductos.map(p => ({
+    name: p.nombre,
+    value: p.totalRecaudado
+  })).filter(p => p.value > 0) : [];
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
@@ -600,120 +619,228 @@ export default function AdminDashboardPage() {
 
         {/* SUB-DASHBOARD 2: VENTAS & PRODUCTOS */}
         {activeTab === 'ventas' && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200">
-            {/* Top Servicios */}
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* GRÁFICO NUEVO PRODUCTOS: UNIDADES VENDIDAS VS STOCK RESTANTE */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-                <Scissors size={18} className="text-primary" />
-                <span>Servicios Más Demandados</span>
-              </h2>
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Package size={18} className="text-emerald-500" />
+                  <h2 className="text-base font-bold">Rotación de Inventario: Ventas vs Stock Restante</h2>
+                </div>
+                <span className="text-xs text-muted-foreground font-semibold">CANTIDAD EN UNIDADES</span>
+              </div>
 
-              <div className="space-y-2.5">
-                {(data?.topServicios || []).map((s, index) => (
-                  <div key={s.servicioId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                        #{index + 1}
-                      </span>
-                      <span className="font-bold text-foreground">{s.nombre}</span>
-                    </div>
-                    <div className="text-right">
-                      <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${s.totalRecaudado.toFixed(2)}</span>
-                      <span className="text-muted-foreground text-[10px]">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
-                    </div>
-                  </div>
-                ))}
-                {(!data?.topServicios || data.topServicios.length === 0) && (
-                  <div className="py-4 text-center text-xs text-muted-foreground">
-                    No hay servicios registrados en este período.
+              <div className="h-72 w-full pt-2">
+                {data?.comparativaProductosStock && data.comparativaProductosStock.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={data.comparativaProductosStock} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                      <XAxis dataKey="nombre" stroke="#888888" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#888888" fontSize={11} tickLine={false} />
+                      <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }} />
+                      <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                      <Bar dataKey="unidadesVendidas" fill="#10b981" radius={[6, 6, 0, 0]} name="Unidades Vendidas" />
+                      <Bar dataKey="stockActual" fill="#6366f1" radius={[6, 6, 0, 0]} name="Stock Restante" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                    Sin datos de productos registrados en el inventario.
                   </div>
                 )}
               </div>
             </div>
 
-            {/* Top Productos Retail */}
-            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-                <ShoppingBag size={18} className="text-emerald-500" />
-                <span>Productos Retail Más Vendidos</span>
-              </h2>
+            {/* Fila de Ranking + Gráfico Donut de Productos */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Ranking Top Servicios */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <Scissors size={18} className="text-primary" />
+                  <span>Servicios Más Demandados</span>
+                </h2>
 
-              <div className="space-y-2.5">
-                {(data?.topProductos || []).map((p, index) => (
-                  <div key={p.productoId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                        #{index + 1}
-                      </span>
-                      <span className="font-bold text-foreground">{p.nombre}</span>
+                <div className="space-y-2.5">
+                  {(data?.topServicios || []).map((s, index) => (
+                    <div key={s.servicioId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                          #{index + 1}
+                        </span>
+                        <span className="font-bold text-foreground">{s.nombre}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${s.totalRecaudado.toFixed(2)}</span>
+                        <span className="text-muted-foreground text-[10px]">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${p.totalRecaudado.toFixed(2)}</span>
-                      <span className="text-muted-foreground text-[10px]">{p.totalVendidos} unidad{p.totalVendidos > 1 ? 'es' : ''}</span>
+                  ))}
+                  {(!data?.topServicios || data.topServicios.length === 0) && (
+                    <div className="py-4 text-center text-xs text-muted-foreground">
+                      No hay servicios registrados en este período.
                     </div>
-                  </div>
-                ))}
-                {(!data?.topProductos || data.topProductos.length === 0) && (
-                  <div className="py-4 text-center text-xs text-muted-foreground">
-                    No hay ventas de productos registradas en este período.
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
+
+              {/* Gráfico Donut Recaudación Retail por Producto */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <ShoppingBag size={18} className="text-emerald-500" />
+                  <span>Distribución de Ingresos Retail ($)</span>
+                </h2>
+
+                <div className="h-64 w-full flex items-center justify-center">
+                  {pieDataProductos.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataProductos}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieDataProductos.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS_PRODUCTOS[index % COLORS_PRODUCTOS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(val: any) => [`$${Number(val).toFixed(2)}`, 'Recaudado']} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic text-center py-8">
+                      No hay ingresos registrados por venta de productos retail en este período.
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
+
           </div>
         )}
 
         {/* SUB-DASHBOARD 3: RENDIMIENTO DE STAFF */}
         {activeTab === 'staff' && (
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4 animate-in fade-in duration-200">
-            <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-              <Award size={18} className="text-emerald-500" />
-              <span>Rendimiento & Cálculo Neto de Comisiones ({PRESETS_LABEL[preset]})</span>
-            </h2>
+          <div className="space-y-6 animate-in fade-in duration-200">
+            
+            {/* GRÁFICOS NUEVOS DE STAFF: RECAUDACIÓN APILADA & CITAS ATENDIDAS */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Gráfico 1 Staff: Recaudación Apilada (Servicios vs Productos) */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <Layers size={18} className="text-blue-500" />
+                  <span>Producción por Barbero: Servicios vs Retail ($)</span>
+                </h2>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
-                    <th className="py-2.5 px-3">Barbero</th>
-                    <th className="py-2.5 px-3 text-center">Citas</th>
-                    <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
-                    <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
-                    <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
-                    <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {(data?.rendimientoBarberos || []).map((b) => (
-                    <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
-                      <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
-                      <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
-                      <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
-                      <td className="py-3 px-3 text-center">
-                        <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
-                          {b.porcentajeComision}%
-                          {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                        ${b.comisionTotal.toFixed(2)}
-                      </td>
-                      <td className="py-3 px-3 text-right font-mono font-semibold text-rose-500">
-                        ${b.propinaTotal.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                  {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
-                    <tr>
-                      <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
-                        <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>
-                        <p className="text-muted-foreground">Prueba seleccionando otro rango de fechas o registrando el cobro de una cita.</p>
-                      </td>
-                    </tr>
+                <div className="h-64 w-full pt-2">
+                  {data?.rendimientoBarberos && data.rendimientoBarberos.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.rendimientoBarberos} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis dataKey="nombreCompleto" stroke="#888888" fontSize={11} tickLine={false} />
+                        <YAxis stroke="#888888" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }} formatter={(v: any) => [`$${Number(v).toFixed(2)}`]} />
+                        <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                        <Bar dataKey="facturadoServicios" stackId="a" fill="#3b82f6" name="Servicios ($)" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="facturadoProductos" stackId="a" fill="#10b981" name="Productos ($)" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                      Sin registros de staff para graficar.
+                    </div>
                   )}
-                </tbody>
-              </table>
+                </div>
+              </div>
+
+              {/* Gráfico 2 Staff: Citas Atendidas por Barbero */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <Users size={18} className="text-purple-500" />
+                  <span>Citas Atendidas por Barbero</span>
+                </h2>
+
+                <div className="h-64 w-full pt-2">
+                  {data?.rendimientoBarberos && data.rendimientoBarberos.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={data.rendimientoBarberos} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis dataKey="nombreCompleto" stroke="#888888" fontSize={11} tickLine={false} />
+                        <YAxis stroke="#888888" fontSize={11} tickLine={false} />
+                        <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }} />
+                        <Bar dataKey="totalCitas" fill="#8b5cf6" radius={[6, 6, 0, 0]} name="Citas Atendidas" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                      Sin citas registradas para graficar.
+                    </div>
+                  )}
+                </div>
+              </div>
+
             </div>
+
+            {/* Tabla Detallada de Comisiones */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                <Award size={18} className="text-emerald-500" />
+                <span>Rendimiento & Cálculo Neto de Comisiones ({PRESETS_LABEL[preset]})</span>
+              </h2>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-sm border-collapse">
+                  <thead>
+                    <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                      <th className="py-2.5 px-3">Barbero</th>
+                      <th className="py-2.5 px-3 text-center">Citas</th>
+                      <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
+                      <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
+                      <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
+                      <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {(data?.rendimientoBarberos || []).map((b) => (
+                      <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
+                        <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
+                        <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
+                        <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
+                        <td className="py-3 px-3 text-center">
+                          <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
+                            {b.porcentajeComision}%
+                            {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                          ${b.comisionTotal.toFixed(2)}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-semibold text-rose-500">
+                          ${b.propinaTotal.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                    {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
+                      <tr>
+                        <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
+                          <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>
+                          <p className="text-muted-foreground">Prueba seleccionando otro rango de fechas o registrando el cobro de una cita.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
           </div>
         )}
 

@@ -123,6 +123,8 @@ let ReportesService = class ReportesService {
                 porcentajeComision: Number(b.porcentajeComision || 0),
                 porcentajeComisionProducto: Number(b.porcentajeComisionProducto || 0),
                 totalCitas: 0,
+                facturadoServicios: 0,
+                facturadoProductos: 0,
                 totalFacturado: 0,
                 comisionTotal: 0,
                 propinaTotal: 0,
@@ -139,6 +141,8 @@ let ReportesService = class ReportesService {
                         porcentajeComision: Number(tx.cita.barbero.porcentajeComision || 0),
                         porcentajeComisionProducto: Number(tx.cita.barbero.porcentajeComisionProducto || 0),
                         totalCitas: 0,
+                        facturadoServicios: 0,
+                        facturadoProductos: 0,
                         totalFacturado: 0,
                         comisionTotal: 0,
                         propinaTotal: 0,
@@ -153,6 +157,18 @@ let ReportesService = class ReportesService {
                     stats.totalFacturado += montoTx;
                     stats.comisionTotal += comisionTx;
                     stats.propinaTotal += propinaTx;
+                    if (tx.detalles && tx.detalles.length > 0) {
+                        for (const det of tx.detalles) {
+                            const sub = Number(det.subtotal || 0);
+                            if (det.tipoItem === 'servicio')
+                                stats.facturadoServicios += sub;
+                            else if (det.tipoItem === 'producto')
+                                stats.facturadoProductos += sub;
+                        }
+                    }
+                    else {
+                        stats.facturadoServicios += montoTx;
+                    }
                 }
             }
         }
@@ -161,9 +177,20 @@ let ReportesService = class ReportesService {
             orderBy: [(0, drizzle_orm_1.desc)(schema_1.clientes.ausenciasStrikes)],
             limit: 10
         });
-        const productosStockBajo = await db.query.productos.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.productos.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.productos.activo, true), (0, drizzle_orm_1.sql) `${schema_1.productos.stockActual} <= ${schema_1.productos.stockMinimo}`),
-            limit: 10
+        const todosProductos = await db.query.productos.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.productos.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.productos.activo, true))
+        });
+        const productosStockBajoList = todosProductos.filter((p) => p.stockActual <= p.stockMinimo);
+        const comparativaProductosStock = todosProductos.map((p) => {
+            const vendidosStats = productosMap.get(p.id);
+            return {
+                productoId: p.id,
+                nombre: p.nombre,
+                unidadesVendidas: vendidosStats ? vendidosStats.totalVendidos : 0,
+                stockActual: Number(p.stockActual || 0),
+                stockMinimo: Number(p.stockMinimo || 0),
+                totalRecaudado: vendidosStats ? vendidosStats.totalRecaudado : 0,
+            };
         });
         const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
         const topProductos = Array.from(productosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
@@ -178,8 +205,9 @@ let ReportesService = class ReportesService {
             tendenciaDiaria,
             topServicios,
             topProductos,
-            productosStockBajoCount: productosStockBajo.length,
-            productosStockBajoList: productosStockBajo.map((p) => ({
+            comparativaProductosStock,
+            productosStockBajoCount: productosStockBajoList.length,
+            productosStockBajoList: productosStockBajoList.map((p) => ({
                 id: p.id,
                 nombre: p.nombre,
                 stockActual: p.stockActual,
