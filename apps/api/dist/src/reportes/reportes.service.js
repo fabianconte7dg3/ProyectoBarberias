@@ -35,6 +35,7 @@ let ReportesService = class ReportesService {
         });
         let ingresosTotales = 0;
         const desgloseMetodosPago = { efectivo: 0, yappy: 0, mixto: 0 };
+        const serviciosMap = new Map();
         for (const tx of txsPeriodo) {
             const monto = Number(tx.totalFacturado || 0);
             ingresosTotales += monto;
@@ -44,6 +45,14 @@ let ReportesService = class ReportesService {
                 desgloseMetodosPago.yappy += monto;
             else if (tx.metodoPago === 'mixto')
                 desgloseMetodosPago.mixto += monto;
+            if (tx.cita && tx.cita.servicio) {
+                const sId = tx.cita.servicio.id;
+                const sNombre = tx.cita.servicio.nombre;
+                const sStats = serviciosMap.get(sId) || { servicioId: sId, nombre: sNombre, totalCitas: 0, totalRecaudado: 0 };
+                sStats.totalCitas += 1;
+                sStats.totalRecaudado += monto;
+                serviciosMap.set(sId, sStats);
+            }
         }
         const staffBarberos = await db.query.usuarios.findMany({
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.rol, 'barbero'))
@@ -90,11 +99,13 @@ let ReportesService = class ReportesService {
             orderBy: [(0, drizzle_orm_1.desc)(schema_1.clientes.ausenciasStrikes)],
             limit: 10
         });
+        const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
         return {
             rangoFechas: { desde, hasta },
             ingresosTotales,
             totalTransacciones: txsPeriodo.length,
             desgloseMetodosPago,
+            topServicios,
             rendimientoBarberos: Array.from(rendimientoBarberosMap.values()),
             clientesStrikes: clientesStrikes.map((c) => ({
                 id: c.id,

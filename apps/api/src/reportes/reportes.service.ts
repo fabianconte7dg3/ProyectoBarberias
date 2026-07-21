@@ -38,6 +38,7 @@ export class ReportesService {
 
     let ingresosTotales = 0;
     const desgloseMetodosPago = { efectivo: 0, yappy: 0, mixto: 0 };
+    const serviciosMap = new Map<string, { servicioId: string; nombre: string; totalCitas: number; totalRecaudado: number }>();
 
     for (const tx of txsPeriodo) {
       const monto = Number(tx.totalFacturado || 0);
@@ -45,6 +46,16 @@ export class ReportesService {
       if (tx.metodoPago === 'efectivo') desgloseMetodosPago.efectivo += monto;
       else if (tx.metodoPago === 'yappy') desgloseMetodosPago.yappy += monto;
       else if (tx.metodoPago === 'mixto') desgloseMetodosPago.mixto += monto;
+
+      // Agregación de Top Servicios
+      if (tx.cita && tx.cita.servicio) {
+        const sId = tx.cita.servicio.id;
+        const sNombre = tx.cita.servicio.nombre;
+        const sStats = serviciosMap.get(sId) || { servicioId: sId, nombre: sNombre, totalCitas: 0, totalRecaudado: 0 };
+        sStats.totalCitas += 1;
+        sStats.totalRecaudado += monto;
+        serviciosMap.set(sId, sStats);
+      }
     }
 
     // 2. Rendimiento y Comisiones por Barbero
@@ -115,11 +126,14 @@ export class ReportesService {
       limit: 10
     });
 
+    const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
+
     return {
       rangoFechas: { desde, hasta },
       ingresosTotales,
       totalTransacciones: txsPeriodo.length,
       desgloseMetodosPago,
+      topServicios,
       rendimientoBarberos: Array.from(rendimientoBarberosMap.values()),
       clientesStrikes: clientesStrikes.map((c: any) => ({
         id: c.id,

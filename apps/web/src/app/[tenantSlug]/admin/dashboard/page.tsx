@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 
@@ -18,6 +18,13 @@ interface RendimientoBarbero {
   totalFacturado: number;
   comisionTotal: number;
   propinaTotal: number;
+}
+
+interface TopServicio {
+  servicioId: string;
+  nombre: string;
+  totalCitas: number;
+  totalRecaudado: number;
 }
 
 interface ClienteStrike {
@@ -36,6 +43,7 @@ interface DashboardData {
     yappy: number;
     mixto: number;
   };
+  topServicios: TopServicio[];
   rendimientoBarberos: RendimientoBarbero[];
   clientesStrikes: ClienteStrike[];
 }
@@ -392,6 +400,34 @@ export default function AdminDashboardPage() {
               </div>
             </div>
 
+          </div>
+        </div>
+
+        {/* Ranking de Servicios Más Vendidos */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+          <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+            <Scissors size={18} className="text-primary" />
+            <span>Servicios Más Vendidos & Demanda ({PRESETS_LABEL[preset]})</span>
+          </h2>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            {data?.topServicios.map((s, index) => (
+              <div key={s.servicioId} className="p-4 bg-secondary/30 border border-border rounded-xl space-y-1 relative overflow-hidden">
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                  #{index + 1} Popular
+                </span>
+                <div className="font-bold text-sm text-foreground pt-1">{s.nombre}</div>
+                <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
+                  <span className="text-muted-foreground">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
+                  <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">${s.totalRecaudado.toFixed(2)}</span>
+                </div>
+              </div>
+            ))}
+            {(!data?.topServicios || data.topServicios.length === 0) && (
+              <div className="col-span-full py-4 text-center text-xs text-muted-foreground">
+                No hay servicios registrados en este período.
+              </div>
+            )}
           </div>
         </div>
 

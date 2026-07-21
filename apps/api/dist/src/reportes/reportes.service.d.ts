@@ -11,6 +11,12 @@ export declare class ReportesService {
             yappy: number;
             mixto: number;
         };
+        topServicios: {
+            servicioId: string;
+            nombre: string;
+            totalCitas: number;
+            totalRecaudado: number;
+        }[];
         rendimientoBarberos: {
             barberoId: string;
             nombreCompleto: string;

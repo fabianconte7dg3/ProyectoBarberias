@@ -14,6 +14,12 @@ export declare class ReportesController {
             yappy: number;
             mixto: number;
         };
+        topServicios: {
+            servicioId: string;
+            nombre: string;
+            totalCitas: number;
+            totalRecaudado: number;
+        }[];
         rendimientoBarberos: {
             barberoId: string;
             nombreCompleto: string;
