@@ -24,7 +24,7 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
 
   if (!isOpen || !cita) return null;
 
-  const totalServicio = cita.servicioPrecio || 0;
+  const totalServicio = Number(cita.servicioPrecio || 0);
   
   // Cálculo exacto de vuelto en centavos enteros para evitar imprecisiones de coma flotante
   const efectivoCentavos = Math.round((parseFloat(montoEfectivo) || 0) * 100);
