@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Body, Param, Query, UseInterceptors, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, UseInterceptors, UseGuards, Request, Res, HttpStatus } from '@nestjs/common';
 import { TransaccionesService } from './transacciones.service';
 import { CobrarCitaDto } from './dto/cobrar-cita.dto';
 import { TenantInterceptor } from '../database/tenant/tenant.interceptor';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
+import type { Response } from 'express';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(TenantInterceptor)
@@ -18,8 +19,13 @@ export class TransaccionesController {
     @Request() req: any,
     @Param('id') id: string,
     @Body() cobrarCitaDto: CobrarCitaDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
+    const result = await this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
+    if (result.idempotent) {
+      res.status(HttpStatus.OK);
+    }
+    return result;
   }
 
   @Post('transacciones/mostrador')
@@ -27,8 +33,13 @@ export class TransaccionesController {
   async ventaMostrador(
     @Request() req: any,
     @Body() cobrarCitaDto: CobrarCitaDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
+    const result = await this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
+    if (result.idempotent) {
+      res.status(HttpStatus.OK);
+    }
+    return result;
   }
 
   @Get('transacciones')

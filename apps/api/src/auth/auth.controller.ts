@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Get, Param, Res, Req } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Res, Req, HttpCode, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterBarberiaDto } from './dto/register-barberia.dto';
 import { LoginAdminDto } from './dto/login-admin.dto';
@@ -18,6 +18,7 @@ export class AuthController {
   }
 
   @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('login/admin')
   async loginAdmin(
     @Body() dto: LoginAdminDto,
@@ -45,6 +46,7 @@ export class AuthController {
   }
 
   @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('logout')
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie('jwt', {
@@ -56,6 +58,7 @@ export class AuthController {
   }
 
   @Public()
+  @HttpCode(HttpStatus.OK)
   @Post('login/staff')
   async loginStaff(
     @Body() dto: LoginStaffDto,
@@ -63,7 +66,6 @@ export class AuthController {
   ) {
     const result = await this.authService.loginStaff(dto);
     
-    // Setear JWT en Cookie httpOnly con 12h de expiración
     res.cookie('jwt', result.accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -77,11 +79,9 @@ export class AuthController {
     };
   }
 
-  // Requiere token válido (via cookie o header) y cualquier rol de staff para responder
   @Roles('admin', 'recepcion', 'barbero')
   @Get('me')
   getMe(@Req() req: Request) {
-    // req.user lo inyecta JwtStrategy si el token es válido
     return req.user;
   }
 }

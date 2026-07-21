@@ -80,6 +80,7 @@ __decorate([
 ], AuthController.prototype, "registerBarberia", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, common_1.Post)('login/admin'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),
@@ -97,6 +98,7 @@ __decorate([
 ], AuthController.prototype, "getStaffForLogin", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, common_1.Post)('logout'),
     __param(0, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
@@ -105,6 +107,7 @@ __decorate([
 ], AuthController.prototype, "logout", null);
 __decorate([
     (0, public_decorator_1.Public)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
     (0, common_1.Post)('login/staff'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Res)({ passthrough: true })),

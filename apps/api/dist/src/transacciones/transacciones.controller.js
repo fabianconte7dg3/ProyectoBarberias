@@ -25,11 +25,19 @@ let TransaccionesController = class TransaccionesController {
     constructor(transaccionesService) {
         this.transaccionesService = transaccionesService;
     }
-    async cobrarCita(req, id, cobrarCitaDto) {
-        return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
+    async cobrarCita(req, id, cobrarCitaDto, res) {
+        const result = await this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
+        if (result.idempotent) {
+            res.status(common_1.HttpStatus.OK);
+        }
+        return result;
     }
-    async ventaMostrador(req, cobrarCitaDto) {
-        return this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
+    async ventaMostrador(req, cobrarCitaDto, res) {
+        const result = await this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
+        if (result.idempotent) {
+            res.status(common_1.HttpStatus.OK);
+        }
+        return result;
     }
     async findAll() {
         return this.transaccionesService.getHistorialTransacciones(20);
@@ -42,8 +50,9 @@ __decorate([
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
+    __param(3, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, cobrar_cita_dto_1.CobrarCitaDto]),
+    __metadata("design:paramtypes", [Object, String, cobrar_cita_dto_1.CobrarCitaDto, Object]),
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "cobrarCita", null);
 __decorate([
@@ -51,8 +60,9 @@ __decorate([
     (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, cobrar_cita_dto_1.CobrarCitaDto]),
+    __metadata("design:paramtypes", [Object, cobrar_cita_dto_1.CobrarCitaDto, Object]),
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "ventaMostrador", null);
 __decorate([
