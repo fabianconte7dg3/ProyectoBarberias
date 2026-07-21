@@ -16,6 +16,13 @@ export declare class ReportesController {
             yappy: number;
             mixto: number;
         };
+        tendenciaDiaria: {
+            fecha: string;
+            label: string;
+            servicios: number;
+            productos: number;
+            total: number;
+        }[];
         topServicios: {
             servicioId: string;
             nombre: string;

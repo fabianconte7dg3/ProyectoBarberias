@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, 
-  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users
 } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
@@ -36,6 +36,7 @@ export function AdminHeader({
   const navLinks = [
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isAdmin ? [
+      { label: 'Barberos', href: `/${tenantSlug}/admin/barberos`, icon: Users },
       { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },
       { label: 'Caja', href: `/${tenantSlug}/admin/caja`, icon: Lock },

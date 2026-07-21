@@ -6,9 +6,12 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart, ShieldAlert
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
+import { 
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar 
+} from 'recharts';
 
 interface RendimientoBarbero {
   barberoId: string;
@@ -33,6 +36,14 @@ interface TopProducto {
   nombre: string;
   totalVendidos: number;
   totalRecaudado: number;
+}
+
+interface PuntoTendenciaDiaria {
+  fecha: string;
+  label: string;
+  servicios: number;
+  productos: number;
+  total: number;
 }
 
 interface ProductoStockBajo {
@@ -60,6 +71,7 @@ interface DashboardData {
     yappy: number;
     mixto: number;
   };
+  tendenciaDiaria?: PuntoTendenciaDiaria[];
   topServicios: TopServicio[];
   topProductos?: TopProducto[];
   productosStockBajoCount?: number;
@@ -90,6 +102,8 @@ const PRESETS_LABEL: Record<PeriodoPreset, string> = {
   este_ano: 'Este año',
   personalizado: 'Rango personalizado',
 };
+
+const COLORS_METODOS_PAGO = ['#10b981', '#6366f1', '#3b82f6']; // Efectivo (Verde), Yappy (Indigo), Mixto (Azul)
 
 export default function AdminDashboardPage() {
   const params = useParams();
@@ -223,6 +237,13 @@ export default function AdminDashboardPage() {
     'personalizado',
   ];
 
+  // Datos para gráfico de métodos de pago
+  const pieDataMetodosPago = data ? [
+    { name: 'Efectivo', value: data.desgloseMetodosPago.efectivo },
+    { name: 'Yappy', value: data.desgloseMetodosPago.yappy },
+    { name: 'Mixto / Tarjeta', value: data.desgloseMetodosPago.mixto },
+  ].filter(item => item.value > 0) : [];
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
@@ -304,7 +325,7 @@ export default function AdminDashboardPage() {
                 : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
             }`}
           >
-            <PieChart size={16} />
+            <PieChartIcon size={16} />
             <span>Finanzas & Recaudación</span>
           </button>
 
@@ -416,9 +437,9 @@ export default function AdminDashboardPage() {
         {/* SUB-DASHBOARD 1: FINANZAS & RECAUDACIÓN */}
         {activeTab === 'finanzas' && (
           <div className="space-y-6 animate-in fade-in duration-200">
+            
             {/* Tarjetas KPI Top */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              
               <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
                   Ingresos Facturados Totales
@@ -454,48 +475,126 @@ export default function AdminDashboardPage() {
                   Ingreso promedio por operación
                 </span>
               </div>
-
             </div>
 
-            {/* Desglose por Método de Pago */}
+            {/* GRÁFICO 1: TENDENCIA DE RECAUDACIÓN DÍA A DÍA */}
             <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-                <Receipt size={18} className="text-indigo-500" />
-                <span>Desglose por Métodos de Pago</span>
-              </h2>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase">
-                    <DollarSign size={16} />
-                    <span>Efectivo</span>
-                  </div>
-                  <div className="text-2xl font-bold font-mono text-foreground">
-                    ${(data?.desgloseMetodosPago.efectivo || 0).toFixed(2)}
-                  </div>
+              <div className="flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <BarChart3 size={18} className="text-emerald-500" />
+                  <h2 className="text-base font-bold">Tendencia de Recaudación Diaria ($)</h2>
                 </div>
+                <span className="text-xs text-muted-foreground font-semibold">
+                  EVOLUCIÓN DÍA A DÍA
+                </span>
+              </div>
 
-                <div className="bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase">
-                    <QrCode size={16} />
-                    <span>Yappy</span>
+              <div className="h-72 w-full pt-2">
+                {data?.tendenciaDiaria && data.tendenciaDiaria.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={data.tendenciaDiaria} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.4}/>
+                          <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="label" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
+                      <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `$${v}`} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }}
+                        formatter={(value: any) => [`$${Number(value).toFixed(2)}`, 'Total Facturado']}
+                      />
+                      <Area type="monotone" dataKey="total" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-xs text-muted-foreground italic">
+                    Sin datos suficientes para graficar la tendencia diaria.
                   </div>
-                  <div className="text-2xl font-bold font-mono text-foreground">
-                    ${(data?.desgloseMetodosPago.yappy || 0).toFixed(2)}
-                  </div>
-                </div>
+                )}
+              </div>
+            </div>
 
-                <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl space-y-1">
-                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase">
-                    <CreditCard size={16} />
-                    <span>Mixto / Tarjeta</span>
+            {/* GRÁFICO 2: DESGLOSE MÉTODOS DE PAGO */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              
+              {/* Tarjetas de Métodos de Pago */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <Receipt size={18} className="text-indigo-500" />
+                  <span>Desglose por Métodos de Pago</span>
+                </h2>
+
+                <div className="space-y-3">
+                  <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-emerald-600 dark:text-emerald-400 font-bold text-xs uppercase">
+                      <DollarSign size={18} />
+                      <span>Efectivo</span>
+                    </div>
+                    <div className="text-xl font-extrabold font-mono text-foreground">
+                      ${(data?.desgloseMetodosPago.efectivo || 0).toFixed(2)}
+                    </div>
                   </div>
-                  <div className="text-2xl font-bold font-mono text-foreground">
-                    ${(data?.desgloseMetodosPago.mixto || 0).toFixed(2)}
+
+                  <div className="bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-indigo-600 dark:text-indigo-400 font-bold text-xs uppercase">
+                      <QrCode size={18} />
+                      <span>Yappy</span>
+                    </div>
+                    <div className="text-xl font-extrabold font-mono text-foreground">
+                      ${(data?.desgloseMetodosPago.yappy || 0).toFixed(2)}
+                    </div>
+                  </div>
+
+                  <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
+                      <CreditCard size={18} />
+                      <span>Mixto / Tarjeta</span>
+                    </div>
+                    <div className="text-xl font-extrabold font-mono text-foreground">
+                      ${(data?.desgloseMetodosPago.mixto || 0).toFixed(2)}
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Gráfico Donut Métodos de Pago */}
+              <div className="bg-card border border-border rounded-2xl p-6 shadow-xs flex flex-col justify-between">
+                <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                  <PieChartIcon size={18} className="text-indigo-500" />
+                  <span>Distribución Porcentual</span>
+                </h2>
+
+                <div className="h-64 w-full flex items-center justify-center">
+                  {pieDataMetodosPago.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={pieDataMetodosPago}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          {pieDataMetodosPago.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS_METODOS_PAGO[index % COLORS_METODOS_PAGO.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(val: any) => [`$${Number(val).toFixed(2)}`, 'Monto']} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="text-xs text-muted-foreground italic">No hay transacciones registradas.</div>
+                  )}
+                </div>
+              </div>
+
             </div>
+
           </div>
         )}
 

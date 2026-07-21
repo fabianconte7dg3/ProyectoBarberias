@@ -15,6 +15,7 @@ class InviteStaffDto {
     nombreCompleto;
     rol;
     porcentajeComision;
+    porcentajeComisionProducto;
 }
 exports.InviteStaffDto = InviteStaffDto;
 __decorate([
@@ -33,4 +34,11 @@ __decorate([
     (0, class_validator_1.Max)(100),
     __metadata("design:type", Number)
 ], InviteStaffDto.prototype, "porcentajeComision", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    (0, class_validator_1.Max)(100),
+    __metadata("design:type", Number)
+], InviteStaffDto.prototype, "porcentajeComisionProducto", void 0);
 //# sourceMappingURL=invite-staff.dto.js.map

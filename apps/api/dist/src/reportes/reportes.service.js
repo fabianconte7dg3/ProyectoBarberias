@@ -45,6 +45,14 @@ let ReportesService = class ReportesService {
         const desgloseMetodosPago = { efectivo: 0, yappy: 0, mixto: 0 };
         const serviciosMap = new Map();
         const productosMap = new Map();
+        const tendenciaDiariaMap = new Map();
+        const curr = new Date(desde);
+        while (curr <= hasta) {
+            const ymd = (0, date_fns_1.format)(curr, 'yyyy-MM-dd');
+            const label = (0, date_fns_1.format)(curr, 'd MMM');
+            tendenciaDiariaMap.set(ymd, { fecha: ymd, label, servicios: 0, productos: 0, total: 0 });
+            curr.setDate(curr.getDate() + 1);
+        }
         for (const tx of txsPeriodo) {
             const monto = Number(tx.totalFacturado || 0);
             ingresosTotales += monto;
@@ -54,11 +62,20 @@ let ReportesService = class ReportesService {
                 desgloseMetodosPago.yappy += monto;
             else if (tx.metodoPago === 'mixto')
                 desgloseMetodosPago.mixto += monto;
+            const txFechaKey = (0, date_fns_1.format)(new Date(tx.createdAt), 'yyyy-MM-dd');
+            let puntoDiario = tendenciaDiariaMap.get(txFechaKey);
+            if (!puntoDiario) {
+                const label = (0, date_fns_1.format)(new Date(tx.createdAt), 'd MMM');
+                puntoDiario = { fecha: txFechaKey, label, servicios: 0, productos: 0, total: 0 };
+                tendenciaDiariaMap.set(txFechaKey, puntoDiario);
+            }
+            puntoDiario.total += monto;
             if (tx.detalles && tx.detalles.length > 0) {
                 for (const det of tx.detalles) {
                     const subtotalDet = Number(det.subtotal || 0);
                     if (det.tipoItem === 'servicio') {
                         ingresosServicios += subtotalDet;
+                        puntoDiario.servicios += subtotalDet;
                         const sId = det.servicioId || (tx.cita?.servicio?.id);
                         const sNombre = det.servicio?.nombre || tx.cita?.servicio?.nombre || 'Servicio';
                         if (sId) {
@@ -70,6 +87,7 @@ let ReportesService = class ReportesService {
                     }
                     else if (det.tipoItem === 'producto') {
                         ingresosProductos += subtotalDet;
+                        puntoDiario.productos += subtotalDet;
                         const pId = det.productoId;
                         const pNombre = det.producto?.nombre || 'Producto Retail';
                         if (pId) {
@@ -83,6 +101,7 @@ let ReportesService = class ReportesService {
             }
             else {
                 ingresosServicios += monto;
+                puntoDiario.servicios += monto;
                 if (tx.cita && tx.cita.servicio) {
                     const sId = tx.cita.servicio.id;
                     const sNombre = tx.cita.servicio.nombre;
@@ -148,6 +167,7 @@ let ReportesService = class ReportesService {
         });
         const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
         const topProductos = Array.from(productosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
+        const tendenciaDiaria = Array.from(tendenciaDiariaMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha));
         return {
             rangoFechas: { desde, hasta },
             ingresosTotales,
@@ -155,6 +175,7 @@ let ReportesService = class ReportesService {
             ingresosProductos,
             totalTransacciones: txsPeriodo.length,
             desgloseMetodosPago,
+            tendenciaDiaria,
             topServicios,
             topProductos,
             productosStockBajoCount: productosStockBajo.length,

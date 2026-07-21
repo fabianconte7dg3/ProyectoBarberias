@@ -71,6 +71,7 @@ let UsuariosService = class UsuariosService {
             nombreCompleto: dto.nombreCompleto,
             rol: dto.rol,
             porcentajeComision: dto.porcentajeComision ? dto.porcentajeComision.toString() : null,
+            porcentajeComisionProducto: dto.porcentajeComisionProducto ? dto.porcentajeComisionProducto.toString() : null,
             tokenActivacion: token,
             tokenExpiraEn: expiresAt,
             activo: false,

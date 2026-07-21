@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, clientes, servicios, productos, detallesTransaccion } from '../database/schema';
-import { and, eq, gte, lte, desc, sql, lte as lteColumn } from 'drizzle-orm';
-import { startOfMonth, endOfDay, differenceInDays, subDays } from 'date-fns';
+import { and, eq, gte, lte, desc, sql } from 'drizzle-orm';
+import { startOfMonth, endOfDay, differenceInDays, subDays, format } from 'date-fns';
 
 @Injectable()
 export class ReportesService {
@@ -48,6 +48,16 @@ export class ReportesService {
 
     const serviciosMap = new Map<string, { servicioId: string; nombre: string; totalCitas: number; totalRecaudado: number }>();
     const productosMap = new Map<string, { productoId: string; nombre: string; totalVendidos: number; totalRecaudado: number }>();
+    const tendenciaDiariaMap = new Map<string, { fecha: string; label: string; servicios: number; productos: number; total: number }>();
+
+    // Inicializar mapa diario con todas las fechas del rango
+    const curr = new Date(desde);
+    while (curr <= hasta) {
+      const ymd = format(curr, 'yyyy-MM-dd');
+      const label = format(curr, 'd MMM');
+      tendenciaDiariaMap.set(ymd, { fecha: ymd, label, servicios: 0, productos: 0, total: 0 });
+      curr.setDate(curr.getDate() + 1);
+    }
 
     for (const tx of txsPeriodo) {
       const monto = Number(tx.totalFacturado || 0);
@@ -56,12 +66,23 @@ export class ReportesService {
       else if (tx.metodoPago === 'yappy') desgloseMetodosPago.yappy += monto;
       else if (tx.metodoPago === 'mixto') desgloseMetodosPago.mixto += monto;
 
+      // Agregación de Tendencia Diaria
+      const txFechaKey = format(new Date(tx.createdAt), 'yyyy-MM-dd');
+      let puntoDiario = tendenciaDiariaMap.get(txFechaKey);
+      if (!puntoDiario) {
+        const label = format(new Date(tx.createdAt), 'd MMM');
+        puntoDiario = { fecha: txFechaKey, label, servicios: 0, productos: 0, total: 0 };
+        tendenciaDiariaMap.set(txFechaKey, puntoDiario);
+      }
+      puntoDiario.total += monto;
+
       // Agregación itemizada desde detallesTransaccion
       if (tx.detalles && tx.detalles.length > 0) {
         for (const det of tx.detalles) {
           const subtotalDet = Number(det.subtotal || 0);
           if (det.tipoItem === 'servicio') {
             ingresosServicios += subtotalDet;
+            puntoDiario.servicios += subtotalDet;
             const sId = det.servicioId || (tx.cita?.servicio?.id);
             const sNombre = det.servicio?.nombre || tx.cita?.servicio?.nombre || 'Servicio';
             if (sId) {
@@ -72,6 +93,7 @@ export class ReportesService {
             }
           } else if (det.tipoItem === 'producto') {
             ingresosProductos += subtotalDet;
+            puntoDiario.productos += subtotalDet;
             const pId = det.productoId;
             const pNombre = det.producto?.nombre || 'Producto Retail';
             if (pId) {
@@ -85,6 +107,7 @@ export class ReportesService {
       } else {
         // Fallback para transacciones anteriores sin tabla de detalles
         ingresosServicios += monto;
+        puntoDiario.servicios += monto;
         if (tx.cita && tx.cita.servicio) {
           const sId = tx.cita.servicio.id;
           const sNombre = tx.cita.servicio.nombre;
@@ -181,6 +204,7 @@ export class ReportesService {
 
     const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
     const topProductos = Array.from(productosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
+    const tendenciaDiaria = Array.from(tendenciaDiariaMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
     return {
       rangoFechas: { desde, hasta },
@@ -189,6 +213,7 @@ export class ReportesService {
       ingresosProductos,
       totalTransacciones: txsPeriodo.length,
       desgloseMetodosPago,
+      tendenciaDiaria,
       topServicios,
       topProductos,
       productosStockBajoCount: productosStockBajo.length,

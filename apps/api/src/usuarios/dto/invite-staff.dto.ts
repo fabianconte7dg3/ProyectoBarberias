@@ -13,4 +13,10 @@ export class InviteStaffDto {
   @Min(0)
   @Max(100)
   porcentajeComision?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  @Max(100)
+  porcentajeComisionProducto?: number;
 }
