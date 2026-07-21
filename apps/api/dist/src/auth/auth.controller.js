@@ -28,8 +28,18 @@ let AuthController = class AuthController {
     registerBarberia(dto) {
         return this.authService.registerBarberia(dto);
     }
-    loginAdmin(dto) {
-        return this.authService.loginAdmin(dto);
+    async loginAdmin(dto, res) {
+        const result = await this.authService.loginAdmin(dto);
+        res.cookie('jwt', result.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 12 * 60 * 60 * 1000,
+        });
+        return {
+            message: 'Login exitoso',
+            usuario: result.usuario
+        };
     }
     getStaffForLogin(slug) {
         return this.authService.getStaffForLogin(slug);
@@ -72,9 +82,10 @@ __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login/admin'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_admin_dto_1.LoginAdminDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [login_admin_dto_1.LoginAdminDto, Object]),
+    __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginAdmin", null);
 __decorate([
     (0, public_decorator_1.Public)(),

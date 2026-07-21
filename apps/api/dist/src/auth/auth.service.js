@@ -122,6 +122,11 @@ let AuthService = class AuthService {
         const payload = { sub: admin.id, tenantId: admin.tenantId, rol: admin.rol };
         return {
             accessToken: this.jwtService.sign(payload),
+            usuario: {
+                id: admin.id,
+                nombreCompleto: adminRow.nombre_completo || 'Administrador (Dueño)',
+                rol: admin.rol
+            }
         };
     }
     async getStaffForLogin(slug) {

@@ -15,6 +15,11 @@ export declare class AuthService {
     }>;
     loginAdmin(dto: LoginAdminDto): Promise<{
         accessToken: string;
+        usuario: {
+            id: any;
+            nombreCompleto: any;
+            rol: any;
+        };
     }>;
     getStaffForLogin(slug: string): Promise<any>;
     loginStaff(dto: LoginStaffDto): Promise<{

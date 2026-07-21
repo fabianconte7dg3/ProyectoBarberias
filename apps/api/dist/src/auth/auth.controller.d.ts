@@ -10,8 +10,13 @@ export declare class AuthController {
         message: string;
         tenantId: `${string}-${string}-${string}-${string}-${string}`;
     }>;
-    loginAdmin(dto: LoginAdminDto): Promise<{
-        accessToken: string;
+    loginAdmin(dto: LoginAdminDto, res: Response): Promise<{
+        message: string;
+        usuario: {
+            id: any;
+            nombreCompleto: any;
+            rol: any;
+        };
     }>;
     getStaffForLogin(slug: string): Promise<any>;
     logout(res: Response): {

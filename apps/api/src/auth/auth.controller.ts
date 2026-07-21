@@ -19,8 +19,23 @@ export class AuthController {
 
   @Public()
   @Post('login/admin')
-  loginAdmin(@Body() dto: LoginAdminDto) {
-    return this.authService.loginAdmin(dto);
+  async loginAdmin(
+    @Body() dto: LoginAdminDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.loginAdmin(dto);
+
+    res.cookie('jwt', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 12 * 60 * 60 * 1000, // 12 horas
+    });
+
+    return {
+      message: 'Login exitoso',
+      usuario: result.usuario
+    };
   }
 
   @Public()
