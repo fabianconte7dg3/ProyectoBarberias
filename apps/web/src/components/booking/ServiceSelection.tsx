@@ -11,8 +11,8 @@ interface Props {
 export function ServiceSelection({ servicios, selectedId, onSelect }: Props) {
   return (
     <div className="space-y-4">
-      <h2 className="text-lg font-semibold px-1">1. ¿Qué te vas a hacer hoy?</h2>
-      <div className="grid gap-3">
+      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">1. ¿Qué te vas a hacer hoy?</h2>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {servicios.map((s) => {
           const isSelected = selectedId === s.id;
           return (
@@ -22,18 +22,18 @@ export function ServiceSelection({ servicios, selectedId, onSelect }: Props) {
               className={`flex items-center justify-between p-4 rounded-2xl border-2 text-left transition-all ${
                 isSelected 
                   ? 'border-primary bg-primary/5 shadow-md' 
-                  : 'border-transparent bg-white shadow-sm hover:border-gray-200'
+                  : 'border-border bg-card shadow-xs hover:border-primary/50'
               }`}
               aria-pressed={isSelected}
             >
               <div>
-                <p className="font-semibold text-base">{s.nombre}</p>
-                <p className="text-sm text-gray-500">{s.duracionMinutos} min</p>
+                <p className="font-semibold text-sm sm:text-base text-foreground">{s.nombre}</p>
+                <p className="text-xs text-muted-foreground">{s.duracionMinutos} min</p>
               </div>
               <div className="flex items-center space-x-3">
-                <span className="font-semibold">${s.precioBase}</span>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                  isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-gray-300'
+                <span className="font-bold text-sm sm:text-base font-mono text-emerald-600 dark:text-emerald-400">${s.precioBase}</span>
+                <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full border-2 flex items-center justify-center ${
+                  isSelected ? 'border-primary bg-primary text-primary-foreground' : 'border-muted-foreground/40'
                 }`}>
                   {isSelected && <Check size={14} strokeWidth={3} />}
                 </div>

@@ -10,22 +10,22 @@ interface Props {
 
 export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
   return (
-    <div className="space-y-4 mt-10">
-      <h2 className="text-lg font-semibold px-1">2. Elige a tu barbero</h2>
+    <div className="space-y-4 mt-8">
+      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">2. Elige a tu barbero</h2>
       
-      {/* Carrusel horizontal para barberos (Mobile UX) */}
-      <div className="flex gap-4 overflow-x-auto pb-4 snap-x px-1 no-scrollbar">
+      {/* Grilla Responsiva para Barberos (Desktop y Mobile Grid) */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
         
         {/* Opción especial: Cualquiera */}
         <button
           onClick={() => onSelect(null)}
-          className={`snap-start flex-shrink-0 w-24 flex flex-col items-center space-y-2 p-2 rounded-2xl border-2 transition-all ${
-            selectedId === null ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-gray-50'
+          className={`flex flex-col items-center space-y-2 p-3 rounded-2xl border-2 transition-all ${
+            selectedId === null ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:bg-secondary/50'
           }`}
           aria-pressed={selectedId === null}
         >
-          <div className={`relative w-16 h-16 rounded-full flex items-center justify-center border-2 ${
-            selectedId === null ? 'border-primary text-primary bg-white' : 'border-gray-200 text-gray-400 bg-white'
+          <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 ${
+            selectedId === null ? 'border-primary text-primary bg-card' : 'border-border text-muted-foreground bg-secondary'
           }`}>
             <UserCircle2 size={32} strokeWidth={1.5} />
             {selectedId === null && (
@@ -34,7 +34,7 @@ export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
               </div>
             )}
           </div>
-          <span className="text-sm font-medium text-center leading-tight">Cualquiera</span>
+          <span className="text-xs sm:text-sm font-semibold text-center leading-tight text-foreground">Cualquiera</span>
         </button>
 
         {/* Mapeo de barberos reales */}
@@ -44,18 +44,18 @@ export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
             <button
               key={b.id}
               onClick={() => onSelect(b.id)}
-              className={`snap-start flex-shrink-0 w-24 flex flex-col items-center space-y-2 p-2 rounded-2xl border-2 transition-all ${
-                isSelected ? 'border-primary bg-primary/5' : 'border-transparent hover:bg-gray-50'
+              className={`flex flex-col items-center space-y-2 p-3 rounded-2xl border-2 transition-all ${
+                isSelected ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:bg-secondary/50'
               }`}
               aria-pressed={isSelected}
             >
-              <div className={`relative w-16 h-16 rounded-full flex items-center justify-center border-2 bg-white ${
-                isSelected ? 'border-primary' : 'border-gray-200'
+              <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 bg-card ${
+                isSelected ? 'border-primary' : 'border-border'
               }`}>
                 {b.fotoUrl ? (
                   <img src={b.fotoUrl} alt={b.nombre} className="w-full h-full rounded-full object-cover" />
                 ) : (
-                  <span className="text-xl font-bold text-gray-400">{b.nombre.charAt(0)}</span>
+                  <span className="text-lg font-bold text-muted-foreground">{b.nombre.charAt(0)}</span>
                 )}
                 
                 {isSelected && (
@@ -64,7 +64,7 @@ export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
                   </div>
                 )}
               </div>
-              <span className="text-sm font-medium text-center leading-tight">{b.nombre}</span>
+              <span className="text-xs sm:text-sm font-semibold text-center leading-tight text-foreground">{b.nombre}</span>
             </button>
           );
         })}
