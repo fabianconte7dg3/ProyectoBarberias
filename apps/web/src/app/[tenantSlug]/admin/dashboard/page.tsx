@@ -585,16 +585,16 @@ export default function AdminDashboardPage() {
                   <span>Distribución Porcentual</span>
                 </h2>
 
-                <div className="h-64 w-full flex items-center justify-center">
+                <div className="h-80 w-full flex items-center justify-center pt-2">
                   {pieDataMetodosPago.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <Pie
                           data={pieDataMetodosPago}
                           cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={90}
+                          cy="42%"
+                          innerRadius={50}
+                          outerRadius={75}
                           paddingAngle={5}
                           dataKey="value"
                         >
@@ -603,7 +603,11 @@ export default function AdminDashboardPage() {
                           ))}
                         </Pie>
                         <Tooltip formatter={(val: any) => [`$${Number(val).toFixed(2)}`, 'Monto']} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                        <Legend 
+                          iconType="circle" 
+                          wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '10px' }}
+                          formatter={(value: string) => value.length > 20 ? `${value.substring(0, 18)}...` : value}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
@@ -634,9 +638,15 @@ export default function AdminDashboardPage() {
               <div className="h-72 w-full pt-2">
                 {data?.comparativaProductosStock && data.comparativaProductosStock.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={data.comparativaProductosStock} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                    <BarChart data={data.comparativaProductosStock} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                      <XAxis dataKey="nombre" stroke="#888888" fontSize={11} tickLine={false} />
+                      <XAxis 
+                        dataKey="nombre" 
+                        stroke="#888888" 
+                        fontSize={11} 
+                        tickLine={false} 
+                        tickFormatter={(val: string) => val.length > 14 ? `${val.substring(0, 12)}...` : val}
+                      />
                       <YAxis stroke="#888888" fontSize={11} tickLine={false} />
                       <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }} />
                       <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
@@ -692,16 +702,16 @@ export default function AdminDashboardPage() {
                   <span>Distribución de Ingresos Retail ($)</span>
                 </h2>
 
-                <div className="h-64 w-full flex items-center justify-center">
+                <div className="h-80 w-full flex items-center justify-center pt-2">
                   {pieDataProductos.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
                         <Pie
                           data={pieDataProductos}
                           cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={90}
+                          cy="42%"
+                          innerRadius={50}
+                          outerRadius={75}
                           paddingAngle={5}
                           dataKey="value"
                         >
@@ -710,7 +720,11 @@ export default function AdminDashboardPage() {
                           ))}
                         </Pie>
                         <Tooltip formatter={(val: any) => [`$${Number(val).toFixed(2)}`, 'Recaudado']} />
-                        <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
+                        <Legend 
+                          iconType="circle" 
+                          wrapperStyle={{ fontSize: '11px', fontWeight: 'bold', paddingTop: '10px' }}
+                          formatter={(value: string) => value.length > 20 ? `${value.substring(0, 18)}...` : value}
+                        />
                       </PieChart>
                     </ResponsiveContainer>
                   ) : (
