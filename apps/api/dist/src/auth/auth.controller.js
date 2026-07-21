@@ -19,7 +19,6 @@ const register_barberia_dto_1 = require("./dto/register-barberia.dto");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const login_staff_dto_1 = require("./dto/login-staff.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
-const throttler_1 = require("@nestjs/throttler");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -31,8 +30,32 @@ let AuthController = class AuthController {
     loginAdmin(dto) {
         return this.authService.loginAdmin(dto);
     }
-    loginStaff(dto) {
-        return this.authService.loginStaff(dto);
+    getStaffForLogin(slug) {
+        return this.authService.getStaffForLogin(slug);
+    }
+    logout(res) {
+        res.clearCookie('jwt', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+        });
+        return { message: 'Logout exitoso' };
+    }
+    async loginStaff(dto, res) {
+        const result = await this.authService.loginStaff(dto);
+        res.cookie('jwt', result.accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 12 * 60 * 60 * 1000,
+        });
+        return {
+            message: 'Login exitoso',
+            usuario: result.usuario
+        };
+    }
+    getMe(req) {
+        return req.user;
     }
 };
 exports.AuthController = AuthController;
@@ -54,14 +77,36 @@ __decorate([
 ], AuthController.prototype, "loginAdmin", null);
 __decorate([
     (0, public_decorator_1.Public)(),
-    (0, common_1.UseGuards)(throttler_1.ThrottlerGuard),
-    (0, throttler_1.Throttle)({ default: { limit: 5, ttl: 60000 } }),
+    (0, common_1.Get)('staff/:slug'),
+    __param(0, (0, common_1.Param)('slug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getStaffForLogin", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('logout'),
+    __param(0, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "logout", null);
+__decorate([
+    (0, public_decorator_1.Public)(),
     (0, common_1.Post)('login/staff'),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Res)({ passthrough: true })),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [login_staff_dto_1.LoginStaffDto]),
-    __metadata("design:returntype", void 0)
+    __metadata("design:paramtypes", [login_staff_dto_1.LoginStaffDto, Object]),
+    __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginStaff", null);
+__decorate([
+    (0, common_1.Get)('me'),
+    __param(0, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AuthController.prototype, "getMe", null);
 exports.AuthController = AuthController = __decorate([
     (0, common_1.Controller)('auth'),
     __metadata("design:paramtypes", [auth_service_1.AuthService])

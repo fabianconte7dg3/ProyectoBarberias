@@ -57,6 +57,7 @@ const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let AuthService = class AuthService {
     db;
     jwtService;
+    failedAttempts = new Map();
     constructor(db, jwtService) {
         this.db = db;
         this.jwtService = jwtService;
@@ -123,39 +124,78 @@ let AuthService = class AuthService {
             accessToken: this.jwtService.sign(payload),
         };
     }
+    async getStaffForLogin(slug) {
+        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, estado FROM auth_get_tenant_by_slug(${slug})`);
+        const barberia = result.rows[0];
+        if (!barberia) {
+            throw new common_1.UnauthorizedException('Barbería no encontrada.');
+        }
+        if (barberia.estado !== 'activo') {
+            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
+        }
+        const staffMembers = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
+            return await tx.query.usuarios.findMany({
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion']), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true)),
+                columns: {
+                    id: true,
+                    nombreCompleto: true,
+                    rol: true
+                }
+            });
+        });
+        return staffMembers;
+    }
     async loginStaff(dto) {
+        const key = `${dto.slug}:${dto.userId}`;
+        const record = this.failedAttempts.get(key);
+        if (record && record.lockUntil > Date.now()) {
+            const seconds = Math.ceil((record.lockUntil - Date.now()) / 1000);
+            throw new common_1.ForbiddenException(`Demasiados intentos. Intenta de nuevo en ${seconds}s.`);
+        }
         const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, estado FROM auth_get_tenant_by_slug(${dto.slug})`);
         const barberia = result.rows[0];
         if (!barberia) {
             throw new common_1.UnauthorizedException('Barbería no encontrada.');
         }
-        const staffMembers = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
+        if (barberia.estado !== 'activo') {
+            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
+        }
+        const matchedStaffArray = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
             return await tx.query.usuarios.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.id, dto.userId), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
             });
         });
-        let matchedStaff = null;
-        for (const staff of staffMembers) {
-            if (staff.pinAcceso) {
-                const isMatch = await bcrypt.compare(dto.pin, staff.pinAcceso);
-                if (isMatch) {
-                    matchedStaff = staff;
-                    break;
-                }
-            }
+        const matchedStaff = matchedStaffArray[0];
+        if (!matchedStaff || !matchedStaff.pinAcceso) {
+            throw new common_1.UnauthorizedException('Usuario o PIN inválido.');
         }
-        if (!matchedStaff) {
-            throw new common_1.UnauthorizedException('PIN inválido.');
+        const isMatch = await bcrypt.compare(dto.pin, matchedStaff.pinAcceso);
+        if (!isMatch) {
+            let count = (record?.count || 0) + 1;
+            let lockUntil = 0;
+            if (count >= 5) {
+                if (count === 5)
+                    lockUntil = Date.now() + 30 * 1000;
+                else if (count === 6)
+                    lockUntil = Date.now() + 2 * 60 * 1000;
+                else
+                    lockUntil = Date.now() + 5 * 60 * 1000;
+            }
+            this.failedAttempts.set(key, { count, lockUntil });
+            throw new common_1.UnauthorizedException('Usuario o PIN inválido.');
         }
         if (!matchedStaff.activo) {
             throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta al administrador local.');
         }
-        if (barberia.estado !== 'activo') {
-            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
-        }
+        this.failedAttempts.delete(key);
         const payload = { sub: matchedStaff.id, tenantId: matchedStaff.tenantId, rol: matchedStaff.rol };
         return {
             accessToken: this.jwtService.sign(payload),
+            usuario: {
+                id: matchedStaff.id,
+                nombreCompleto: matchedStaff.nombreCompleto,
+                rol: matchedStaff.rol
+            }
         };
     }
 };

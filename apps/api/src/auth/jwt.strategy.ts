@@ -8,6 +8,8 @@ import { eq } from 'drizzle-orm';
 import { ConfigService } from '@nestjs/config';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
 
+import type { Request } from 'express';
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -15,7 +17,15 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private readonly configService: ConfigService,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (req: Request) => {
+          if (req && req.cookies) {
+            return req.cookies['jwt'];
+          }
+          return null;
+        },
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ]),
       ignoreExpiration: false,
       secretOrKey: configService.get<string>('JWT_SECRET', 'super_secret_dev_key_change_in_prod'),
     });

@@ -13,6 +13,8 @@ import { runInTenantScope } from '../database/tenant/tenant.utils';
 
 @Injectable()
 export class AuthService {
+  private failedAttempts = new Map<string, { count: number, lockUntil: number }>();
+
   constructor(
     @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
     private readonly jwtService: JwtService,
@@ -97,12 +99,16 @@ export class AuthService {
     };
   }
 
-  async loginStaff(dto: LoginStaffDto) {
-    const result = await this.db.execute(sql`SELECT id, estado FROM auth_get_tenant_by_slug(${dto.slug})`);
+  async getStaffForLogin(slug: string) {
+    const result = await this.db.execute(sql`SELECT id, estado FROM auth_get_tenant_by_slug(${slug})`);
     const barberia = result.rows[0] as any;
 
     if (!barberia) {
       throw new UnauthorizedException('Barbería no encontrada.');
+    }
+
+    if (barberia.estado !== 'activo') {
+      throw new ForbiddenException('La suscripción de la barbería está inactiva.');
     }
 
     const staffMembers = await runInTenantScope(this.db, barberia.id, async (tx) => {
@@ -110,40 +116,85 @@ export class AuthService {
         where: and(
           eq(schema.usuarios.tenantId, barberia.id),
           inArray(schema.usuarios.rol, ['barbero', 'recepcion']),
+          eq(schema.usuarios.activo, true)
         ),
+        columns: {
+          id: true,
+          nombreCompleto: true,
+          rol: true
+        }
       });
     });
 
-    let matchedStaff = null;
+    return staffMembers;
+  }
 
-    // Buscar qué staff tiene el PIN correspondiente
-    for (const staff of staffMembers) {
-      if (staff.pinAcceso) {
-        const isMatch = await bcrypt.compare(dto.pin, staff.pinAcceso);
-        if (isMatch) {
-          matchedStaff = staff;
-          break;
-        }
-      }
+  async loginStaff(dto: LoginStaffDto) {
+    const key = `${dto.slug}:${dto.userId}`;
+    const record = this.failedAttempts.get(key);
+    
+    if (record && record.lockUntil > Date.now()) {
+      const seconds = Math.ceil((record.lockUntil - Date.now()) / 1000);
+      throw new ForbiddenException(`Demasiados intentos. Intenta de nuevo en ${seconds}s.`);
     }
 
-    if (!matchedStaff) {
-      throw new UnauthorizedException('PIN inválido.');
+    const result = await this.db.execute(sql`SELECT id, estado FROM auth_get_tenant_by_slug(${dto.slug})`);
+    const barberia = result.rows[0] as any;
+
+    if (!barberia) {
+      throw new UnauthorizedException('Barbería no encontrada.');
     }
 
-    // El PIN es correcto, ahora verificamos si el usuario está activo
-    if (!matchedStaff.activo) {
-      throw new ForbiddenException('Esta cuenta está suspendida. Contacta al administrador local.');
-    }
-
-    // Validamos el estado de la barbería solo después de que el PIN probó ser correcto
     if (barberia.estado !== 'activo') {
       throw new ForbiddenException('La suscripción de la barbería está inactiva.');
     }
 
+    const matchedStaffArray = await runInTenantScope(this.db, barberia.id, async (tx) => {
+      return await tx.query.usuarios.findMany({
+        where: and(
+          eq(schema.usuarios.tenantId, barberia.id),
+          eq(schema.usuarios.id, dto.userId),
+          inArray(schema.usuarios.rol, ['barbero', 'recepcion'])
+        ),
+      });
+    });
+
+    const matchedStaff = matchedStaffArray[0];
+
+    if (!matchedStaff || !matchedStaff.pinAcceso) {
+      throw new UnauthorizedException('Usuario o PIN inválido.');
+    }
+
+    const isMatch = await bcrypt.compare(dto.pin, matchedStaff.pinAcceso);
+    if (!isMatch) {
+      let count = (record?.count || 0) + 1;
+      let lockUntil = 0;
+      
+      if (count >= 5) {
+        if (count === 5) lockUntil = Date.now() + 30 * 1000; // 30s
+        else if (count === 6) lockUntil = Date.now() + 2 * 60 * 1000; // 2m
+        else lockUntil = Date.now() + 5 * 60 * 1000; // 5m
+      }
+      
+      this.failedAttempts.set(key, { count, lockUntil });
+      throw new UnauthorizedException('Usuario o PIN inválido.');
+    }
+
+    if (!matchedStaff.activo) {
+      throw new ForbiddenException('Esta cuenta está suspendida. Contacta al administrador local.');
+    }
+
+    // Login exitoso, limpiamos los intentos
+    this.failedAttempts.delete(key);
+
     const payload = { sub: matchedStaff.id, tenantId: matchedStaff.tenantId, rol: matchedStaff.rol };
     return {
       accessToken: this.jwtService.sign(payload),
+      usuario: {
+        id: matchedStaff.id,
+        nombreCompleto: matchedStaff.nombreCompleto,
+        rol: matchedStaff.rol
+      }
     };
   }
 }

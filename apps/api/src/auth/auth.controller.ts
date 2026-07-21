@@ -1,10 +1,10 @@
-import { Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Get, Param, Res, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { RegisterBarberiaDto } from './dto/register-barberia.dto';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { LoginStaffDto } from './dto/login-staff.dto';
 import { Public } from '../common/decorators/public.decorator';
-import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
+import type { Response, Request } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -23,10 +23,48 @@ export class AuthController {
   }
 
   @Public()
-  @UseGuards(ThrottlerGuard)
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 intentos por minuto
+  @Get('staff/:slug')
+  getStaffForLogin(@Param('slug') slug: string) {
+    return this.authService.getStaffForLogin(slug);
+  }
+
+  @Public()
+  @Post('logout')
+  logout(@Res({ passthrough: true }) res: Response) {
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+    return { message: 'Logout exitoso' };
+  }
+
+  @Public()
   @Post('login/staff')
-  loginStaff(@Body() dto: LoginStaffDto) {
-    return this.authService.loginStaff(dto);
+  async loginStaff(
+    @Body() dto: LoginStaffDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const result = await this.authService.loginStaff(dto);
+    
+    // Setear JWT en Cookie httpOnly con 12h de expiración
+    res.cookie('jwt', result.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 12 * 60 * 60 * 1000, // 12 horas
+    });
+
+    return {
+      message: 'Login exitoso',
+      usuario: result.usuario
+    };
+  }
+
+  // Requiere token válido (via cookie o header) para responder
+  @Get('me')
+  getMe(@Req() req: Request) {
+    // req.user lo inyecta JwtStrategy si el token es válido
+    return req.user;
   }
 }

@@ -59,7 +59,15 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
     configService;
     constructor(db, configService) {
         super({
-            jwtFromRequest: passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            jwtFromRequest: passport_jwt_1.ExtractJwt.fromExtractors([
+                (req) => {
+                    if (req && req.cookies) {
+                        return req.cookies['jwt'];
+                    }
+                    return null;
+                },
+                passport_jwt_1.ExtractJwt.fromAuthHeaderAsBearerToken(),
+            ]),
             ignoreExpiration: false,
             secretOrKey: configService.get('JWT_SECRET', 'super_secret_dev_key_change_in_prod'),
         });

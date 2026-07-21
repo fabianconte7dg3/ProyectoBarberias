@@ -13,6 +13,7 @@ exports.LoginStaffDto = void 0;
 const class_validator_1 = require("class-validator");
 class LoginStaffDto {
     slug;
+    userId;
     pin;
 }
 exports.LoginStaffDto = LoginStaffDto;
@@ -21,6 +22,11 @@ __decorate([
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
 ], LoginStaffDto.prototype, "slug", void 0);
+__decorate([
+    (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], LoginStaffDto.prototype, "userId", void 0);
 __decorate([
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.Length)(4, 4, { message: 'El PIN debe ser exactamente de 4 dígitos' }),

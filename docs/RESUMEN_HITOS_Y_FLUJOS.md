@@ -42,6 +42,13 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **Audit Logs:** Registro inmutable de acciones sensibles (cierre de caja con descuadre, reseteo de contraseñas, etc.).
 * **Kill Switch:** Posibilidad de desactivar (`killSwitchActivo = true`) instantáneamente todas las mutaciones para una barbería. Un `Guard` a nivel global (posterior a la inyección del tenant) bloquea cualquier petición diferente a `GET` retornando un HTTP 503, aislando el tenant afectado.
 
+### Hito 8: Autenticación de Staff y UI Operativa (Cookies httpOnly & Numpad)
+* **Logro Principal:** Login operativo ultra-rápido para tablets/PCs en el local con máxima seguridad.
+* **Cookies httpOnly:** Eliminación de almacenamiento de JWT en `localStorage` (prevención de XSS). Configuración de cookies `httpOnly`, `SameSite=Lax`, y `Secure` condicional al entorno en backend y frontend (`credentials: 'include'`).
+* **Rate-Limiting Progresivo por Usuario:** Bloqueo incremental (30s, 2m, 5m) scoped por `slug:userId` para evitar que fallos de un barbero bloqueen a todo el equipo en la misma IP local.
+* **UI Numpad & Teclado Físico:** Selector de perfiles estilo Netflix + Numpad táctil de 4 dígitos con soporte para teclado de PC y animación de error (*shake*).
+* **Gestión de Sesión & Logout:** Endpoint `POST /auth/logout` para limpiar la cookie en dispositivos compartidos y validación previa `GET /auth/me` al cargar la app.
+
 ---
 
 ## Flujos Principales de Negocio

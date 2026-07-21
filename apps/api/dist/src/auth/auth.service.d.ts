@@ -7,6 +7,7 @@ import { LoginStaffDto } from './dto/login-staff.dto';
 export declare class AuthService {
     private readonly db;
     private readonly jwtService;
+    private failedAttempts;
     constructor(db: NodePgDatabase<typeof schema>, jwtService: JwtService);
     registerBarberia(dto: RegisterBarberiaDto): Promise<{
         message: string;
@@ -15,7 +16,13 @@ export declare class AuthService {
     loginAdmin(dto: LoginAdminDto): Promise<{
         accessToken: string;
     }>;
+    getStaffForLogin(slug: string): Promise<any>;
     loginStaff(dto: LoginStaffDto): Promise<{
         accessToken: string;
+        usuario: {
+            id: any;
+            nombreCompleto: any;
+            rol: any;
+        };
     }>;
 }
