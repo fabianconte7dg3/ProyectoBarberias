@@ -1,12 +1,21 @@
-import { Controller, Post, Param, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Param, Body, Logger, Inject } from '@nestjs/common';
 import { WhatsappService } from './whatsapp.service';
 import { Public } from '../common/decorators/public.decorator';
+import { runInTenantScope } from '../database/tenant/tenant.utils';
+import { TenantContext } from '../database/tenant/tenant-context';
+import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
+import * as schema from '../database/schema';
+import { eq } from 'drizzle-orm';
+import { NodePgDatabase } from 'drizzle-orm/node-postgres';
 
 @Controller('whatsapp')
 export class WhatsappController {
   private readonly logger = new Logger(WhatsappController.name);
 
-  constructor(private readonly whatsappService: WhatsappService) {}
+  constructor(
+    private readonly whatsappService: WhatsappService,
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
+  ) {}
 
   @Public()
   @Post('webhook/:tenantId')
@@ -32,6 +41,18 @@ export class WhatsappController {
         const telefono = remoteJid.split('@')[0];
 
         this.logger.log(`Mensaje entrante de ${telefono}: "${incomingText}"`);
+
+        // Actualizar ultimoMensajeRecibidoAt en background
+        runInTenantScope(this.db, tenantId, async () => {
+          try {
+            const txDb = TenantContext.getDb();
+            await txDb.update(schema.clientes)
+              .set({ ultimoMensajeRecibidoAt: new Date() })
+              .where(eq(schema.clientes.telefonoWhatsapp, telefono));
+          } catch (error) {
+            this.logger.error(`Error actualizando last interaction para ${telefono}: ${error.message}`);
+          }
+        }).catch(err => this.logger.error(err));
 
         // Lógica de Menú Numerado o Fallback (Bot estricto anti-frustración)
         if (incomingText === '1') {

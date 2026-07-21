@@ -80,6 +80,7 @@ exports.clientes = (0, pg_core_1.pgTable)('clientes', {
     totalGastado: (0, pg_core_1.decimal)('total_gastado', { precision: 12, scale: 2 }).notNull().default('0'),
     emailFacturacion: (0, pg_core_1.varchar)('email_facturacion', { length: 255 }),
     bloqueado: (0, pg_core_1.boolean)('bloqueado').notNull().default(false),
+    ultimoMensajeRecibidoAt: (0, pg_core_1.timestamp)('ultimo_mensaje_recibido_at', { withTimezone: true }),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
     telefonoPorTenantUnico: (0, pg_core_1.unique)().on(table.tenantId, table.telefonoWhatsapp),

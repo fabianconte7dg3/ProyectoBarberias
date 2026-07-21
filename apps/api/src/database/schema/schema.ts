@@ -116,6 +116,7 @@ export const clientes = pgTable('clientes', {
   totalGastado: decimal('total_gastado', { precision: 12, scale: 2 }).notNull().default('0'),
   emailFacturacion: varchar('email_facturacion', { length: 255 }),
   bloqueado: boolean('bloqueado').notNull().default(false),
+  ultimoMensajeRecibidoAt: timestamp('ultimo_mensaje_recibido_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   telefonoPorTenantUnico: unique().on(table.tenantId, table.telefonoWhatsapp),

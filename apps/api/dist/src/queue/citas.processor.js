@@ -97,7 +97,20 @@ let CitasProcessor = CitasProcessor_1 = class CitasProcessor extends bullmq_1.Wo
         const strHora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
         const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.barbero.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
         if (result.cliente?.telefonoWhatsapp) {
-            await this.whatsappService.enviarMensajeTexto(tenantId, result.cliente.telefonoWhatsapp, mensaje);
+            let interactedRecently = false;
+            if (result.cliente.ultimoMensajeRecibidoAt) {
+                const lastMsgDate = new Date(result.cliente.ultimoMensajeRecibidoAt);
+                const diffHrs = (Date.now() - lastMsgDate.getTime()) / (1000 * 60 * 60);
+                if (diffHrs <= 24) {
+                    interactedRecently = true;
+                }
+            }
+            if (interactedRecently) {
+                await this.whatsappService.enviarMensajeTexto(tenantId, result.cliente.telefonoWhatsapp, mensaje);
+            }
+            else {
+                this.logger.log(`Recordatorio 24h omitido por falta de interacción reciente (Anti-Spam) para cita ${citaId}`);
+            }
         }
     }
     async handleCancelacionRetraso(citaId, tenantId) {

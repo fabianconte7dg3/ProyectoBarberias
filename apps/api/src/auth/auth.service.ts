@@ -82,6 +82,15 @@ export class AuthService {
       throw new ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
     }
 
+    // Checking if the tenant is active
+    const resultTenant = await runInTenantScope(this.db, admin.tenantId, async (tx) => {
+      return await tx.execute(sql`SELECT estado FROM barberias WHERE id = ${admin.tenantId}`);
+    });
+    console.log('ResultTenant in loginAdmin:', resultTenant.rows);
+    if (resultTenant.rows[0] && resultTenant.rows[0].estado !== 'activo') {
+      throw new ForbiddenException('La suscripción de la barbería está inactiva.');
+    }
+
     const payload = { sub: admin.id, tenantId: admin.tenantId, rol: admin.rol };
     return {
       accessToken: this.jwtService.sign(payload),
@@ -100,7 +109,6 @@ export class AuthService {
       return await tx.query.usuarios.findMany({
         where: and(
           eq(schema.usuarios.tenantId, barberia.id),
-          eq(schema.usuarios.activo, true),
           inArray(schema.usuarios.rol, ['barbero', 'recepcion']),
         ),
       });
@@ -123,9 +131,14 @@ export class AuthService {
       throw new UnauthorizedException('PIN inválido.');
     }
 
+    // El PIN es correcto, ahora verificamos si el usuario está activo
+    if (!matchedStaff.activo) {
+      throw new ForbiddenException('Esta cuenta está suspendida. Contacta al administrador local.');
+    }
+
     // Validamos el estado de la barbería solo después de que el PIN probó ser correcto
     if (barberia.estado !== 'activo') {
-      throw new ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
+      throw new ForbiddenException('La suscripción de la barbería está inactiva.');
     }
 
     const payload = { sub: matchedStaff.id, tenantId: matchedStaff.tenantId, rol: matchedStaff.rol };

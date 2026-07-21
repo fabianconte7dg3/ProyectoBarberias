@@ -111,6 +111,13 @@ let AuthService = class AuthService {
         if (!admin.activo) {
             throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
         }
+        const resultTenant = await (0, tenant_utils_1.runInTenantScope)(this.db, admin.tenantId, async (tx) => {
+            return await tx.execute((0, drizzle_orm_1.sql) `SELECT estado FROM barberias WHERE id = ${admin.tenantId}`);
+        });
+        console.log('ResultTenant in loginAdmin:', resultTenant.rows);
+        if (resultTenant.rows[0] && resultTenant.rows[0].estado !== 'activo') {
+            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
+        }
         const payload = { sub: admin.id, tenantId: admin.tenantId, rol: admin.rol };
         return {
             accessToken: this.jwtService.sign(payload),
@@ -124,7 +131,7 @@ let AuthService = class AuthService {
         }
         const staffMembers = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
             return await tx.query.usuarios.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
             });
         });
         let matchedStaff = null;
@@ -140,8 +147,11 @@ let AuthService = class AuthService {
         if (!matchedStaff) {
             throw new common_1.UnauthorizedException('PIN inválido.');
         }
+        if (!matchedStaff.activo) {
+            throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta al administrador local.');
+        }
         if (barberia.estado !== 'activo') {
-            throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
+            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
         }
         const payload = { sub: matchedStaff.id, tenantId: matchedStaff.tenantId, rol: matchedStaff.rol };
         return {

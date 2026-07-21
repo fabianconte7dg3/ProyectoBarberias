@@ -64,7 +64,21 @@ export class CitasProcessor extends WorkerHost {
     const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.barbero.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
     
     if (result.cliente?.telefonoWhatsapp) {
-      await this.whatsappService.enviarMensajeTexto(tenantId, result.cliente.telefonoWhatsapp, mensaje);
+      // Regla Antispam: Verificar que el cliente haya interactuado en las últimas 24h
+      let interactedRecently = false;
+      if (result.cliente.ultimoMensajeRecibidoAt) {
+         const lastMsgDate = new Date(result.cliente.ultimoMensajeRecibidoAt);
+         const diffHrs = (Date.now() - lastMsgDate.getTime()) / (1000 * 60 * 60);
+         if (diffHrs <= 24) {
+            interactedRecently = true;
+         }
+      }
+
+      if (interactedRecently) {
+         await this.whatsappService.enviarMensajeTexto(tenantId, result.cliente.telefonoWhatsapp, mensaje);
+      } else {
+         this.logger.log(`Recordatorio 24h omitido por falta de interacción reciente (Anti-Spam) para cita ${citaId}`);
+      }
     }
   }
 
