@@ -1,5 +1,5 @@
-import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common';
-import { eq, and, lte, or, between, ne, desc, sql } from 'drizzle-orm';
+import { Injectable, ConflictException, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
+import { eq, and, lte, gte, or, between, ne, desc, sql } from 'drizzle-orm';
 import { citas, bloqueosTemporales, servicios, clientes, usuarios } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
@@ -147,10 +147,69 @@ export class CitasService {
   }
 
   /**
-   * Cambiar estado de una cita (con strike atómico).
+   * Obtiene las citas de la agenda para una fecha dada, aplicando filtrado por rol y RLS.
    */
-  async cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado) {
+  async obtenerCitasAgenda({ user, fechaStr, barberoId }: { user: any; fechaStr?: string; barberoId?: string }) {
     const db = TenantContext.getDb();
+
+    // Normalizar fecha (por defecto hoy)
+    const targetDate = fechaStr ? new Date(fechaStr + 'T00:00:00') : new Date();
+    const inicioDia = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+    const finDia = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+
+    const conditions = [
+      gte(citas.inicioEstimado, inicioDia),
+      lte(citas.inicioEstimado, finDia),
+    ];
+
+    // Regla de Autorización: Si es barbero, filtrar ESTRICTAMENTE por su id
+    if (user.rol === 'barbero') {
+      conditions.push(eq(citas.barberoId, user.userId));
+    } else if (barberoId) {
+      conditions.push(eq(citas.barberoId, barberoId));
+    }
+
+    const listaCitas = await db
+      .select({
+        id: citas.id,
+        inicioEstimado: citas.inicioEstimado,
+        finEstimado: citas.finEstimado,
+        estado: citas.estado,
+        origen: citas.origen,
+        barberoId: citas.barberoId,
+        barberoNombre: usuarios.nombreCompleto,
+        clienteId: citas.clienteId,
+        clienteNombre: clientes.nombreCompleto,
+        clienteTelefono: clientes.telefonoWhatsapp,
+        servicioId: citas.servicioId,
+        servicioNombre: servicios.nombre,
+        servicioPrecio: servicios.precioBase,
+        servicioDuracion: servicios.duracionMinutos,
+      })
+      .from(citas)
+      .leftJoin(usuarios, eq(citas.barberoId, usuarios.id))
+      .leftJoin(clientes, eq(citas.clienteId, clientes.id))
+      .leftJoin(servicios, eq(citas.servicioId, servicios.id))
+      .where(and(...conditions))
+      .orderBy(citas.inicioEstimado);
+
+    return listaCitas;
+  }
+
+  /**
+   * Cambiar estado de una cita (con strike atómico y autorización estricta).
+   */
+  async cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado, user?: any) {
+    const db = TenantContext.getDb();
+
+    // 1. Validar propiedad si es un barbero
+    if (user && user.rol === 'barbero') {
+      const [existente] = await db.select({ barberoId: citas.barberoId }).from(citas).where(eq(citas.id, citaId));
+      if (!existente) throw new NotFoundException('Cita no encontrada');
+      if (existente.barberoId !== user.userId) {
+        throw new ForbiddenException('No tienes permisos para modificar las citas de otro barbero.');
+      }
+    }
 
     return await db.transaction(async (tx: any) => {
       // Usar transaction instance directamente, NO tx.query.citas (tipado más seguro)

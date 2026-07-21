@@ -13,6 +13,11 @@ export declare class CitasService {
         isExisting: boolean;
     }>;
     bloquearTurno(data: BloquearTurnoDto): Promise<any>;
-    cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado): Promise<any>;
+    obtenerCitasAgenda({ user, fechaStr, barberoId }: {
+        user: any;
+        fechaStr?: string;
+        barberoId?: string;
+    }): Promise<any>;
+    cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado, user?: any): Promise<any>;
     cancelarPorCliente(citaId: string): Promise<any>;
 }

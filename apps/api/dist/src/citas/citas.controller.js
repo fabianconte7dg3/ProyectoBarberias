@@ -40,11 +40,20 @@ let CitasController = class CitasController {
         }
         return result.cita;
     }
+    async getCitas(req, fechaStr, barberoId) {
+        const user = req.user;
+        return this.citasService.obtenerCitasAgenda({
+            user,
+            fechaStr,
+            barberoId,
+        });
+    }
     async bloquearTurno(data) {
         return this.citasService.bloquearTurno(data);
     }
-    async cambiarEstado(id, data) {
-        return this.citasService.cambiarEstado(id, data.estado);
+    async cambiarEstado(req, id, data) {
+        const user = req.user;
+        return this.citasService.cambiarEstado(id, data.estado, user);
     }
     async cancelarPorCliente(id, token) {
         if (!token)
@@ -71,6 +80,16 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "crearCita", null);
 __decorate([
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, common_1.Get)(),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Query)('fecha')),
+    __param(2, (0, common_1.Query)('barberoId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], CitasController.prototype, "getCitas", null);
+__decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('bloquear'),
     __param(0, (0, common_1.Body)()),
@@ -81,10 +100,11 @@ __decorate([
 __decorate([
     (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Patch)(':id/estado'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, update_estado_dto_1.UpdateEstadoCitaDto]),
+    __metadata("design:paramtypes", [Object, String, update_estado_dto_1.UpdateEstadoCitaDto]),
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "cambiarEstado", null);
 __decorate([

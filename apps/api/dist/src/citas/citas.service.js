@@ -121,8 +121,56 @@ let CitasService = class CitasService {
             }
         });
     }
-    async cambiarEstado(citaId, nuevoEstado) {
+    async obtenerCitasAgenda({ user, fechaStr, barberoId }) {
         const db = tenant_context_1.TenantContext.getDb();
+        const targetDate = fechaStr ? new Date(fechaStr + 'T00:00:00') : new Date();
+        const inicioDia = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+        const finDia = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 23, 59, 59);
+        const conditions = [
+            (0, drizzle_orm_1.gte)(schema_1.citas.inicioEstimado, inicioDia),
+            (0, drizzle_orm_1.lte)(schema_1.citas.inicioEstimado, finDia),
+        ];
+        if (user.rol === 'barbero') {
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.barberoId, user.userId));
+        }
+        else if (barberoId) {
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.barberoId, barberoId));
+        }
+        const listaCitas = await db
+            .select({
+            id: schema_1.citas.id,
+            inicioEstimado: schema_1.citas.inicioEstimado,
+            finEstimado: schema_1.citas.finEstimado,
+            estado: schema_1.citas.estado,
+            origen: schema_1.citas.origen,
+            barberoId: schema_1.citas.barberoId,
+            barberoNombre: schema_1.usuarios.nombreCompleto,
+            clienteId: schema_1.citas.clienteId,
+            clienteNombre: schema_1.clientes.nombreCompleto,
+            clienteTelefono: schema_1.clientes.telefonoWhatsapp,
+            servicioId: schema_1.citas.servicioId,
+            servicioNombre: schema_1.servicios.nombre,
+            servicioPrecio: schema_1.servicios.precioBase,
+            servicioDuracion: schema_1.servicios.duracionMinutos,
+        })
+            .from(schema_1.citas)
+            .leftJoin(schema_1.usuarios, (0, drizzle_orm_1.eq)(schema_1.citas.barberoId, schema_1.usuarios.id))
+            .leftJoin(schema_1.clientes, (0, drizzle_orm_1.eq)(schema_1.citas.clienteId, schema_1.clientes.id))
+            .leftJoin(schema_1.servicios, (0, drizzle_orm_1.eq)(schema_1.citas.servicioId, schema_1.servicios.id))
+            .where((0, drizzle_orm_1.and)(...conditions))
+            .orderBy(schema_1.citas.inicioEstimado);
+        return listaCitas;
+    }
+    async cambiarEstado(citaId, nuevoEstado, user) {
+        const db = tenant_context_1.TenantContext.getDb();
+        if (user && user.rol === 'barbero') {
+            const [existente] = await db.select({ barberoId: schema_1.citas.barberoId }).from(schema_1.citas).where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId));
+            if (!existente)
+                throw new common_1.NotFoundException('Cita no encontrada');
+            if (existente.barberoId !== user.userId) {
+                throw new common_1.ForbiddenException('No tienes permisos para modificar las citas de otro barbero.');
+            }
+        }
         return await db.transaction(async (tx) => {
             const [cita] = await tx
                 .update(schema_1.citas)

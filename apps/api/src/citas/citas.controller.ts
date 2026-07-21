@@ -1,5 +1,5 @@
-import { Controller, Post, Body, Headers, Patch, Param, UnauthorizedException, Inject, Res, HttpStatus } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Body, Headers, Patch, Param, Get, Query, Req, UnauthorizedException, Inject, Res, HttpStatus } from '@nestjs/common';
+import type { Response, Request } from 'express';
 import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
@@ -38,6 +38,21 @@ export class CitasController {
     return result.cita;
   }
 
+  @Roles('admin', 'recepcion', 'barbero')
+  @Get()
+  async getCitas(
+    @Req() req: Request,
+    @Query('fecha') fechaStr?: string,
+    @Query('barberoId') barberoId?: string,
+  ) {
+    const user = (req as any).user;
+    return this.citasService.obtenerCitasAgenda({
+      user,
+      fechaStr,
+      barberoId,
+    });
+  }
+
   @Public() // Los clientes bloquean temporalmente desde la web sin auth
   @Post('bloquear')
   async bloquearTurno(@Body() data: BloquearTurnoDto) {
@@ -46,8 +61,13 @@ export class CitasController {
 
   @Roles('admin', 'recepcion', 'barbero')
   @Patch(':id/estado')
-  async cambiarEstado(@Param('id') id: string, @Body() data: UpdateEstadoCitaDto) {
-    return this.citasService.cambiarEstado(id, data.estado);
+  async cambiarEstado(
+    @Req() req: Request,
+    @Param('id') id: string, 
+    @Body() data: UpdateEstadoCitaDto
+  ) {
+    const user = (req as any).user;
+    return this.citasService.cambiarEstado(id, data.estado, user);
   }
 
   @Public()
