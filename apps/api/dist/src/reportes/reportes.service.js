@@ -30,12 +30,21 @@ let ReportesService = class ReportesService {
                         servicio: true,
                         cliente: true,
                     }
+                },
+                detalles: {
+                    with: {
+                        servicio: true,
+                        producto: true,
+                    }
                 }
             }
         });
         let ingresosTotales = 0;
+        let ingresosServicios = 0;
+        let ingresosProductos = 0;
         const desgloseMetodosPago = { efectivo: 0, yappy: 0, mixto: 0 };
         const serviciosMap = new Map();
+        const productosMap = new Map();
         for (const tx of txsPeriodo) {
             const monto = Number(tx.totalFacturado || 0);
             ingresosTotales += monto;
@@ -45,13 +54,43 @@ let ReportesService = class ReportesService {
                 desgloseMetodosPago.yappy += monto;
             else if (tx.metodoPago === 'mixto')
                 desgloseMetodosPago.mixto += monto;
-            if (tx.cita && tx.cita.servicio) {
-                const sId = tx.cita.servicio.id;
-                const sNombre = tx.cita.servicio.nombre;
-                const sStats = serviciosMap.get(sId) || { servicioId: sId, nombre: sNombre, totalCitas: 0, totalRecaudado: 0 };
-                sStats.totalCitas += 1;
-                sStats.totalRecaudado += monto;
-                serviciosMap.set(sId, sStats);
+            if (tx.detalles && tx.detalles.length > 0) {
+                for (const det of tx.detalles) {
+                    const subtotalDet = Number(det.subtotal || 0);
+                    if (det.tipoItem === 'servicio') {
+                        ingresosServicios += subtotalDet;
+                        const sId = det.servicioId || (tx.cita?.servicio?.id);
+                        const sNombre = det.servicio?.nombre || tx.cita?.servicio?.nombre || 'Servicio';
+                        if (sId) {
+                            const sStats = serviciosMap.get(sId) || { servicioId: sId, nombre: sNombre, totalCitas: 0, totalRecaudado: 0 };
+                            sStats.totalCitas += det.cantidad;
+                            sStats.totalRecaudado += subtotalDet;
+                            serviciosMap.set(sId, sStats);
+                        }
+                    }
+                    else if (det.tipoItem === 'producto') {
+                        ingresosProductos += subtotalDet;
+                        const pId = det.productoId;
+                        const pNombre = det.producto?.nombre || 'Producto Retail';
+                        if (pId) {
+                            const pStats = productosMap.get(pId) || { productoId: pId, nombre: pNombre, totalVendidos: 0, totalRecaudado: 0 };
+                            pStats.totalVendidos += det.cantidad;
+                            pStats.totalRecaudado += subtotalDet;
+                            productosMap.set(pId, pStats);
+                        }
+                    }
+                }
+            }
+            else {
+                ingresosServicios += monto;
+                if (tx.cita && tx.cita.servicio) {
+                    const sId = tx.cita.servicio.id;
+                    const sNombre = tx.cita.servicio.nombre;
+                    const sStats = serviciosMap.get(sId) || { servicioId: sId, nombre: sNombre, totalCitas: 0, totalRecaudado: 0 };
+                    sStats.totalCitas += 1;
+                    sStats.totalRecaudado += monto;
+                    serviciosMap.set(sId, sStats);
+                }
             }
         }
         const staffBarberos = await db.query.usuarios.findMany({
@@ -63,6 +102,7 @@ let ReportesService = class ReportesService {
                 barberoId: b.id,
                 nombreCompleto: b.nombreCompleto,
                 porcentajeComision: Number(b.porcentajeComision || 0),
+                porcentajeComisionProducto: Number(b.porcentajeComisionProducto || 0),
                 totalCitas: 0,
                 totalFacturado: 0,
                 comisionTotal: 0,
@@ -70,14 +110,15 @@ let ReportesService = class ReportesService {
             });
         }
         for (const tx of txsPeriodo) {
-            if (tx.cita && tx.cita.barbero) {
-                const bId = tx.cita.barbero.id;
+            const bId = tx.cita?.barbero?.id;
+            if (bId) {
                 let stats = rendimientoBarberosMap.get(bId);
-                if (!stats) {
+                if (!stats && tx.cita?.barbero) {
                     stats = {
                         barberoId: bId,
                         nombreCompleto: tx.cita.barbero.nombreCompleto,
                         porcentajeComision: Number(tx.cita.barbero.porcentajeComision || 0),
+                        porcentajeComisionProducto: Number(tx.cita.barbero.porcentajeComisionProducto || 0),
                         totalCitas: 0,
                         totalFacturado: 0,
                         comisionTotal: 0,
@@ -85,13 +126,15 @@ let ReportesService = class ReportesService {
                     };
                     rendimientoBarberosMap.set(bId, stats);
                 }
-                const montoTx = Number(tx.totalFacturado || 0);
-                const propinaTx = Number(tx.propinaBarbero || 0);
-                const comisionTx = (montoTx * stats.porcentajeComision) / 100;
-                stats.totalCitas += 1;
-                stats.totalFacturado += montoTx;
-                stats.comisionTotal += comisionTx;
-                stats.propinaTotal += propinaTx;
+                if (stats) {
+                    const montoTx = Number(tx.totalFacturado || 0);
+                    const propinaTx = Number(tx.propinaBarbero || 0);
+                    const comisionTx = Number(tx.comisionBarbero || 0);
+                    stats.totalCitas += tx.cita ? 1 : 0;
+                    stats.totalFacturado += montoTx;
+                    stats.comisionTotal += comisionTx;
+                    stats.propinaTotal += propinaTx;
+                }
             }
         }
         const clientesStrikes = await db.query.clientes.findMany({
@@ -99,13 +142,28 @@ let ReportesService = class ReportesService {
             orderBy: [(0, drizzle_orm_1.desc)(schema_1.clientes.ausenciasStrikes)],
             limit: 10
         });
+        const productosStockBajo = await db.query.productos.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.productos.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.productos.activo, true), (0, drizzle_orm_1.sql) `${schema_1.productos.stockActual} <= ${schema_1.productos.stockMinimo}`),
+            limit: 10
+        });
         const topServicios = Array.from(serviciosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
+        const topProductos = Array.from(productosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
         return {
             rangoFechas: { desde, hasta },
             ingresosTotales,
+            ingresosServicios,
+            ingresosProductos,
             totalTransacciones: txsPeriodo.length,
             desgloseMetodosPago,
             topServicios,
+            topProductos,
+            productosStockBajoCount: productosStockBajo.length,
+            productosStockBajoList: productosStockBajo.map((p) => ({
+                id: p.id,
+                nombre: p.nombre,
+                stockActual: p.stockActual,
+                stockMinimo: p.stockMinimo,
+            })),
             rendimientoBarberos: Array.from(rendimientoBarberosMap.values()),
             clientesStrikes: clientesStrikes.map((c) => ({
                 id: c.id,

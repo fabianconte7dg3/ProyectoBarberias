@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 
@@ -14,6 +14,7 @@ interface RendimientoBarbero {
   barberoId: string;
   nombreCompleto: string;
   porcentajeComision: number;
+  porcentajeComisionProducto?: number;
   totalCitas: number;
   totalFacturado: number;
   comisionTotal: number;
@@ -27,6 +28,20 @@ interface TopServicio {
   totalRecaudado: number;
 }
 
+interface TopProducto {
+  productoId: string;
+  nombre: string;
+  totalVendidos: number;
+  totalRecaudado: number;
+}
+
+interface ProductoStockBajo {
+  id: string;
+  nombre: string;
+  stockActual: number;
+  stockMinimo: number;
+}
+
 interface ClienteStrike {
   id: string;
   nombreCompleto: string;
@@ -37,6 +52,8 @@ interface ClienteStrike {
 interface DashboardData {
   rangoFechas: { desde: string; hasta: string };
   ingresosTotales: number;
+  ingresosServicios?: number;
+  ingresosProductos?: number;
   totalTransacciones: number;
   desgloseMetodosPago: {
     efectivo: number;
@@ -44,6 +61,9 @@ interface DashboardData {
     mixto: number;
   };
   topServicios: TopServicio[];
+  topProductos?: TopProducto[];
+  productosStockBajoCount?: number;
+  productosStockBajoList?: ProductoStockBajo[];
   rendimientoBarberos: RendimientoBarbero[];
   clientesStrikes: ClienteStrike[];
 }
@@ -273,6 +293,22 @@ export default function AdminDashboardPage() {
       {/* Main Content */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
+        {/* Banner Alerta Stock Bajo */}
+        {(data?.productosStockBajoCount || 0) > 0 && (
+          <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl text-amber-600 dark:text-amber-400 text-xs font-semibold flex items-center justify-between gap-3 shadow-xs">
+            <div className="flex items-center gap-2.5">
+              <Package size={18} className="shrink-0" />
+              <span>Hay <strong>{data?.productosStockBajoCount} productos</strong> con stock bajo en tu inventario.</span>
+            </div>
+            <button
+              onClick={() => router.push(`/${tenantSlug}/admin/productos`)}
+              className="px-3 py-1.5 bg-amber-500 text-white font-bold rounded-xl text-[11px] hover:opacity-90 transition-opacity shrink-0"
+            >
+              Ver Inventario
+            </button>
+          </div>
+        )}
+
         {/* Selector de Rango Personalizado */}
         {preset === 'personalizado' && (
           <form onSubmit={handleCustomDateApply} className="bg-card border border-border p-4 rounded-2xl flex flex-wrap items-center gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
@@ -331,31 +367,31 @@ export default function AdminDashboardPage() {
               ${(data?.ingresosTotales || 0).toFixed(2)}
             </div>
             <span className="text-[11px] font-semibold text-muted-foreground block pt-1">
-              Filtro: {PRESETS_LABEL[preset]} ({fechaDesde} a {fechaHasta})
+              Servicios: ${(data?.ingresosServicios || 0).toFixed(2)} | Productos: ${(data?.ingresosProductos || 0).toFixed(2)}
             </span>
           </div>
 
           <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Total Citas Cobradas
+              Total Operaciones Cobradas
             </span>
             <div className="text-3xl font-extrabold text-foreground font-mono">
               {data?.totalTransacciones || 0}
             </div>
             <span className="text-[11px] text-muted-foreground block pt-1">
-              Operaciones procesadas
+              Citas y ventas de mostrador
             </span>
           </div>
 
           <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Ticket Promedio por Cita
+              Ticket Promedio por Cobro
             </span>
             <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
               ${ticketPromedio}
             </div>
             <span className="text-[11px] text-muted-foreground block pt-1">
-              Ingreso promedio por atención
+              Ingreso promedio por operación
             </span>
           </div>
 
@@ -403,32 +439,69 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Ranking de Servicios Más Vendidos */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-          <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-            <Scissors size={18} className="text-primary" />
-            <span>Servicios Más Vendidos & Demanda ({PRESETS_LABEL[preset]})</span>
-          </h2>
+        {/* Ranking de Servicios & Productos Más Vendidos */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          {/* Top Servicios */}
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+            <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+              <Scissors size={18} className="text-primary" />
+              <span>Servicios Más Demandados</span>
+            </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {(data?.topServicios || []).map((s, index) => (
-              <div key={s.servicioId} className="p-4 bg-secondary/30 border border-border rounded-xl space-y-1 relative overflow-hidden">
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                  #{index + 1} Popular
-                </span>
-                <div className="font-bold text-sm text-foreground pt-1">{s.nombre}</div>
-                <div className="flex items-center justify-between text-xs pt-1 border-t border-border/50">
-                  <span className="text-muted-foreground">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
-                  <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400">${s.totalRecaudado.toFixed(2)}</span>
+            <div className="space-y-2.5">
+              {(data?.topServicios || []).map((s, index) => (
+                <div key={s.servicioId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                      #{index + 1}
+                    </span>
+                    <span className="font-bold text-foreground">{s.nombre}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${s.totalRecaudado.toFixed(2)}</span>
+                    <span className="text-muted-foreground text-[10px]">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
-            {(!data?.topServicios || data.topServicios.length === 0) && (
-              <div className="col-span-full py-4 text-center text-xs text-muted-foreground">
-                No hay servicios registrados en este período.
-              </div>
-            )}
+              ))}
+              {(!data?.topServicios || data.topServicios.length === 0) && (
+                <div className="py-4 text-center text-xs text-muted-foreground">
+                  No hay servicios registrados en este período.
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Top Productos Retail */}
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+            <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+              <ShoppingBag size={18} className="text-emerald-500" />
+              <span>Productos Retail Más Vendidos</span>
+            </h2>
+
+            <div className="space-y-2.5">
+              {(data?.topProductos || []).map((p, index) => (
+                <div key={p.productoId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                      #{index + 1}
+                    </span>
+                    <span className="font-bold text-foreground">{p.nombre}</span>
+                  </div>
+                  <div className="text-right">
+                    <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${p.totalRecaudado.toFixed(2)}</span>
+                    <span className="text-muted-foreground text-[10px]">{p.totalVendidos} unidad{p.totalVendidos > 1 ? 'es' : ''}</span>
+                  </div>
+                </div>
+              ))}
+              {(!data?.topProductos || data.topProductos.length === 0) && (
+                <div className="py-4 text-center text-xs text-muted-foreground">
+                  No hay ventas de productos registradas en este período.
+                </div>
+              )}
+            </div>
+          </div>
+
         </div>
 
         {/* Rendimiento & Comisiones por Barbero */}
@@ -445,8 +518,8 @@ export default function AdminDashboardPage() {
                   <th className="py-2.5 px-3">Barbero</th>
                   <th className="py-2.5 px-3 text-center">Citas</th>
                   <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
-                  <th className="py-2.5 px-3 text-center">% Pactado</th>
-                  <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión a Pagar</th>
+                  <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
+                  <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
                   <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
                 </tr>
               </thead>
@@ -458,7 +531,7 @@ export default function AdminDashboardPage() {
                     <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
                     <td className="py-3 px-3 text-center">
                       <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
-                        {b.porcentajeComision}%
+                        {b.porcentajeComision}% / {b.porcentajeComisionProducto || 0}%
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
