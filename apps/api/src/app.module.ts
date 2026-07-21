@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -21,6 +21,8 @@ import { CajaModule } from './caja/caja.module';
 
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
+import { AuditModule } from './audit/audit.module';
+import { KillSwitchGuard } from './common/guards/kill-switch.guard';
 
 @Module({
   imports: [
@@ -40,6 +42,7 @@ import { QueueModule } from './queue/queue.module';
       inject: [ConfigService],
     }),
     DatabaseModule,
+    AuditModule,
     AuthModule,
     UsuariosModule,
     ServiciosModule,
@@ -58,6 +61,10 @@ import { QueueModule } from './queue/queue.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: KillSwitchGuard,
     },
     {
       provide: APP_GUARD,

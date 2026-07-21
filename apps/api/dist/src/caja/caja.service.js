@@ -5,6 +5,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CajaService = void 0;
 const common_1 = require("@nestjs/common");
@@ -12,7 +15,12 @@ const tenant_context_1 = require("../database/tenant/tenant-context");
 const schema_1 = require("../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const date_fns_1 = require("date-fns");
+const audit_service_1 = require("../audit/audit.service");
 let CajaService = class CajaService {
+    auditService;
+    constructor(auditService) {
+        this.auditService = auditService;
+    }
     async getBalanceDelDia() {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
@@ -35,12 +43,12 @@ let CajaService = class CajaService {
             cantidadTransaccionesEfectivo: txsDelDia.length
         };
     }
-    async cerrarCaja(usuarioId, dto) {
+    async cerrarCaja(usuarioId, dto, ipOrigen, userAgent) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         const hoy = new Date();
         const balance = await this.getBalanceDelDia();
-        let estado = 'cuadra';
+        let estado = 'cuadrado';
         const diferencia = dto.efectivoDeclarado - balance.efectivoEsperado;
         if (diferencia > 0)
             estado = 'sobrante';
@@ -55,11 +63,25 @@ let CajaService = class CajaService {
             estado,
             notasAdmin: dto.notasAdmin
         }).returning();
+        if (estado !== 'cuadrado') {
+            await this.auditService.logAction({
+                tenantId,
+                usuarioId,
+                tablaAfectada: 'cierres_de_caja',
+                registroId: nuevoCierre.id,
+                accion: 'cierre_emergencia',
+                payloadAntes: { esperado: balance.efectivoEsperado },
+                payloadDespues: { declarado: dto.efectivoDeclarado, diferencia },
+                ipOrigen,
+                userAgent
+            });
+        }
         return nuevoCierre;
     }
 };
 exports.CajaService = CajaService;
 exports.CajaService = CajaService = __decorate([
-    (0, common_1.Injectable)()
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [audit_service_1.AuditService])
 ], CajaService);
 //# sourceMappingURL=caja.service.js.map

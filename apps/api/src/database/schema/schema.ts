@@ -61,6 +61,7 @@ export const barberias = pgTable('barberias', {
   planSuscripcion: planSuscripcionEnum('plan_suscripcion').notNull().default('basico'),
   estado: estadoBarberiaEnum('estado').notNull().default('activo'),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
+  killSwitchActivo: boolean('kill_switch_activo').notNull().default(false),
   colorPrimario: varchar('color_primario', { length: 7 }),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

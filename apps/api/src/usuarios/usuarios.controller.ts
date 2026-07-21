@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Param } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Param, Ip, Headers } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
@@ -14,6 +14,17 @@ export class UsuariosController {
   @Post('invite')
   inviteStaff(@Body() dto: InviteStaffDto, @Req() req: any) {
     return this.usuariosService.inviteStaff(dto, req.user.tenantId);
+  }
+
+  @Roles('admin')
+  @Post('configuracion/kill-switch')
+  toggleKillSwitch(
+    @Req() req: any,
+    @Body('activo') activo: boolean,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.usuariosService.toggleKillSwitch(req.user.tenantId, req.user.userId, activo, ip, userAgent);
   }
 
   @Public()

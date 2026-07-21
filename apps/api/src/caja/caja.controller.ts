@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, UseGuards, UseInterceptors, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, UseGuards, UseInterceptors, Request, Ip, Headers } from '@nestjs/common';
 import { CajaService } from './caja.service';
 import { CerrarCajaDto } from './dto/cerrar-caja.dto';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -20,9 +20,14 @@ export class CajaController {
 
   @Post('cerrar')
   @Roles('admin') // Normalmente solo admin puede cerrar caja
-  async cerrarCaja(@Request() req: any, @Body() dto: CerrarCajaDto) {
+  async cerrarCaja(
+    @Request() req: any, 
+    @Body() dto: CerrarCajaDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string
+  ) {
     const usuarioId = req.user.userId; // el id del usuario desde el JWT
-    return this.cajaService.cerrarCaja(usuarioId, dto);
+    return this.cajaService.cerrarCaja(usuarioId, dto, ip, userAgent);
   }
 }
 

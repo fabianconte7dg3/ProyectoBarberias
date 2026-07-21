@@ -8,11 +8,13 @@ import * as bcrypt from 'bcrypt';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
 import { TenantContext } from '../database/tenant/tenant-context';
+import { AuditService } from '../audit/audit.service';
 
 @Injectable()
 export class UsuariosService {
   constructor(
     @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
+    private readonly auditService: AuditService,
   ) {}
 
   async inviteStaff(dto: InviteStaffDto, tenantId: string) {
@@ -34,6 +36,46 @@ export class UsuariosService {
     return {
       message: 'Invitación generada con éxito.',
       activationToken: nuevoUsuario.token,
+    };
+  }
+
+  async toggleKillSwitch(tenantId: string, adminId: string, activo: boolean, ipOrigen?: string, userAgent?: string) {
+    // El tenantId del admin que ejecuta esto ya está forzado por el interceptor RLS.
+    // Solo permitimos modificar el propio tenant.
+    const txDb = TenantContext.getDb();
+    
+    // Obtenemos el estado anterior
+    const [barberiaActual] = await txDb.select({ killSwitchActivo: schema.barberias.killSwitchActivo })
+      .from(schema.barberias)
+      .where(eq(schema.barberias.id, tenantId));
+
+    if (!barberiaActual) {
+      throw new NotFoundException('Barbería no encontrada.');
+    }
+
+    if (barberiaActual.killSwitchActivo === activo) {
+      return { message: `El Kill Switch ya se encuentra ${activo ? 'activado' : 'desactivado'}.` };
+    }
+
+    await txDb.update(schema.barberias)
+      .set({ killSwitchActivo: activo })
+      .where(eq(schema.barberias.id, tenantId));
+
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId: adminId,
+      tablaAfectada: 'barberias',
+      registroId: tenantId,
+      accion: 'kill_switch',
+      payloadAntes: { killSwitchActivo: barberiaActual.killSwitchActivo },
+      payloadDespues: { killSwitchActivo: activo },
+      ipOrigen,
+      userAgent
+    });
+
+    return {
+      message: `El Kill Switch ha sido ${activo ? 'ACTIVADO. Todas las mutaciones están bloqueadas.' : 'DESACTIVADO. Sistema operando normalmente.'}`,
+      killSwitchActivo: activo
     };
   }
 

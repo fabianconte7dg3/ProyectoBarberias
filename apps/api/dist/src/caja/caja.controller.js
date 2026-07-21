@@ -28,9 +28,9 @@ let CajaController = class CajaController {
     async getBalance() {
         return this.cajaService.getBalanceDelDia();
     }
-    async cerrarCaja(req, dto) {
+    async cerrarCaja(req, dto, ip, userAgent) {
         const usuarioId = req.user.userId;
-        return this.cajaService.cerrarCaja(usuarioId, dto);
+        return this.cajaService.cerrarCaja(usuarioId, dto, ip, userAgent);
     }
 };
 exports.CajaController = CajaController;
@@ -46,8 +46,10 @@ __decorate([
     (0, roles_decorator_1.Roles)('admin'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Ip)()),
+    __param(3, (0, common_1.Headers)('user-agent')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, cerrar_caja_dto_1.CerrarCajaDto]),
+    __metadata("design:paramtypes", [Object, cerrar_caja_dto_1.CerrarCajaDto, String, String]),
     __metadata("design:returntype", Promise)
 ], CajaController.prototype, "cerrarCaja", null);
 exports.CajaController = CajaController = __decorate([

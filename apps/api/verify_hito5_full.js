@@ -87,15 +87,9 @@ async function main() {
     const adminToken = loginRes.data.accessToken;
     const adminId = JSON.parse(Buffer.from(adminToken.split('.')[1], 'base64').toString()).sub;
     
-    const bBarbero = await request('POST', '/usuarios/invite', { nombreCompleto: "Barbero 5", rol: "barbero", porcentajeComision: 50 }, adminToken);
-    console.log('bBarbero:', bBarbero);
-    const activarRes = await request('POST', '/usuarios/activar', { token: bBarbero.data.activationToken, pin: "1234" });
-    console.log('activarRes:', activarRes);
+    const bBarbero = await request('POST', '/usuarios/invite', { nombreCompleto: "Barbero 5", rol: "barbero" }, adminToken);
+    await request('POST', '/usuarios/activar', { token: bBarbero.data.activationToken, pin: "1234" });
     const loginBarbero = await request('POST', '/auth/login/staff', { slug: `hito5-${rand}`, pin: "1234" });
-    console.log('loginBarbero result:', loginBarbero);
-    if (!loginBarbero.data?.accessToken) {
-      console.log('Fallo en login de staff:', loginBarbero);
-    }
     const barberoId = JSON.parse(Buffer.from(loginBarbero.data.accessToken.split('.')[1], 'base64').toString()).sub;
     
     // Set 50% commission

@@ -46,13 +46,13 @@ Cobros inmutables y cierres ciegos.
 ## Hito 6: Asincronía y WhatsApp (BullMQ + Evolution API)
 Liberar el hilo principal y enviar notificaciones.
 
-- `[ ]` **QueueModule:** Configurar workers de BullMQ y conectarlos a Redis.
-- `[ ]` **WhatsappModule:** Configurar la conexión con Evolution API y exponer webhook para mensajes entrantes (bot).
-- `[ ]` Crear *Jobs* programados: Enviar recordatorio 24 horas antes de la cita.
-- `[ ]` Crear *Jobs* programados: Cancelación automática si pasan 15 min de retraso.
+- `[x]` **QueueModule:** Configurar workers de BullMQ y conectarlos a Redis.
+- `[x]` **WhatsappModule:** Configurar la conexión con Evolution API y exponer webhook para mensajes entrantes (bot).
+- `[x]` Crear *Jobs* programados: Enviar recordatorio 24 horas antes de la cita.
+- `[x]` Crear *Jobs* programados: Cancelación automática si pasan 15 min de retraso.
 
 ## Hito 7: Auditoría y Seguridad Final
-Blindar las finanzas.
+Blindar las finanzas y crear logs.
 
 - `[ ]` Asegurar que todos los intentos de alteración financiera se graben en `audit_logs` usando el `accionAuditEnum`.
 - `[ ]` Probar el "Kill Switch" temporal (para frenar operaciones en caso de emergencia).
@@ -61,4 +61,4 @@ Blindar las finanzas.
 
 > [!NOTE]
 > **Siguiente Acción Sugerida:**
-> Iniciar el **Hito 1 (Finalización)** creando el `docker-compose.yml` para levantar PostgreSQL y Redis y aplicar las migraciones. ¿Estás de acuerdo?
+> Iniciar el **Hito 7**, que comprende la capa final de seguridad: Auditoría financiera inmutable (`audit_logs`) y el sistema de emergencia "Kill Switch". ¿Quieres que prepare el plan de implementación para este hito?

@@ -8,8 +8,8 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppModule = void 0;
 const common_1 = require("@nestjs/common");
-const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
+const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const app_controller_1 = require("./app.controller");
 const app_service_1 = require("./app.service");
@@ -29,6 +29,8 @@ const dgi_module_1 = require("./dgi/dgi.module");
 const caja_module_1 = require("./caja/caja.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const queue_module_1 = require("./queue/queue.module");
+const audit_module_1 = require("./audit/audit.module");
+const kill_switch_guard_1 = require("./common/guards/kill-switch.guard");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -51,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
                 inject: [config_1.ConfigService],
             }),
             database_module_1.DatabaseModule,
+            audit_module_1.AuditModule,
             auth_module_1.AuthModule,
             usuarios_module_1.UsuariosModule,
             servicios_module_1.ServiciosModule,
@@ -69,6 +72,10 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: jwt_auth_guard_1.JwtAuthGuard,
+            },
+            {
+                provide: core_1.APP_GUARD,
+                useClass: kill_switch_guard_1.KillSwitchGuard,
             },
             {
                 provide: core_1.APP_GUARD,

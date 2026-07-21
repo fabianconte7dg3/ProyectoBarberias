@@ -53,10 +53,13 @@ const drizzle_orm_1 = require("drizzle-orm");
 const crypto = __importStar(require("crypto"));
 const bcrypt = __importStar(require("bcrypt"));
 const tenant_context_1 = require("../database/tenant/tenant-context");
+const audit_service_1 = require("../audit/audit.service");
 let UsuariosService = class UsuariosService {
     db;
-    constructor(db) {
+    auditService;
+    constructor(db, auditService) {
         this.db = db;
+        this.auditService = auditService;
     }
     async inviteStaff(dto, tenantId) {
         const token = crypto.randomBytes(32).toString('hex');
@@ -75,6 +78,36 @@ let UsuariosService = class UsuariosService {
         return {
             message: 'Invitación generada con éxito.',
             activationToken: nuevoUsuario.token,
+        };
+    }
+    async toggleKillSwitch(tenantId, adminId, activo, ipOrigen, userAgent) {
+        const txDb = tenant_context_1.TenantContext.getDb();
+        const [barberiaActual] = await txDb.select({ killSwitchActivo: schema.barberias.killSwitchActivo })
+            .from(schema.barberias)
+            .where((0, drizzle_orm_1.eq)(schema.barberias.id, tenantId));
+        if (!barberiaActual) {
+            throw new common_1.NotFoundException('Barbería no encontrada.');
+        }
+        if (barberiaActual.killSwitchActivo === activo) {
+            return { message: `El Kill Switch ya se encuentra ${activo ? 'activado' : 'desactivado'}.` };
+        }
+        await txDb.update(schema.barberias)
+            .set({ killSwitchActivo: activo })
+            .where((0, drizzle_orm_1.eq)(schema.barberias.id, tenantId));
+        await this.auditService.logAction({
+            tenantId,
+            usuarioId: adminId,
+            tablaAfectada: 'barberias',
+            registroId: tenantId,
+            accion: 'kill_switch',
+            payloadAntes: { killSwitchActivo: barberiaActual.killSwitchActivo },
+            payloadDespues: { killSwitchActivo: activo },
+            ipOrigen,
+            userAgent
+        });
+        return {
+            message: `El Kill Switch ha sido ${activo ? 'ACTIVADO. Todas las mutaciones están bloqueadas.' : 'DESACTIVADO. Sistema operando normalmente.'}`,
+            killSwitchActivo: activo
         };
     }
     async activateStaff(dto) {
@@ -119,6 +152,6 @@ exports.UsuariosService = UsuariosService;
 exports.UsuariosService = UsuariosService = __decorate([
     (0, common_1.Injectable)(),
     __param(0, (0, common_1.Inject)(database_constants_1.DRIZZLE_POOL_DB)),
-    __metadata("design:paramtypes", [Function])
+    __metadata("design:paramtypes", [Function, audit_service_1.AuditService])
 ], UsuariosService);
 //# sourceMappingURL=usuarios.service.js.map

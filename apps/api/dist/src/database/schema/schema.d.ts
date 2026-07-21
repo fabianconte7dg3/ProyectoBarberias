@@ -144,6 +144,23 @@ export declare const barberias: import("drizzle-orm/pg-core").PgTableWithColumns
         }, {}, {
             length: 255;
         }>;
+        killSwitchActivo: import("drizzle-orm/pg-core").PgColumn<{
+            name: "kill_switch_activo";
+            tableName: "barberias";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         colorPrimario: import("drizzle-orm/pg-core").PgColumn<{
             name: "color_primario";
             tableName: "barberias";

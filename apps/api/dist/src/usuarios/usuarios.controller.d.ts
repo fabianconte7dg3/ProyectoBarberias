@@ -8,6 +8,13 @@ export declare class UsuariosController {
         message: string;
         activationToken: any;
     }>;
+    toggleKillSwitch(req: any, activo: boolean, ip: string, userAgent: string): Promise<{
+        message: string;
+        killSwitchActivo?: undefined;
+    } | {
+        message: string;
+        killSwitchActivo: boolean;
+    }>;
     activateStaff(dto: ActivateStaffDto): Promise<{
         message: string;
     }>;

@@ -27,6 +27,9 @@ let UsuariosController = class UsuariosController {
     inviteStaff(dto, req) {
         return this.usuariosService.inviteStaff(dto, req.user.tenantId);
     }
+    toggleKillSwitch(req, activo, ip, userAgent) {
+        return this.usuariosService.toggleKillSwitch(req.user.tenantId, req.user.userId, activo, ip, userAgent);
+    }
     activateStaff(dto) {
         return this.usuariosService.activateStaff(dto);
     }
@@ -47,6 +50,17 @@ __decorate([
     __metadata("design:paramtypes", [invite_staff_dto_1.InviteStaffDto, Object]),
     __metadata("design:returntype", void 0)
 ], UsuariosController.prototype, "inviteStaff", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Post)('configuracion/kill-switch'),
+    __param(0, (0, common_1.Req)()),
+    __param(1, (0, common_1.Body)('activo')),
+    __param(2, (0, common_1.Ip)()),
+    __param(3, (0, common_1.Headers)('user-agent')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Boolean, String, String]),
+    __metadata("design:returntype", void 0)
+], UsuariosController.prototype, "toggleKillSwitch", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Post)('activar'),

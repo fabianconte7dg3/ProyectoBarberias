@@ -8,5 +8,5 @@ export declare class CajaController {
         efectivoEsperado: number;
         cantidadTransaccionesEfectivo: any;
     }>;
-    cerrarCaja(req: any, dto: CerrarCajaDto): Promise<any>;
+    cerrarCaja(req: any, dto: CerrarCajaDto, ip: string, userAgent: string): Promise<any>;
 }

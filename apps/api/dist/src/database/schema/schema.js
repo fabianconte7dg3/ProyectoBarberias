@@ -40,6 +40,7 @@ exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     planSuscripcion: (0, exports.planSuscripcionEnum)('plan_suscripcion').notNull().default('basico'),
     estado: (0, exports.estadoBarberiaEnum)('estado').notNull().default('activo'),
     slug: (0, pg_core_1.varchar)('slug', { length: 255 }).notNull().unique(),
+    killSwitchActivo: (0, pg_core_1.boolean)('kill_switch_activo').notNull().default(false),
     colorPrimario: (0, pg_core_1.varchar)('color_primario', { length: 7 }),
     logoUrl: (0, pg_core_1.text)('logo_url'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
