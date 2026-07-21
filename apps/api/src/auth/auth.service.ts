@@ -38,7 +38,7 @@ export class AuthService {
 
     await this.db.transaction(async (tx) => {
       // Solución al problema del huevo y la gallina con el RLS
-      await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+      await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
 
       await tx.insert(schema.barberias).values({
         id: tenantId,

@@ -75,7 +75,7 @@ let AuthService = class AuthService {
         const adminId = crypto.randomUUID();
         const hashedPassword = await bcrypt.hash(dto.adminPassword, 10);
         await this.db.transaction(async (tx) => {
-            await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+            await tx.execute((0, drizzle_orm_1.sql) `SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
             await tx.insert(schema.barberias).values({
                 id: tenantId,
                 nombreComercial: dto.nombreComercial,

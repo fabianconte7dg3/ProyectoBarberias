@@ -38,14 +38,15 @@ let TenantInterceptor = class TenantInterceptor {
         }
         const request = context.switchToHttp().getRequest();
         const tenantId = request.user?.tenantId;
-        if (!tenantId) {
-            throw new common_1.UnauthorizedException('No se pudo resolver el tenant activo para esta request.');
+        const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        if (!tenantId || !UUID_REGEX.test(tenantId)) {
+            throw new common_1.UnauthorizedException('Tenant ID inválido o malformado.');
         }
         return (0, rxjs_1.from)(new Promise((resolve, reject) => {
             this.db
                 .transaction(async (tx) => {
-                await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL ROLE app_user`));
-                await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+                await tx.execute((0, drizzle_orm_1.sql) `SET LOCAL ROLE app_user`);
+                await tx.execute((0, drizzle_orm_1.sql) `SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
                 const result = await tenant_context_1.TenantContext.run({ tenantId, db: tx }, () => firstValueFromObservable(next.handle()));
                 return result;
             })

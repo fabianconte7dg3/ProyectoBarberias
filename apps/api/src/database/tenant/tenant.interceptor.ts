@@ -35,16 +35,18 @@ export class TenantInterceptor implements NestInterceptor {
     const request = context.switchToHttp().getRequest();
     const tenantId: string | undefined = request.user?.tenantId;
 
-    if (!tenantId) {
-      throw new UnauthorizedException('No se pudo resolver el tenant activo para esta request.');
+    const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+    if (!tenantId || !UUID_REGEX.test(tenantId)) {
+      throw new UnauthorizedException('Tenant ID inválido o malformado.');
     }
 
     return from(
       new Promise((resolve, reject) => {
         this.db
           .transaction(async (tx) => {
-            await tx.execute(sql.raw(`SET LOCAL ROLE app_user`));
-            await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${tenantId}'`));
+            await tx.execute(sql`SET LOCAL ROLE app_user`);
+            await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${tenantId}, true)`);
 
             const result = await TenantContext.run({ tenantId, db: tx }, () =>
               firstValueFromObservable(next.handle()),

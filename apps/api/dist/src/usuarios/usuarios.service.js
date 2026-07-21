@@ -121,7 +121,7 @@ let UsuariosService = class UsuariosService {
         }
         const hashedPin = await bcrypt.hash(dto.pin, 10);
         await this.db.transaction(async (tx) => {
-            await tx.execute(drizzle_orm_1.sql.raw(`SET LOCAL app.current_tenant_id = '${usuario.tenantId}'`));
+            await tx.execute((0, drizzle_orm_1.sql) `SELECT set_config('app.current_tenant_id', ${usuario.tenantId}, true)`);
             await tx.update(schema.usuarios)
                 .set({
                 pinAcceso: hashedPin,

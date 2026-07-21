@@ -98,7 +98,7 @@ export class UsuariosService {
     // En este caso, haremos el update directamente, pero debemos asegurar que el RLS lo permita,
     // o hacer el update abriendo una transacción con el tenantId del usuario encontrado.
     await this.db.transaction(async (tx) => {
-      await tx.execute(sql.raw(`SET LOCAL app.current_tenant_id = '${usuario.tenantId}'`));
+      await tx.execute(sql`SELECT set_config('app.current_tenant_id', ${usuario.tenantId}, true)`);
       
       await tx.update(schema.usuarios)
         .set({
