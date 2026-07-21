@@ -27,6 +27,7 @@ const transacciones_module_1 = require("./transacciones/transacciones.module");
 const yappy_module_1 = require("./yappy/yappy.module");
 const dgi_module_1 = require("./dgi/dgi.module");
 const caja_module_1 = require("./caja/caja.module");
+const reportes_module_1 = require("./reportes/reportes.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const queue_module_1 = require("./queue/queue.module");
 const audit_module_1 = require("./audit/audit.module");
@@ -64,6 +65,7 @@ exports.AppModule = AppModule = __decorate([
             yappy_module_1.YappyModule,
             dgi_module_1.DgiModule,
             caja_module_1.CajaModule,
+            reportes_module_1.ReportesModule,
             queue_module_1.QueueModule,
         ],
         controllers: [app_controller_1.AppController],

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const usuarios_service_1 = require("./usuarios.service");
 const invite_staff_dto_1 = require("./dto/invite-staff.dto");
 const activate_staff_dto_1 = require("./dto/activate-staff.dto");
+const update_comision_dto_1 = require("./dto/update-comision.dto");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 let UsuariosController = class UsuariosController {
@@ -32,6 +33,9 @@ let UsuariosController = class UsuariosController {
     }
     activateStaff(dto) {
         return this.usuariosService.activateStaff(dto);
+    }
+    updateComision(id, dto, req, ip, userAgent) {
+        return this.usuariosService.updateComision(id, dto.porcentajeComision, req.user.userId, ip, userAgent);
     }
     findAll() {
         return this.usuariosService.findAll();
@@ -69,6 +73,18 @@ __decorate([
     __metadata("design:paramtypes", [activate_staff_dto_1.ActivateStaffDto]),
     __metadata("design:returntype", void 0)
 ], UsuariosController.prototype, "activateStaff", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin'),
+    (0, common_1.Patch)(':id/comision'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __param(3, (0, common_1.Ip)()),
+    __param(4, (0, common_1.Headers)('user-agent')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, update_comision_dto_1.UpdateComisionDto, Object, String, String]),
+    __metadata("design:returntype", void 0)
+], UsuariosController.prototype, "updateComision", null);
 __decorate([
     (0, roles_decorator_1.Roles)('admin', 'barbero', 'recepcion'),
     (0, common_1.Get)(),

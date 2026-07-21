@@ -110,6 +110,32 @@ let UsuariosService = class UsuariosService {
             killSwitchActivo: activo
         };
     }
+    async updateComision(usuarioId, porcentaje, adminId, ipOrigen, userAgent) {
+        const txDb = tenant_context_1.TenantContext.getDb();
+        const tenantId = tenant_context_1.TenantContext.getTenantId();
+        const [usuarioActual] = await txDb.select()
+            .from(schema.usuarios)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.id, usuarioId), (0, drizzle_orm_1.eq)(schema.usuarios.tenantId, tenantId)));
+        if (!usuarioActual) {
+            throw new common_1.NotFoundException('Usuario no encontrado.');
+        }
+        const anteriorComision = usuarioActual.porcentajeComision;
+        await txDb.update(schema.usuarios)
+            .set({ porcentajeComision: porcentaje.toString() })
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.id, usuarioId), (0, drizzle_orm_1.eq)(schema.usuarios.tenantId, tenantId)));
+        await this.auditService.logAction({
+            tenantId,
+            usuarioId: adminId,
+            tablaAfectada: 'usuarios',
+            registroId: usuarioId,
+            accion: 'cambio_comision',
+            payloadAntes: { porcentajeComision: anteriorComision },
+            payloadDespues: { porcentajeComision: porcentaje.toString() },
+            ipOrigen,
+            userAgent
+        });
+        return { success: true, porcentajeComision: porcentaje };
+    }
     async activateStaff(dto) {
         const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, tenant_id as "tenantId", token_expira_en as "tokenExpiraEn" FROM auth_get_user_by_token(${dto.token})`);
         const usuario = result.rows[0];

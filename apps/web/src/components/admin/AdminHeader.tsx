@@ -1,4 +1,4 @@
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, UserCheck, Lock } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, UserCheck, Lock, TrendingUp, Settings } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter } from 'next/navigation';
 import { es } from 'date-fns/locale';
@@ -82,16 +82,37 @@ export function AdminHeader({
         )}
       </div>
 
-      {/* 3. Acciones (Cierre de Caja + Nueva Cita + Logout) */}
-      <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+      {/* 3. Acciones (Navegación Admin + Nueva Cita + Logout) */}
+      <div className="flex items-center gap-2 w-full md:w-auto justify-end">
         {userRole === 'admin' && (
-          <button
-            onClick={() => router.push(`/${tenantSlug}/admin/caja`)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-600/20 font-semibold rounded-xl transition-all border border-emerald-500/20 text-xs"
-          >
-            <Lock size={16} />
-            <span>Arqueo de Caja</span>
-          </button>
+          <>
+            <button
+              onClick={() => router.push(`/${tenantSlug}/admin/dashboard`)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
+              title="Analítica Ejecutiva"
+            >
+              <TrendingUp size={16} className="text-emerald-500" />
+              <span>Métricas</span>
+            </button>
+
+            <button
+              onClick={() => router.push(`/${tenantSlug}/admin/caja`)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
+              title="Arqueo de Caja"
+            >
+              <Lock size={16} className="text-emerald-500" />
+              <span>Caja</span>
+            </button>
+
+            <button
+              onClick={() => router.push(`/${tenantSlug}/admin/configuracion`)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
+              title="Configuración del Local"
+            >
+              <Settings size={16} className="text-primary" />
+              <span>Configuración</span>
+            </button>
+          </>
         )}
 
         <button

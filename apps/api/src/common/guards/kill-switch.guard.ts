@@ -19,6 +19,11 @@ export class KillSwitchGuard implements CanActivate {
       return true;
     }
 
+    // Los administradores NUNCA quedan bloqueados por el Kill Switch
+    if (request.user?.rol === 'admin') {
+      return true;
+    }
+
     // Excluir el endpoint que desactiva el kill switch!
     const route = request.route?.path;
     if (route && route.includes('/configuracion/kill-switch')) {

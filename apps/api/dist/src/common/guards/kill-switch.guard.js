@@ -63,6 +63,9 @@ let KillSwitchGuard = class KillSwitchGuard {
         if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
             return true;
         }
+        if (request.user?.rol === 'admin') {
+            return true;
+        }
         const route = request.route?.path;
         if (route && route.includes('/configuracion/kill-switch')) {
             return true;

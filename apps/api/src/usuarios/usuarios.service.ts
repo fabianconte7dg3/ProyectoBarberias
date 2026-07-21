@@ -79,6 +79,39 @@ export class UsuariosService {
     };
   }
 
+  async updateComision(usuarioId: string, porcentaje: number, adminId: string, ipOrigen?: string, userAgent?: string) {
+    const txDb = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    const [usuarioActual] = await txDb.select()
+      .from(schema.usuarios)
+      .where(and(eq(schema.usuarios.id, usuarioId), eq(schema.usuarios.tenantId, tenantId)));
+
+    if (!usuarioActual) {
+      throw new NotFoundException('Usuario no encontrado.');
+    }
+
+    const anteriorComision = usuarioActual.porcentajeComision;
+
+    await txDb.update(schema.usuarios)
+      .set({ porcentajeComision: porcentaje.toString() })
+      .where(and(eq(schema.usuarios.id, usuarioId), eq(schema.usuarios.tenantId, tenantId)));
+
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId: adminId,
+      tablaAfectada: 'usuarios',
+      registroId: usuarioId,
+      accion: 'cambio_comision',
+      payloadAntes: { porcentajeComision: anteriorComision },
+      payloadDespues: { porcentajeComision: porcentaje.toString() },
+      ipOrigen,
+      userAgent
+    });
+
+    return { success: true, porcentajeComision: porcentaje };
+  }
+
   async activateStaff(dto: ActivateStaffDto) {
     // Buscar globalmente por token (no requiere tenantId en el request, por eso puede ser Public)
     const result = await this.db.execute(sql`SELECT id, tenant_id as "tenantId", token_expira_en as "tokenExpiraEn" FROM auth_get_user_by_token(${dto.token})`);

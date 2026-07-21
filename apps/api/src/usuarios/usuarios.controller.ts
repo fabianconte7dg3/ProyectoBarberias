@@ -1,7 +1,8 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Param, Ip, Headers } from '@nestjs/common';
+import { Controller, Post, Patch, Body, UseGuards, Req, Get, Param, Ip, Headers } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
+import { UpdateComisionDto } from './dto/update-comision.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -31,6 +32,18 @@ export class UsuariosController {
   @Post('activar')
   activateStaff(@Body() dto: ActivateStaffDto) {
     return this.usuariosService.activateStaff(dto);
+  }
+
+  @Roles('admin')
+  @Patch(':id/comision')
+  updateComision(
+    @Param('id') id: string,
+    @Body() dto: UpdateComisionDto,
+    @Req() req: any,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.usuariosService.updateComision(id, dto.porcentajeComision, req.user.userId, ip, userAgent);
   }
 
   @Roles('admin', 'barbero', 'recepcion')

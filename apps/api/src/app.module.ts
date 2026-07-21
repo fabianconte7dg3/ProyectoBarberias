@@ -18,6 +18,7 @@ import { TransaccionesModule } from './transacciones/transacciones.module';
 import { YappyModule } from './yappy/yappy.module';
 import { DgiModule } from './dgi/dgi.module';
 import { CajaModule } from './caja/caja.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
@@ -53,6 +54,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     YappyModule,
     DgiModule,
     CajaModule,
+    ReportesModule,
     QueueModule,
   ],
   controllers: [AppController],
