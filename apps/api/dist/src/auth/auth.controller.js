@@ -19,6 +19,7 @@ const register_barberia_dto_1 = require("./dto/register-barberia.dto");
 const login_admin_dto_1 = require("./dto/login-admin.dto");
 const login_staff_dto_1 = require("./dto/login-staff.dto");
 const public_decorator_1 = require("../common/decorators/public.decorator");
+const roles_decorator_1 = require("../common/decorators/roles.decorator");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -101,6 +102,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginStaff", null);
 __decorate([
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Get)('me'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),

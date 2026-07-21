@@ -4,6 +4,7 @@ import { RegisterBarberiaDto } from './dto/register-barberia.dto';
 import { LoginAdminDto } from './dto/login-admin.dto';
 import { LoginStaffDto } from './dto/login-staff.dto';
 import { Public } from '../common/decorators/public.decorator';
+import { Roles } from '../common/decorators/roles.decorator';
 import type { Response, Request } from 'express';
 
 @Controller('auth')
@@ -61,7 +62,8 @@ export class AuthController {
     };
   }
 
-  // Requiere token válido (via cookie o header) para responder
+  // Requiere token válido (via cookie o header) y cualquier rol de staff para responder
+  @Roles('admin', 'recepcion', 'barbero')
   @Get('me')
   getMe(@Req() req: Request) {
     // req.user lo inyecta JwtStrategy si el token es válido
