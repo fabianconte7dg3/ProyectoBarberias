@@ -49,6 +49,12 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **UI Numpad & Teclado Físico:** Selector de perfiles estilo Netflix + Numpad táctil de 4 dígitos con soporte para teclado de PC y animación de error (*shake*).
 * **Gestión de Sesión & Logout:** Endpoint `POST /auth/logout` para limpiar la cookie en dispositivos compartidos y validación previa `GET /auth/me` al cargar la app.
 
+### Hito 9: Productos Retail, Sub-Dashboards Recharts, Módulo de Barberos & Historial de Ausencias del Staff
+* **Venta de Productos Retail e Inventario Atómico:** Catálogo `/admin/productos`, tabla `detalles_transaccion` append-only, descuento de stock con SQL atómico `stock_actual >= cantidad` e idempotencia por `idempotencyKey`.
+* **Sub-Dashboards Modulares por Pestañas & Gráficos Recharts:** `/admin/dashboard` dividido en 4 pestañas (*Finanzas*, *Ventas & Productos*, *Rendimiento Staff*, *Riesgos & CRM*) con gráficos de área (tendencia diaria) y donuts (métodos de pago).
+* **Módulo Dedicado de Gestión de Barberos (`/admin/barberos`):** Tarjetas de personal, edición rápida de comisiones duplas (`% Servicios` y `% Productos`), modal de invitación `InviteBarberoModal.tsx` con generador de link de activación.
+* **Historial de Ausencias y Vacaciones del Staff (`GET /horarios/bloqueos-historial`):** Tabla histórica en `/admin/configuracion` con trazabilidad de vacaciones y licencias clasificadas dinámicamente como `[PROGRAMADO]`, `[EN CURSO]` o `[PASADO]`.
+
 ---
 
 ## Flujos Principales de Negocio
