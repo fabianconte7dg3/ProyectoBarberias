@@ -2,7 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, clientes, servicios } from '../database/schema';
 import { and, eq, gte, lte, desc, sql, inArray } from 'drizzle-orm';
-import { startOfMonth, endOfDay, differenceInDays } from 'date-fns';
+import { startOfMonth, endOfDay, differenceInDays, subDays } from 'date-fns';
 
 @Injectable()
 export class ReportesService {
@@ -10,8 +10,8 @@ export class ReportesService {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
-    let desde = desdeStr ? new Date(desdeStr) : startOfMonth(new Date());
-    let hasta = hastaStr ? endOfDay(new Date(hastaStr)) : endOfDay(new Date());
+    let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : subDays(new Date(), 30);
+    let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : endOfDay(new Date());
 
     // Validar límite de 365 días para prevenir consultas pesadas no indexadas
     if (differenceInDays(hasta, desde) > 365) {

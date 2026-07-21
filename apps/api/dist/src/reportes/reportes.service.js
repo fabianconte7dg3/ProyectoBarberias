@@ -16,8 +16,8 @@ let ReportesService = class ReportesService {
     async getDashboardMetrics(desdeStr, hastaStr) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
-        let desde = desdeStr ? new Date(desdeStr) : (0, date_fns_1.startOfMonth)(new Date());
-        let hasta = hastaStr ? (0, date_fns_1.endOfDay)(new Date(hastaStr)) : (0, date_fns_1.endOfDay)(new Date());
+        let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : (0, date_fns_1.subDays)(new Date(), 30);
+        let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : (0, date_fns_1.endOfDay)(new Date());
         if ((0, date_fns_1.differenceInDays)(hasta, desde) > 365) {
             throw new common_1.BadRequestException('El rango de fechas no puede exceder los 365 días.');
         }

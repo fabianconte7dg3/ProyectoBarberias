@@ -6,9 +6,9 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, Filter
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subDays, startOfYear } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 
 interface RendimientoBarbero {
   barberoId: string;
@@ -40,7 +40,26 @@ interface DashboardData {
   clientesStrikes: ClienteStrike[];
 }
 
-type PeriodoPreset = 'mes_actual' | 'ultimos_30_dias' | 'hoy' | 'ano_actual' | 'personalizado';
+export type PeriodoPreset = 
+  | 'hoy' 
+  | 'ayer' 
+  | 'ultimos_7_dias' 
+  | 'ultimos_30_dias' 
+  | 'este_mes' 
+  | 'mes_anterior' 
+  | 'este_ano' 
+  | 'personalizado';
+
+const PRESETS_LABEL: Record<PeriodoPreset, string> = {
+  hoy: 'Hoy',
+  ayer: 'Ayer',
+  ultimos_7_dias: 'Últimos 7 días',
+  ultimos_30_dias: 'Últimos 30 días ⭐',
+  este_mes: 'Este mes',
+  mes_anterior: 'Mes anterior',
+  este_ano: 'Este año',
+  personalizado: 'Rango personalizado',
+};
 
 export default function AdminDashboardPage() {
   const params = useParams();
@@ -52,10 +71,11 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Filtros de Período
-  const [preset, setPreset] = useState<PeriodoPreset>('mes_actual');
-  const [fechaDesde, setFechaDesde] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
-  const [fechaHasta, setFechaHasta] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
+  // Filtro por defecto: Últimos 30 días ⭐
+  const today = new Date();
+  const [preset, setPreset] = useState<PeriodoPreset>('ultimos_30_dias');
+  const [fechaDesde, setFechaDesde] = useState(format(subDays(today, 30), 'yyyy-MM-dd'));
+  const [fechaHasta, setFechaHasta] = useState(format(today, 'yyyy-MM-dd'));
 
   useEffect(() => {
     if (!currentUser) {
@@ -85,25 +105,36 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Manejador de cambio de Preset
+  // Manejador exacto para cada uno de los 8 rangos de período
   const handlePresetChange = (newPreset: PeriodoPreset) => {
     setPreset(newPreset);
-    const today = new Date();
-    let d = format(today, 'yyyy-MM-dd');
-    let h = format(today, 'yyyy-MM-dd');
+    const now = new Date();
+    let d = format(now, 'yyyy-MM-dd');
+    let h = format(now, 'yyyy-MM-dd');
 
-    if (newPreset === 'mes_actual') {
-      d = format(startOfMonth(today), 'yyyy-MM-dd');
-      h = format(endOfMonth(today), 'yyyy-MM-dd');
+    if (newPreset === 'hoy') {
+      d = format(now, 'yyyy-MM-dd');
+      h = format(now, 'yyyy-MM-dd');
+    } else if (newPreset === 'ayer') {
+      const ayer = subDays(now, 1);
+      d = format(ayer, 'yyyy-MM-dd');
+      h = format(ayer, 'yyyy-MM-dd');
+    } else if (newPreset === 'ultimos_7_dias') {
+      d = format(subDays(now, 7), 'yyyy-MM-dd');
+      h = format(now, 'yyyy-MM-dd');
     } else if (newPreset === 'ultimos_30_dias') {
-      d = format(subDays(today, 30), 'yyyy-MM-dd');
-      h = format(today, 'yyyy-MM-dd');
-    } else if (newPreset === 'hoy') {
-      d = format(today, 'yyyy-MM-dd');
-      h = format(today, 'yyyy-MM-dd');
-    } else if (newPreset === 'ano_actual') {
-      d = format(startOfYear(today), 'yyyy-MM-dd');
-      h = format(today, 'yyyy-MM-dd');
+      d = format(subDays(now, 30), 'yyyy-MM-dd');
+      h = format(now, 'yyyy-MM-dd');
+    } else if (newPreset === 'este_mes') {
+      d = format(startOfMonth(now), 'yyyy-MM-dd');
+      h = format(endOfMonth(now), 'yyyy-MM-dd');
+    } else if (newPreset === 'mes_anterior') {
+      const prevMonth = subMonths(now, 1);
+      d = format(startOfMonth(prevMonth), 'yyyy-MM-dd');
+      h = format(endOfMonth(prevMonth), 'yyyy-MM-dd');
+    } else if (newPreset === 'este_ano') {
+      d = format(startOfYear(now), 'yyyy-MM-dd');
+      h = format(now, 'yyyy-MM-dd');
     }
 
     if (newPreset !== 'personalizado') {
@@ -156,41 +187,25 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Control de Filtro de Período */}
-        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-          <div className="flex items-center gap-1 bg-secondary/60 p-1 rounded-xl border border-border text-xs font-semibold">
-            <button
-              onClick={() => handlePresetChange('mes_actual')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                preset === 'mes_actual' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
-              }`}
+        {/* Control de Seleccionar Período de 8 Opciones */}
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+          
+          <div className="flex items-center gap-2 bg-secondary/80 px-3 py-1.5 rounded-xl border border-border">
+            <Calendar size={16} className="text-primary" />
+            <select
+              value={preset}
+              onChange={(e) => handlePresetChange(e.target.value as PeriodoPreset)}
+              className="bg-transparent text-xs font-extrabold text-foreground border-0 focus:outline-hidden cursor-pointer"
             >
-              Este Mes
-            </button>
-            <button
-              onClick={() => handlePresetChange('ultimos_30_dias')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                preset === 'ultimos_30_dias' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Últimos 30 Días
-            </button>
-            <button
-              onClick={() => handlePresetChange('hoy')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                preset === 'hoy' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Hoy
-            </button>
-            <button
-              onClick={() => handlePresetChange('personalizado')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                preset === 'personalizado' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              Personalizado
-            </button>
+              <option value="hoy">Hoy</option>
+              <option value="ayer">Ayer</option>
+              <option value="ultimos_7_dias">Últimos 7 días</option>
+              <option value="ultimos_30_dias">Últimos 30 días ⭐</option>
+              <option value="este_mes">Este mes</option>
+              <option value="mes_anterior">Mes anterior</option>
+              <option value="este_ano">Este año</option>
+              <option value="personalizado">Rango personalizado</option>
+            </select>
           </div>
 
           <button
@@ -208,7 +223,7 @@ export default function AdminDashboardPage() {
         
         {/* Selector de Rango Personalizado */}
         {preset === 'personalizado' && (
-          <form onSubmit={handleCustomDateApply} className="bg-card border border-border p-4 rounded-2xl flex flex-wrap items-center gap-3 shadow-xs">
+          <form onSubmit={handleCustomDateApply} className="bg-card border border-border p-4 rounded-2xl flex flex-wrap items-center gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
             <div className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
               <Calendar size={16} className="text-primary" />
               <span>Seleccionar Rango de Fechas</span>
@@ -263,8 +278,8 @@ export default function AdminDashboardPage() {
             <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
               ${(data?.ingresosTotales || 0).toFixed(2)}
             </div>
-            <span className="text-[11px] text-muted-foreground block pt-1">
-              {fechaDesde} al {fechaHasta}
+            <span className="text-[11px] font-semibold text-muted-foreground block pt-1">
+              Filtro: {PRESETS_LABEL[preset]} ({fechaDesde} a {fechaHasta})
             </span>
           </div>
 
@@ -340,7 +355,7 @@ export default function AdminDashboardPage() {
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
           <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
             <Award size={18} className="text-emerald-500" />
-            <span>Rendimiento & Cálculo Neto de Comisiones</span>
+            <span>Rendimiento & Cálculo Neto de Comisiones ({PRESETS_LABEL[preset]})</span>
           </h2>
 
           <div className="overflow-x-auto">
