@@ -18,9 +18,10 @@ export declare class UsuariosService {
         message: string;
         killSwitchActivo: boolean;
     }>;
-    updateComision(usuarioId: string, porcentaje: number, adminId: string, ipOrigen?: string, userAgent?: string): Promise<{
+    updateComision(usuarioId: string, porcentaje: number, porcentajeProducto?: number, adminId?: string, ipOrigen?: string, userAgent?: string): Promise<{
         success: boolean;
         porcentajeComision: number;
+        porcentajeComisionProducto: number | undefined;
     }>;
     activateStaff(dto: ActivateStaffDto): Promise<{
         message: string;

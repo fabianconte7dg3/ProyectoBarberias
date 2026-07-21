@@ -13,6 +13,7 @@ exports.UpdateComisionDto = void 0;
 const class_validator_1 = require("class-validator");
 class UpdateComisionDto {
     porcentajeComision;
+    porcentajeComisionProducto;
 }
 exports.UpdateComisionDto = UpdateComisionDto;
 __decorate([
@@ -21,4 +22,11 @@ __decorate([
     (0, class_validator_1.Max)(100, { message: 'El porcentaje de comisión no puede ser mayor a 100%.' }),
     __metadata("design:type", Number)
 ], UpdateComisionDto.prototype, "porcentajeComision", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsNumber)({}, { message: 'El porcentaje de comisión de productos debe ser un número válido.' }),
+    (0, class_validator_1.Min)(0, { message: 'El porcentaje de comisión de productos no puede ser menor a 0%.' }),
+    (0, class_validator_1.Max)(100, { message: 'El porcentaje de comisión de productos no puede ser mayor a 100%.' }),
+    __metadata("design:type", Number)
+], UpdateComisionDto.prototype, "porcentajeComisionProducto", void 0);
 //# sourceMappingURL=update-comision.dto.js.map

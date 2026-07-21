@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X
 } from 'lucide-react';
 
 interface Servicio {
@@ -23,6 +23,7 @@ interface UsuarioStaff {
   email?: string;
   rol: 'admin' | 'barbero' | 'recepcion';
   porcentajeComision?: string;
+  porcentajeComisionProducto?: string;
   activo: boolean;
 }
 
@@ -48,9 +49,10 @@ export default function AdminConfiguracionPage() {
   const [nuevaDuracion, setNuevaDuracion] = useState('30');
   const [nuevoPrecio, setNuevoPrecio] = useState('15.00');
 
-  // Formulario comisión
+  // Formulario comisiones (Servicios & Productos)
   const [editingComisionUserId, setEditingComisionUserId] = useState<string | null>(null);
   const [comisionInput, setComisionInput] = useState<string>('');
+  const [comisionProductoInput, setComisionProductoInput] = useState<string>('0');
 
   useEffect(() => {
     if (!currentUser) {
@@ -127,11 +129,18 @@ export default function AdminConfiguracionPage() {
     }
   };
 
-  // 3. Actualizar comisión de un barbero
+  // 3. Actualizar comisiones (Servicios & Productos) de un barbero
   const handleSaveComision = async (usuarioId: string) => {
-    const val = parseFloat(comisionInput);
-    if (isNaN(val) || val < 0 || val > 100) {
-      setError('El porcentaje de comisión debe estar entre 0% y 100%.');
+    const valServicio = parseFloat(comisionInput);
+    const valProducto = parseFloat(comisionProductoInput || '0');
+
+    if (isNaN(valServicio) || valServicio < 0 || valServicio > 100) {
+      setError('El porcentaje de comisión de servicios debe estar entre 0% y 100%.');
+      return;
+    }
+
+    if (isNaN(valProducto) || valProducto < 0 || valProducto > 100) {
+      setError('El porcentaje de comisión de productos debe estar entre 0% y 100%.');
       return;
     }
 
@@ -142,10 +151,13 @@ export default function AdminConfiguracionPage() {
     try {
       await fetchApi(`/usuarios/${usuarioId}/comision`, {
         method: 'PATCH',
-        body: JSON.stringify({ porcentajeComision: val }),
+        body: JSON.stringify({
+          porcentajeComision: valServicio,
+          porcentajeComisionProducto: valProducto,
+        }),
       });
 
-      setSuccessMsg('Porcentaje de comisión actualizado y auditado.');
+      setSuccessMsg('Porcentajes de comisión (servicios y productos) actualizados exitosamente.');
       setEditingComisionUserId(null);
       loadData();
     } catch (err: any) {
@@ -208,14 +220,14 @@ export default function AdminConfiguracionPage() {
               <span>Configuración del Local</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Catálogo de Servicios · Porcentaje de Comisiones · Kill-Switch de Emergencia
+              Catálogo de Servicios · Inventario Retail · Porcentaje de Comisiones (Servicios & Productos)
             </p>
           </div>
         </div>
 
         <button
           onClick={loadData}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border"
         >
           <RefreshCw size={14} />
           <span>Actualizar</span>
@@ -348,7 +360,6 @@ export default function AdminConfiguracionPage() {
                 <button
                   onClick={() => handleSoftDeleteServicio(s.id)}
                   className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
-                  title="Desactivar servicio"
                 >
                   <Trash2 size={16} />
                 </button>
@@ -380,18 +391,23 @@ export default function AdminConfiguracionPage() {
           </div>
         </div>
 
-        {/* 3. SECCIÓN: Equipo & Porcentaje de Comisiones */}
+        {/* 4. SECCIÓN: Equipo & Porcentaje de Comisiones */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <Users size={20} className="text-indigo-500" />
-              <h2 className="text-base font-bold">Equipo de Staff & Porcentaje de Comisiones</h2>
+              <div>
+                <h2 className="text-base font-bold">Equipo de Staff & Configuración de Comisiones</h2>
+                <p className="text-xs text-muted-foreground">
+                  Configura comisiones independientes para servicios de corte y venta de productos por barbero.
+                </p>
+              </div>
             </div>
           </div>
 
           <div className="space-y-3">
             {staff.map((u) => (
-              <div key={u.id} className="p-4 bg-secondary/20 border border-border rounded-xl flex items-center justify-between">
+              <div key={u.id} className="p-4 bg-secondary/20 border border-border rounded-xl flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-semibold text-sm flex items-center gap-2">
@@ -409,35 +425,75 @@ export default function AdminConfiguracionPage() {
                 {u.rol === 'barbero' && (
                   <div className="flex items-center gap-3">
                     {editingComisionUserId === u.id ? (
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="number"
-                          min="0"
-                          max="100"
-                          value={comisionInput}
-                          onChange={(e) => setComisionInput(e.target.value)}
-                          className="w-20 px-2 py-1 bg-background border border-border rounded-lg text-xs font-mono font-bold"
-                        />
-                        <span className="text-xs font-bold">%</span>
-                        <button
-                          onClick={() => handleSaveComision(u.id)}
-                          disabled={saving}
-                          className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
-                        >
-                          <Save size={14} />
-                        </button>
+                      <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 bg-secondary/40 p-2.5 rounded-xl border border-border">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground">Servicios:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={comisionInput}
+                            onChange={(e) => setComisionInput(e.target.value)}
+                            className="w-16 px-2 py-1 bg-background border border-border rounded-lg text-xs font-mono font-bold"
+                          />
+                          <span className="text-xs font-bold">%</span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground">Productos:</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={comisionProductoInput}
+                            onChange={(e) => setComisionProductoInput(e.target.value)}
+                            className="w-16 px-2 py-1 bg-background border border-border rounded-lg text-xs font-mono font-bold"
+                          />
+                          <span className="text-xs font-bold">%</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => handleSaveComision(u.id)}
+                            disabled={saving}
+                            className="p-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                            title="Guardar comisiones"
+                          >
+                            <Save size={14} />
+                          </button>
+                          <button
+                            onClick={() => setEditingComisionUserId(null)}
+                            className="p-1.5 text-muted-foreground hover:bg-secondary rounded-lg transition-colors"
+                            title="Cancelar"
+                          >
+                            <X size={14} />
+                          </button>
+                        </div>
                       </div>
                     ) : (
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-mono font-extrabold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                          {u.porcentajeComision || '0'}% comisión
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-mono font-extrabold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                            {u.porcentajeComision || '0'}% Servicios
+                          </span>
+                          {Number(u.porcentajeComisionProducto || 0) > 0 ? (
+                            <span className="text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                              {u.porcentajeComisionProducto}% Productos
+                            </span>
+                          ) : (
+                            <span className="text-xs text-muted-foreground italic px-1">
+                              (0% Productos)
+                            </span>
+                          )}
+                        </div>
                         <button
                           onClick={() => {
                             setEditingComisionUserId(u.id);
                             setComisionInput(u.porcentajeComision || '0');
+                            setComisionProductoInput(u.porcentajeComisionProducto || '0');
                           }}
-                          className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary"
+                          className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary transition-colors"
+                          title="Editar comisiones"
                         >
                           <Edit2 size={14} />
                         </button>

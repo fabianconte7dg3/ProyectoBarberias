@@ -110,7 +110,7 @@ let UsuariosService = class UsuariosService {
             killSwitchActivo: activo
         };
     }
-    async updateComision(usuarioId, porcentaje, adminId, ipOrigen, userAgent) {
+    async updateComision(usuarioId, porcentaje, porcentajeProducto, adminId, ipOrigen, userAgent) {
         const txDb = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         const [usuarioActual] = await txDb.select()
@@ -120,21 +120,26 @@ let UsuariosService = class UsuariosService {
             throw new common_1.NotFoundException('Usuario no encontrado.');
         }
         const anteriorComision = usuarioActual.porcentajeComision;
+        const anteriorComisionProducto = usuarioActual.porcentajeComisionProducto;
+        const updateFields = { porcentajeComision: porcentaje.toString() };
+        if (porcentajeProducto !== undefined) {
+            updateFields.porcentajeComisionProducto = porcentajeProducto.toString();
+        }
         await txDb.update(schema.usuarios)
-            .set({ porcentajeComision: porcentaje.toString() })
+            .set(updateFields)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.id, usuarioId), (0, drizzle_orm_1.eq)(schema.usuarios.tenantId, tenantId)));
         await this.auditService.logAction({
             tenantId,
-            usuarioId: adminId,
+            usuarioId: adminId || 'admin',
             tablaAfectada: 'usuarios',
             registroId: usuarioId,
             accion: 'cambio_comision',
-            payloadAntes: { porcentajeComision: anteriorComision },
-            payloadDespues: { porcentajeComision: porcentaje.toString() },
+            payloadAntes: { porcentajeComision: anteriorComision, porcentajeComisionProducto: anteriorComisionProducto },
+            payloadDespues: updateFields,
             ipOrigen,
             userAgent
         });
-        return { success: true, porcentajeComision: porcentaje };
+        return { success: true, porcentajeComision: porcentaje, porcentajeComisionProducto: porcentajeProducto };
     }
     async activateStaff(dto) {
         const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, tenant_id as "tenantId", token_expira_en as "tokenExpiraEn" FROM auth_get_user_by_token(${dto.token})`);

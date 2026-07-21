@@ -22,6 +22,7 @@ export declare class UsuariosController {
     updateComision(id: string, dto: UpdateComisionDto, req: any, ip: string, userAgent: string): Promise<{
         success: boolean;
         porcentajeComision: number;
+        porcentajeComisionProducto: number | undefined;
     }>;
     findAll(): Promise<any>;
     findOne(id: string): Promise<any>;

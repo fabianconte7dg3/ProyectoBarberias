@@ -35,7 +35,7 @@ let UsuariosController = class UsuariosController {
         return this.usuariosService.activateStaff(dto);
     }
     updateComision(id, dto, req, ip, userAgent) {
-        return this.usuariosService.updateComision(id, dto.porcentajeComision, req.user.userId, ip, userAgent);
+        return this.usuariosService.updateComision(id, dto.porcentajeComision, dto.porcentajeComisionProducto, req.user.userId, ip, userAgent);
     }
     findAll() {
         return this.usuariosService.findAll();

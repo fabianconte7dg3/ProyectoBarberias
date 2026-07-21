@@ -43,7 +43,7 @@ export class UsuariosController {
     @Ip() ip: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.usuariosService.updateComision(id, dto.porcentajeComision, req.user.userId, ip, userAgent);
+    return this.usuariosService.updateComision(id, dto.porcentajeComision, dto.porcentajeComisionProducto, req.user.userId, ip, userAgent);
   }
 
   @Roles('admin', 'barbero', 'recepcion')

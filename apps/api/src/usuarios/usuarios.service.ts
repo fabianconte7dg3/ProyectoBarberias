@@ -79,7 +79,7 @@ export class UsuariosService {
     };
   }
 
-  async updateComision(usuarioId: string, porcentaje: number, adminId: string, ipOrigen?: string, userAgent?: string) {
+  async updateComision(usuarioId: string, porcentaje: number, porcentajeProducto?: number, adminId?: string, ipOrigen?: string, userAgent?: string) {
     const txDb = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
@@ -92,24 +92,30 @@ export class UsuariosService {
     }
 
     const anteriorComision = usuarioActual.porcentajeComision;
+    const anteriorComisionProducto = usuarioActual.porcentajeComisionProducto;
+
+    const updateFields: any = { porcentajeComision: porcentaje.toString() };
+    if (porcentajeProducto !== undefined) {
+      updateFields.porcentajeComisionProducto = porcentajeProducto.toString();
+    }
 
     await txDb.update(schema.usuarios)
-      .set({ porcentajeComision: porcentaje.toString() })
+      .set(updateFields)
       .where(and(eq(schema.usuarios.id, usuarioId), eq(schema.usuarios.tenantId, tenantId)));
 
     await this.auditService.logAction({
       tenantId,
-      usuarioId: adminId,
+      usuarioId: adminId || 'admin',
       tablaAfectada: 'usuarios',
       registroId: usuarioId,
       accion: 'cambio_comision',
-      payloadAntes: { porcentajeComision: anteriorComision },
-      payloadDespues: { porcentajeComision: porcentaje.toString() },
+      payloadAntes: { porcentajeComision: anteriorComision, porcentajeComisionProducto: anteriorComisionProducto },
+      payloadDespues: updateFields,
       ipOrigen,
       userAgent
     });
 
-    return { success: true, porcentajeComision: porcentaje };
+    return { success: true, porcentajeComision: porcentaje, porcentajeComisionProducto: porcentajeProducto };
   }
 
   async activateStaff(dto: ActivateStaffDto) {
