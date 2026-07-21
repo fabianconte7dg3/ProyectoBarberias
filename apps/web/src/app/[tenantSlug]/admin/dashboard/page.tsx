@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 
@@ -54,7 +54,7 @@ const PRESETS_LABEL: Record<PeriodoPreset, string> = {
   hoy: 'Hoy',
   ayer: 'Ayer',
   ultimos_7_dias: 'Últimos 7 días',
-  ultimos_30_dias: 'Últimos 30 días ⭐',
+  ultimos_30_dias: 'Últimos 30 días',
   este_mes: 'Este mes',
   mes_anterior: 'Mes anterior',
   este_ano: 'Este año',
@@ -71,11 +71,26 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // Filtro por defecto: Últimos 30 días ⭐
+  // Filtro por defecto: Últimos 30 días
   const today = new Date();
   const [preset, setPreset] = useState<PeriodoPreset>('ultimos_30_dias');
   const [fechaDesde, setFechaDesde] = useState(format(subDays(today, 30), 'yyyy-MM-dd'));
   const [fechaHasta, setFechaHasta] = useState(format(today, 'yyyy-MM-dd'));
+
+  // Estado Menú Desplegable Personalizado
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Cerrar menú si se hace clic afuera
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     if (!currentUser) {
@@ -105,9 +120,10 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Manejador exacto para cada uno de los 8 rangos de período
-  const handlePresetChange = (newPreset: PeriodoPreset) => {
+  const handlePresetSelect = (newPreset: PeriodoPreset) => {
     setPreset(newPreset);
+    setIsDropdownOpen(false);
+
     const now = new Date();
     let d = format(now, 'yyyy-MM-dd');
     let h = format(now, 'yyyy-MM-dd');
@@ -164,6 +180,17 @@ export default function AdminDashboardPage() {
     ? (data.ingresosTotales / data.totalTransacciones).toFixed(2)
     : '0.00';
 
+  const presetsList: PeriodoPreset[] = [
+    'hoy',
+    'ayer',
+    'ultimos_7_dias',
+    'ultimos_30_dias',
+    'este_mes',
+    'mes_anterior',
+    'este_ano',
+    'personalizado',
+  ];
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
@@ -187,34 +214,51 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Control de Seleccionar Período de 8 Opciones */}
-        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto justify-end">
+        {/* Desplegable de Estilo Personalizado (Sin Emojis) */}
+        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
           
-          <div className="flex items-center gap-2 bg-secondary/80 px-3 py-1.5 rounded-xl border border-border">
-            <Calendar size={16} className="text-primary" />
-            <select
-              value={preset}
-              onChange={(e) => handlePresetChange(e.target.value as PeriodoPreset)}
-              className="bg-transparent text-xs font-extrabold text-foreground border-0 focus:outline-hidden cursor-pointer"
+          <div className="relative" ref={dropdownRef}>
+            <button
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground transition-all shadow-xs"
             >
-              <option value="hoy">Hoy</option>
-              <option value="ayer">Ayer</option>
-              <option value="ultimos_7_dias">Últimos 7 días</option>
-              <option value="ultimos_30_dias">Últimos 30 días ⭐</option>
-              <option value="este_mes">Este mes</option>
-              <option value="mes_anterior">Mes anterior</option>
-              <option value="este_ano">Este año</option>
-              <option value="personalizado">Rango personalizado</option>
-            </select>
+              <Calendar size={15} className="text-emerald-500" />
+              <span>{PRESETS_LABEL[preset]}</span>
+              <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            </button>
+
+            {isDropdownOpen && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2">
+                {presetsList.map((p) => {
+                  const isActive = preset === p;
+                  return (
+                    <button
+                      key={p}
+                      onClick={() => handlePresetSelect(p)}
+                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                        isActive
+                          ? 'bg-primary/10 text-primary font-bold'
+                          : 'text-foreground hover:bg-secondary'
+                      }`}
+                    >
+                      <span>{PRESETS_LABEL[p]}</span>
+                      {isActive && <Check size={14} className="text-primary shrink-0" />}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <button
             onClick={() => loadDashboard(fechaDesde, fechaHasta)}
             className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+            title="Actualizar datos"
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span>Actualizar</span>
+            <span className="hidden sm:inline">Actualizar</span>
           </button>
+
         </div>
       </header>
 
