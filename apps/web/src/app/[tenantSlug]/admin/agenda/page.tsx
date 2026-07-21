@@ -10,6 +10,8 @@ import { TimelineGrid } from '@/components/admin/TimelineGrid';
 import { CitaAgenda } from '@/components/admin/CitaCard';
 import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
 import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
+import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
+import { User, Users, Filter } from 'lucide-react';
 
 interface Barbero {
   id: string;
@@ -31,6 +33,10 @@ export default function AdminAgendaPage() {
   const [loading, setLoading] = useState(true);
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
   const [citaParaCobrar, setCitaParaCobrar] = useState<CitaAgenda | null>(null);
+  const [isMiDesempenoOpen, setIsMiDesempenoOpen] = useState(false);
+
+  // Filtro de visualización personal para barberos
+  const [soloMisCitas, setSoloMisCitas] = useState(false);
 
   // 1. Verificar sesión activa contra el backend
   useEffect(() => {
@@ -141,6 +147,11 @@ export default function AdminAgendaPage() {
     );
   }
 
+  // Filtrar columnas si es rol barbero y activó "Solo Mis Citas"
+  const barberosFiltrados = (currentUser.rol === 'barbero' && soloMisCitas)
+    ? barberos.filter((b) => b.id === currentUser.id)
+    : barberos;
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header con Controles */}
@@ -152,12 +163,48 @@ export default function AdminAgendaPage() {
         onDateChange={(date) => setSelectedDate(date)}
         onLogout={handleLogout}
         onNewCitaClick={() => setIsWalkInOpen(true)}
+        onMiDesempenoClick={() => setIsMiDesempenoOpen(true)}
       />
+
+      {/* Sub-header de Filtro de Vista para Barberos */}
+      {currentUser.rol === 'barbero' && (
+        <div className="bg-card/40 border-b border-border px-4 py-2 flex items-center justify-between text-xs">
+          <div className="flex items-center gap-2">
+            <Filter size={14} className="text-primary" />
+            <span className="font-semibold text-muted-foreground">Modo de Vista:</span>
+          </div>
+
+          <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border">
+            <button
+              onClick={() => setSoloMisCitas(true)}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all ${
+                soloMisCitas
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <User size={14} />
+              <span>Solo Mis Citas</span>
+            </button>
+            <button
+              onClick={() => setSoloMisCitas(false)}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all ${
+                !soloMisCitas
+                  ? 'bg-primary text-primary-foreground shadow-xs'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Users size={14} />
+              <span>Ver Todo el Equipo</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Timeline Grid */}
       <main className="flex-1 flex flex-col">
         <TimelineGrid
-          barberos={barberos}
+          barberos={barberosFiltrados}
           citas={citas}
           selectedDate={selectedDate}
           currentUserId={currentUser.id}
@@ -183,6 +230,12 @@ export default function AdminAgendaPage() {
         isOpen={!!citaParaCobrar}
         onClose={() => setCitaParaCobrar(null)}
         onSuccess={loadCitas}
+      />
+
+      {/* Modal de Desempeño y Comisiones del Barbero */}
+      <MiDesempenoModal
+        isOpen={isMiDesempenoOpen}
+        onClose={() => setIsMiDesempenoOpen(false)}
       />
     </div>
   );

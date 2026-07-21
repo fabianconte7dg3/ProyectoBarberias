@@ -49,4 +49,28 @@ export declare class ReportesController {
         }[];
         clientesStrikes: any;
     }>;
+    getMiDesempeno(req: any, desde?: string, hasta?: string): Promise<{
+        barberoId: any;
+        nombreCompleto: any;
+        porcentajeComision: number;
+        porcentajeComisionProducto: number;
+        rangoFechas: {
+            desde: Date;
+            hasta: Date;
+        };
+        totalCitas: number;
+        totalFacturado: number;
+        comisionServicios: number;
+        comisionProductos: number;
+        comisionTotal: number;
+        propinaTotal: number;
+        resumenDiario: {
+            fecha: string;
+            label: string;
+            citas: number;
+            facturado: number;
+            comision: number;
+            propina: number;
+        }[];
+    }>;
 }

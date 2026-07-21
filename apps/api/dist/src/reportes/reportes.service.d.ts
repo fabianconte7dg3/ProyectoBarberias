@@ -46,4 +46,28 @@ export declare class ReportesService {
         }[];
         clientesStrikes: any;
     }>;
+    getMiDesempeno(barberoId: string, desdeStr?: string, hastaStr?: string): Promise<{
+        barberoId: any;
+        nombreCompleto: any;
+        porcentajeComision: number;
+        porcentajeComisionProducto: number;
+        rangoFechas: {
+            desde: Date;
+            hasta: Date;
+        };
+        totalCitas: number;
+        totalFacturado: number;
+        comisionServicios: number;
+        comisionProductos: number;
+        comisionTotal: number;
+        propinaTotal: number;
+        resumenDiario: {
+            fecha: string;
+            label: string;
+            citas: number;
+            facturado: number;
+            comision: number;
+            propina: number;
+        }[];
+    }>;
 }

@@ -232,4 +232,114 @@ export class ReportesService {
       }))
     };
   }
+
+  async getMiDesempeno(barberoId: string, desdeStr?: string, hastaStr?: string) {
+    const db = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : subDays(new Date(), 30);
+    let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : endOfDay(new Date());
+
+    const [barbero] = await db.query.usuarios.findMany({
+      where: and(
+        eq(usuarios.tenantId, tenantId),
+        eq(usuarios.id, barberoId)
+      )
+    });
+
+    if (!barbero) {
+      throw new BadRequestException('Barbero no encontrado.');
+    }
+
+    const txsBarbero = await db.query.transacciones.findMany({
+      where: and(
+        eq(transacciones.tenantId, tenantId),
+        gte(transacciones.createdAt, desde),
+        lte(transacciones.createdAt, hasta)
+      ),
+      with: {
+        cita: {
+          with: {
+            barbero: true,
+            servicio: true,
+            cliente: true,
+          }
+        },
+        detalles: {
+          with: {
+            servicio: true,
+            producto: true,
+          }
+        }
+      }
+    });
+
+    // Filtrar solo transacciones donde el barbero es el asignado
+    const txsFiltradas = txsBarbero.filter((tx: any) => tx.cita?.barberoId === barberoId);
+
+    let totalCitas = 0;
+    let totalFacturado = 0;
+    let comisionTotal = 0;
+    let comisionServicios = 0;
+    let comisionProductos = 0;
+    let propinaTotal = 0;
+
+    const resumenDiarioMap = new Map<string, { fecha: string; label: string; citas: number; facturado: number; comision: number; propina: number }>();
+
+    // Inicializar días
+    const curr = new Date(desde);
+    while (curr <= hasta) {
+      const ymd = format(curr, 'yyyy-MM-dd');
+      const label = format(curr, 'd MMM');
+      resumenDiarioMap.set(ymd, { fecha: ymd, label, citas: 0, facturado: 0, comision: 0, propina: 0 });
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    for (const tx of txsFiltradas) {
+      const montoTx = Number(tx.totalFacturado || 0);
+      const comisionTx = Number(tx.comisionBarbero || 0);
+      const propinaTx = Number(tx.propinaBarbero || 0);
+
+      totalCitas += tx.cita ? 1 : 0;
+      totalFacturado += montoTx;
+      comisionTotal += comisionTx;
+      propinaTotal += propinaTx;
+
+      const ymd = format(new Date(tx.createdAt), 'yyyy-MM-dd');
+      let p = resumenDiarioMap.get(ymd);
+      if (!p) {
+        p = { fecha: ymd, label: format(new Date(tx.createdAt), 'd MMM'), citas: 0, facturado: 0, comision: 0, propina: 0 };
+        resumenDiarioMap.set(ymd, p);
+      }
+      p.citas += tx.cita ? 1 : 0;
+      p.facturado += montoTx;
+      p.comision += comisionTx;
+      p.propina += propinaTx;
+
+      if (tx.detalles && tx.detalles.length > 0) {
+        for (const det of tx.detalles) {
+          const comDet = Number(det.comisionAplicada || 0);
+          if (det.tipoItem === 'servicio') comisionServicios += comDet;
+          else if (det.tipoItem === 'producto') comisionProductos += comDet;
+        }
+      } else {
+        comisionServicios += comisionTx;
+      }
+    }
+
+    return {
+      barberoId: barbero.id,
+      nombreCompleto: barbero.nombreCompleto,
+      porcentajeComision: Number(barbero.porcentajeComision || 0),
+      porcentajeComisionProducto: Number(barbero.porcentajeComisionProducto || 0),
+      rangoFechas: { desde, hasta },
+      totalCitas,
+      totalFacturado,
+      comisionServicios,
+      comisionProductos,
+      comisionTotal,
+      propinaTotal,
+      resumenDiario: Array.from(resumenDiarioMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha))
+    };
+  }
 }

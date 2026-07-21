@@ -194,6 +194,96 @@ let ReportesService = class ReportesService {
             }))
         };
     }
+    async getMiDesempeno(barberoId, desdeStr, hastaStr) {
+        const db = tenant_context_1.TenantContext.getDb();
+        const tenantId = tenant_context_1.TenantContext.getTenantId();
+        let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : (0, date_fns_1.subDays)(new Date(), 30);
+        let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : (0, date_fns_1.endOfDay)(new Date());
+        const [barbero] = await db.query.usuarios.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.id, barberoId))
+        });
+        if (!barbero) {
+            throw new common_1.BadRequestException('Barbero no encontrado.');
+        }
+        const txsBarbero = await db.query.transacciones.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.transacciones.tenantId, tenantId), (0, drizzle_orm_1.gte)(schema_1.transacciones.createdAt, desde), (0, drizzle_orm_1.lte)(schema_1.transacciones.createdAt, hasta)),
+            with: {
+                cita: {
+                    with: {
+                        barbero: true,
+                        servicio: true,
+                        cliente: true,
+                    }
+                },
+                detalles: {
+                    with: {
+                        servicio: true,
+                        producto: true,
+                    }
+                }
+            }
+        });
+        const txsFiltradas = txsBarbero.filter((tx) => tx.cita?.barberoId === barberoId);
+        let totalCitas = 0;
+        let totalFacturado = 0;
+        let comisionTotal = 0;
+        let comisionServicios = 0;
+        let comisionProductos = 0;
+        let propinaTotal = 0;
+        const resumenDiarioMap = new Map();
+        const curr = new Date(desde);
+        while (curr <= hasta) {
+            const ymd = (0, date_fns_1.format)(curr, 'yyyy-MM-dd');
+            const label = (0, date_fns_1.format)(curr, 'd MMM');
+            resumenDiarioMap.set(ymd, { fecha: ymd, label, citas: 0, facturado: 0, comision: 0, propina: 0 });
+            curr.setDate(curr.getDate() + 1);
+        }
+        for (const tx of txsFiltradas) {
+            const montoTx = Number(tx.totalFacturado || 0);
+            const comisionTx = Number(tx.comisionBarbero || 0);
+            const propinaTx = Number(tx.propinaBarbero || 0);
+            totalCitas += tx.cita ? 1 : 0;
+            totalFacturado += montoTx;
+            comisionTotal += comisionTx;
+            propinaTotal += propinaTx;
+            const ymd = (0, date_fns_1.format)(new Date(tx.createdAt), 'yyyy-MM-dd');
+            let p = resumenDiarioMap.get(ymd);
+            if (!p) {
+                p = { fecha: ymd, label: (0, date_fns_1.format)(new Date(tx.createdAt), 'd MMM'), citas: 0, facturado: 0, comision: 0, propina: 0 };
+                resumenDiarioMap.set(ymd, p);
+            }
+            p.citas += tx.cita ? 1 : 0;
+            p.facturado += montoTx;
+            p.comision += comisionTx;
+            p.propina += propinaTx;
+            if (tx.detalles && tx.detalles.length > 0) {
+                for (const det of tx.detalles) {
+                    const comDet = Number(det.comisionAplicada || 0);
+                    if (det.tipoItem === 'servicio')
+                        comisionServicios += comDet;
+                    else if (det.tipoItem === 'producto')
+                        comisionProductos += comDet;
+                }
+            }
+            else {
+                comisionServicios += comisionTx;
+            }
+        }
+        return {
+            barberoId: barbero.id,
+            nombreCompleto: barbero.nombreCompleto,
+            porcentajeComision: Number(barbero.porcentajeComision || 0),
+            porcentajeComisionProducto: Number(barbero.porcentajeComisionProducto || 0),
+            rangoFechas: { desde, hasta },
+            totalCitas,
+            totalFacturado,
+            comisionServicios,
+            comisionProductos,
+            comisionTotal,
+            propinaTotal,
+            resumenDiario: Array.from(resumenDiarioMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha))
+        };
+    }
 };
 exports.ReportesService = ReportesService;
 exports.ReportesService = ReportesService = __decorate([

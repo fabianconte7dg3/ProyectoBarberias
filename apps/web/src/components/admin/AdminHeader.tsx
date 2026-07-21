@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, 
-  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award
 } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
@@ -15,6 +15,7 @@ interface AdminHeaderProps {
   onDateChange: (date: Date) => void;
   onLogout: () => void;
   onNewCitaClick: () => void;
+  onMiDesempenoClick?: () => void;
 }
 
 export function AdminHeader({
@@ -25,6 +26,7 @@ export function AdminHeader({
   onDateChange,
   onLogout,
   onNewCitaClick,
+  onMiDesempenoClick,
 }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -105,51 +107,81 @@ export function AdminHeader({
           )}
         </div>
 
-        {/* 3. Navegación Desktop (Pestañas horizontales) */}
-        <nav className="hidden md:flex items-center gap-1 bg-secondary/40 p-1 rounded-xl border border-border">
-          {navLinks.map((link) => {
-            const Icon = link.icon;
-            const isActive = pathname === link.href;
-            return (
-              <button
-                key={link.href}
-                onClick={() => router.push(link.href)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                  isActive
-                    ? 'bg-card text-foreground shadow-xs border border-border font-bold'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
-                }`}
-              >
-                <Icon size={14} className={isActive ? 'text-primary' : ''} />
-                <span>{link.label}</span>
-              </button>
-            );
-          })}
-        </nav>
+        {/* 3. Menú Navegación Desktop & Acciones */}
+        <div className="hidden md:flex items-center gap-2">
+          <nav className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-border">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <button
+                  key={link.href}
+                  onClick={() => router.push(link.href)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    isActive
+                      ? 'bg-card text-foreground font-bold shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                  }`}
+                >
+                  <Icon size={15} />
+                  <span>{link.label}</span>
+                </button>
+              );
+            })}
+          </nav>
 
-        {/* 4. Acciones Derecha (Nueva Cita + Logout + Hamburger en Mobile) */}
-        <div className="flex items-center gap-2">
+          {/* Botón Mi Desempeño (Para Barbero / Recepción) */}
+          {onMiDesempenoClick && (
+            <button
+              onClick={onMiDesempenoClick}
+              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-extrabold rounded-xl transition-colors shadow-xs"
+              title="Ver mis comisiones e ingresos"
+            >
+              <Award size={16} />
+              <span>Mi Desempeño</span>
+            </button>
+          )}
+
           <button
             onClick={onNewCitaClick}
-            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm text-xs sm:text-sm"
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-xs hover:opacity-90 transition-opacity"
           >
             <Plus size={16} />
-            <span className="hidden sm:inline">Nueva Cita</span>
-            <span className="sm:hidden">Cita</span>
+            <span>Cita</span>
           </button>
 
           <button
             onClick={onLogout}
-            className="hidden sm:flex p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-            title="Cerrar sesión"
+            className="p-2 text-muted-foreground hover:text-destructive hover:bg-secondary rounded-xl transition-colors"
+            title="Cerrar Sesión"
           >
             <LogOut size={18} />
           </button>
+        </div>
 
-          {/* Menú Hamburguesa en Pantallas Pequeñas */}
+        {/* 4. Botón Menú Móvil */}
+        <div className="flex md:hidden items-center gap-2">
+          {onMiDesempenoClick && (
+            <button
+              onClick={onMiDesempenoClick}
+              className="p-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 rounded-xl"
+              title="Mi Desempeño"
+            >
+              <Award size={18} />
+            </button>
+          )}
+
+          <button
+            onClick={onNewCitaClick}
+            className="p-2 bg-primary text-primary-foreground font-bold rounded-xl shadow-xs"
+            title="Nueva Cita"
+          >
+            <Plus size={18} />
+          </button>
+
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary border border-border"
+            className="p-2 text-muted-foreground hover:text-foreground bg-secondary rounded-xl border border-border"
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -170,6 +202,19 @@ export function AdminHeader({
               {userRole}
             </span>
           </div>
+
+          {onMiDesempenoClick && (
+            <button
+              onClick={() => {
+                onMiDesempenoClick();
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-center gap-2 p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 font-extrabold text-xs rounded-xl"
+            >
+              <Award size={16} />
+              <span>Ver Mi Desempeño & Comisiones</span>
+            </button>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             {navLinks.map((link) => {

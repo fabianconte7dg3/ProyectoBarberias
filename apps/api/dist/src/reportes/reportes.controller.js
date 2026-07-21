@@ -27,6 +27,10 @@ let ReportesController = class ReportesController {
     async getDashboardMetrics(desde, hasta) {
         return this.reportesService.getDashboardMetrics(desde, hasta);
     }
+    async getMiDesempeno(req, desde, hasta) {
+        const userId = req.user.sub;
+        return this.reportesService.getMiDesempeno(userId, desde, hasta);
+    }
 };
 exports.ReportesController = ReportesController;
 __decorate([
@@ -38,6 +42,16 @@ __decorate([
     __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], ReportesController.prototype, "getDashboardMetrics", null);
+__decorate([
+    (0, common_1.Get)('mi-desempeno'),
+    (0, roles_decorator_1.Roles)('barbero', 'admin', 'recepcion'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('desde')),
+    __param(2, (0, common_1.Query)('hasta')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], ReportesController.prototype, "getMiDesempeno", null);
 exports.ReportesController = ReportesController = __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, common_1.UseInterceptors)(tenant_interceptor_1.TenantInterceptor),
