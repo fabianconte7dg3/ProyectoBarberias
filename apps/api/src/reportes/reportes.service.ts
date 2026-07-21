@@ -248,7 +248,20 @@ export class ReportesService {
     });
 
     if (!barbero) {
-      throw new BadRequestException('Barbero no encontrado.');
+      return {
+        barberoId: barberoId || '',
+        nombreCompleto: 'Staff',
+        porcentajeComision: 0,
+        porcentajeComisionProducto: 0,
+        rangoFechas: { desde, hasta },
+        totalCitas: 0,
+        totalFacturado: 0,
+        comisionServicios: 0,
+        comisionProductos: 0,
+        comisionTotal: 0,
+        propinaTotal: 0,
+        resumenDiario: []
+      };
     }
 
     const txsBarbero = await db.query.transacciones.findMany({

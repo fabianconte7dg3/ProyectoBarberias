@@ -203,7 +203,20 @@ let ReportesService = class ReportesService {
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.id, barberoId))
         });
         if (!barbero) {
-            throw new common_1.BadRequestException('Barbero no encontrado.');
+            return {
+                barberoId: barberoId || '',
+                nombreCompleto: 'Staff',
+                porcentajeComision: 0,
+                porcentajeComisionProducto: 0,
+                rangoFechas: { desde, hasta },
+                totalCitas: 0,
+                totalFacturado: 0,
+                comisionServicios: 0,
+                comisionProductos: 0,
+                comisionTotal: 0,
+                propinaTotal: 0,
+                resumenDiario: []
+            };
         }
         const txsBarbero = await db.query.transacciones.findMany({
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.transacciones.tenantId, tenantId), (0, drizzle_orm_1.gte)(schema_1.transacciones.createdAt, desde), (0, drizzle_orm_1.lte)(schema_1.transacciones.createdAt, hasta)),

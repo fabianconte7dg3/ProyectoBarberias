@@ -28,7 +28,7 @@ let ReportesController = class ReportesController {
         return this.reportesService.getDashboardMetrics(desde, hasta);
     }
     async getMiDesempeno(req, desde, hasta) {
-        const userId = req.user.sub;
+        const userId = req.user?.userId || req.user?.sub || req.user?.id;
         return this.reportesService.getMiDesempeno(userId, desde, hasta);
     }
 };

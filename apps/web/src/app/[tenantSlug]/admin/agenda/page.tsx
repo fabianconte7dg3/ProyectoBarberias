@@ -7,11 +7,12 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { TimelineGrid } from '@/components/admin/TimelineGrid';
+import { ListaTurnosView } from '@/components/admin/ListaTurnosView';
 import { CitaAgenda } from '@/components/admin/CitaCard';
 import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
 import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
 import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
-import { User, Users, Filter } from 'lucide-react';
+import { User, Users, Filter, LayoutGrid, List } from 'lucide-react';
 
 interface Barbero {
   id: string;
@@ -35,8 +36,9 @@ export default function AdminAgendaPage() {
   const [citaParaCobrar, setCitaParaCobrar] = useState<CitaAgenda | null>(null);
   const [isMiDesempenoOpen, setIsMiDesempenoOpen] = useState(false);
 
-  // Filtro de visualización personal para barberos
+  // Filtros de visualización para la agenda
   const [soloMisCitas, setSoloMisCitas] = useState(false);
+  const [tipoVistaGrid, setTipoVistaGrid] = useState<'parrilla' | 'lista'>('parrilla');
 
   // 1. Verificar sesión activa contra el backend
   useEffect(() => {
@@ -147,10 +149,15 @@ export default function AdminAgendaPage() {
     );
   }
 
-  // Filtrar columnas si es rol barbero y activó "Solo Mis Citas"
+  // Filtrar columnas de barberos
   const barberosFiltrados = (currentUser.rol === 'barbero' && soloMisCitas)
     ? barberos.filter((b) => b.id === currentUser.id)
     : barberos;
+
+  // Filtrar citas si está en "Solo Mis Citas"
+  const citasFiltradas = (currentUser.rol === 'barbero' && soloMisCitas)
+    ? citas.filter((c) => c.barberoId === currentUser.id)
+    : citas;
 
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
@@ -166,14 +173,11 @@ export default function AdminAgendaPage() {
         onMiDesempenoClick={() => setIsMiDesempenoOpen(true)}
       />
 
-      {/* Sub-header de Filtro de Vista para Barberos */}
-      {currentUser.rol === 'barbero' && (
-        <div className="bg-card/40 border-b border-border px-4 py-2 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2">
-            <Filter size={14} className="text-primary" />
-            <span className="font-semibold text-muted-foreground">Modo de Vista:</span>
-          </div>
-
+      {/* Sub-header de Filtros y Alternador de Vista */}
+      <div className="bg-card/40 border-b border-border px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
+        
+        {/* Filtro Equipo (Barbero) */}
+        {currentUser.rol === 'barbero' ? (
           <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border">
             <button
               onClick={() => setSoloMisCitas(true)}
@@ -198,20 +202,67 @@ export default function AdminAgendaPage() {
               <span>Ver Todo el Equipo</span>
             </button>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex items-center gap-2 text-muted-foreground font-semibold">
+            <Filter size={14} className="text-primary" />
+            <span>Vista Operativa de Citas</span>
+          </div>
+        )}
 
-      {/* Main Timeline Grid */}
+        {/* Alternador Parrilla vs Lista Compacta */}
+        <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border">
+          <button
+            onClick={() => setTipoVistaGrid('parrilla')}
+            className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all ${
+              tipoVistaGrid === 'parrilla'
+                ? 'bg-card text-foreground font-bold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title="Vista de parrilla por horas"
+          >
+            <LayoutGrid size={14} />
+            <span className="hidden sm:inline">Parrilla Horaria</span>
+          </button>
+
+          <button
+            onClick={() => setTipoVistaGrid('lista')}
+            className={`flex items-center gap-1 px-3 py-1 rounded-lg font-bold transition-all ${
+              tipoVistaGrid === 'lista'
+                ? 'bg-card text-foreground font-bold shadow-xs'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+            title="Vista de lista secuencial de turnos"
+          >
+            <List size={14} />
+            <span>Lista de Turnos</span>
+          </button>
+        </div>
+
+      </div>
+
+      {/* Main Content View (Parrilla o Lista) */}
       <main className="flex-1 flex flex-col">
-        <TimelineGrid
-          barberos={barberosFiltrados}
-          citas={citas}
-          selectedDate={selectedDate}
-          currentUserId={currentUser.id}
-          currentUserRole={currentUser.rol}
-          onStatusChange={handleStatusChange}
-          onCobrarClick={(cita) => setCitaParaCobrar(cita)}
-        />
+        {tipoVistaGrid === 'parrilla' ? (
+          <TimelineGrid
+            barberos={barberosFiltrados}
+            citas={citasFiltradas}
+            selectedDate={selectedDate}
+            currentUserId={currentUser.id}
+            currentUserRole={currentUser.rol}
+            onStatusChange={handleStatusChange}
+            onCobrarClick={(cita) => setCitaParaCobrar(cita)}
+          />
+        ) : (
+          <ListaTurnosView
+            barberos={barberosFiltrados}
+            citas={citasFiltradas}
+            selectedDate={selectedDate}
+            currentUserId={currentUser.id}
+            currentUserRole={currentUser.rol}
+            onStatusChange={handleStatusChange}
+            onCobrarClick={(cita) => setCitaParaCobrar(cita)}
+          />
+        )}
       </main>
 
       {/* Modal de Registro Rápido Walk-in */}

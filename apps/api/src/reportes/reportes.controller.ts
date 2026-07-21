@@ -27,7 +27,7 @@ export class ReportesController {
     @Query('desde') desde?: string,
     @Query('hasta') hasta?: string,
   ) {
-    const userId = req.user.sub;
+    const userId = req.user?.userId || req.user?.sub || req.user?.id;
     return this.reportesService.getMiDesempeno(userId, desde, hasta);
   }
 }
