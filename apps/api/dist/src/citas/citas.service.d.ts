@@ -3,9 +3,11 @@ import { CreateCitaDto } from './dto/create-cita.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
+import { Queue } from 'bullmq';
 export declare class CitasService {
-    private readonly globalDb;
-    constructor(globalDb: NodePgDatabase<typeof schema>);
+    private readonly db;
+    private readonly citasQueue;
+    constructor(db: NodePgDatabase<typeof schema>, citasQueue: Queue);
     crearCita(data: CreateCitaDto, idempotencyKey: string): Promise<{
         cita: any;
         isExisting: boolean;

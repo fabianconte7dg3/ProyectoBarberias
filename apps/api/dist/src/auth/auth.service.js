@@ -53,6 +53,7 @@ const schema = __importStar(require("../database/schema"));
 const drizzle_orm_1 = require("drizzle-orm");
 const bcrypt = __importStar(require("bcrypt"));
 const crypto = __importStar(require("crypto"));
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let AuthService = class AuthService {
     db;
     jwtService;
@@ -61,16 +62,12 @@ let AuthService = class AuthService {
         this.jwtService = jwtService;
     }
     async registerBarberia(dto) {
-        const existingBarberia = await this.db.query.barberias.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema.barberias.slug, dto.slug),
-        });
-        if (existingBarberia) {
+        const resultSlug = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM auth_get_tenant_by_slug(${dto.slug})`);
+        if (resultSlug.rows.length > 0) {
             throw new common_1.BadRequestException('El slug ya está en uso.');
         }
-        const existingAdmin = await this.db.query.usuarios.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema.usuarios.email, dto.adminEmail),
-        });
-        if (existingAdmin) {
+        const resultAdmin = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM auth_get_user_by_email(${dto.adminEmail})`);
+        if (resultAdmin.rows.length > 0) {
             throw new common_1.BadRequestException('El email del administrador ya está en uso.');
         }
         const tenantId = crypto.randomUUID();
@@ -95,16 +92,24 @@ let AuthService = class AuthService {
         return { message: 'Barbería y administrador creados exitosamente', tenantId };
     }
     async loginAdmin(dto) {
-        const admin = await this.db.query.usuarios.findFirst({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.email, dto.email), (0, drizzle_orm_1.eq)(schema.usuarios.rol, 'admin')),
-        });
-        console.log("loginAdmin buscó email:", dto.email, "encontró:", admin);
-        if (!admin || !admin.activo || !admin.password) {
-            throw new common_1.UnauthorizedException('Credenciales inválidas o usuario inactivo.');
+        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT * FROM auth_get_user_by_email(${dto.email})`);
+        const adminRow = result.rows[0];
+        if (!adminRow || adminRow.rol !== 'admin') {
+            throw new common_1.UnauthorizedException('Credenciales inválidas.');
         }
+        const admin = {
+            id: adminRow.id,
+            tenantId: adminRow.tenant_id,
+            password: adminRow.password,
+            activo: adminRow.activo,
+            rol: adminRow.rol
+        };
         const passwordMatches = await bcrypt.compare(dto.password, admin.password);
         if (!passwordMatches) {
             throw new common_1.UnauthorizedException('Credenciales inválidas.');
+        }
+        if (!admin.activo) {
+            throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
         }
         const payload = { sub: admin.id, tenantId: admin.tenantId, rol: admin.rol };
         return {
@@ -112,14 +117,15 @@ let AuthService = class AuthService {
         };
     }
     async loginStaff(dto) {
-        const barberia = await this.db.query.barberias.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema.barberias.slug, dto.slug),
-        });
-        if (!barberia || barberia.estado !== 'activo') {
-            throw new common_1.UnauthorizedException('Barbería no encontrada o inactiva.');
+        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, estado FROM auth_get_tenant_by_slug(${dto.slug})`);
+        const barberia = result.rows[0];
+        if (!barberia) {
+            throw new common_1.UnauthorizedException('Barbería no encontrada.');
         }
-        const staffMembers = await this.db.query.usuarios.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
+        const staffMembers = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
+            return await tx.query.usuarios.findMany({
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
+            });
         });
         let matchedStaff = null;
         for (const staff of staffMembers) {
@@ -133,6 +139,9 @@ let AuthService = class AuthService {
         }
         if (!matchedStaff) {
             throw new common_1.UnauthorizedException('PIN inválido.');
+        }
+        if (barberia.estado !== 'activo') {
+            throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
         }
         const payload = { sub: matchedStaff.id, tenantId: matchedStaff.tenantId, rol: matchedStaff.rol };
         return {

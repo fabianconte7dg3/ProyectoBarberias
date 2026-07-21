@@ -20,17 +20,17 @@ const database_constants_1 = require("../database/tenant/database.constants");
 const node_postgres_1 = require("drizzle-orm/node-postgres");
 let YappyController = class YappyController {
     yappyService;
-    globalDb;
-    constructor(yappyService, globalDb) {
+    db;
+    constructor(yappyService, db) {
         this.yappyService = yappyService;
-        this.globalDb = globalDb;
+        this.db = db;
     }
     async handleIpn(orderId, status, hash, domain, res) {
         if (!orderId || !status || !hash || !domain) {
             return res.status(common_1.HttpStatus.BAD_REQUEST).json({ error: 'Missing parameters' });
         }
         try {
-            await this.yappyService.processIpn(orderId, status, hash, domain, this.globalDb);
+            await this.yappyService.processIpn(orderId, status, hash, domain, this.db);
             return res.status(common_1.HttpStatus.OK).json({ success: true });
         }
         catch (error) {

@@ -62,7 +62,8 @@ let UsuariosService = class UsuariosService {
         const token = crypto.randomBytes(32).toString('hex');
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 48);
-        const [nuevoUsuario] = await this.db.insert(schema.usuarios).values({
+        const txDb = tenant_context_1.TenantContext.getDb();
+        const [nuevoUsuario] = await txDb.insert(schema.usuarios).values({
             tenantId,
             nombreCompleto: dto.nombreCompleto,
             rol: dto.rol,
@@ -77,9 +78,8 @@ let UsuariosService = class UsuariosService {
         };
     }
     async activateStaff(dto) {
-        const usuario = await this.db.query.usuarios.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema.usuarios.tokenActivacion, dto.token),
-        });
+        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id, tenant_id as "tenantId", token_expira_en as "tokenExpiraEn" FROM auth_get_user_by_token(${dto.token})`);
+        const usuario = result.rows[0];
         if (!usuario) {
             throw new common_1.NotFoundException('Token inválido o no encontrado.');
         }

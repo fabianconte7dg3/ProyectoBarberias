@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
@@ -19,6 +19,9 @@ import { YappyModule } from './yappy/yappy.module';
 import { DgiModule } from './dgi/dgi.module';
 import { CajaModule } from './caja/caja.module';
 
+import { BullModule } from '@nestjs/bullmq';
+import { QueueModule } from './queue/queue.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -26,6 +29,16 @@ import { CajaModule } from './caja/caja.module';
       ttl: 60000,
       limit: 10,
     }]),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        connection: {
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get<number>('REDIS_PORT', 6379),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     DatabaseModule,
     AuthModule,
     UsuariosModule,
@@ -37,6 +50,7 @@ import { CajaModule } from './caja/caja.module';
     YappyModule,
     DgiModule,
     CajaModule,
+    QueueModule,
   ],
   controllers: [AppController],
   providers: [

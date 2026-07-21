@@ -7,7 +7,7 @@ export declare class UsuariosService {
     constructor(db: NodePgDatabase<typeof schema>);
     inviteStaff(dto: InviteStaffDto, tenantId: string): Promise<{
         message: string;
-        activationToken: string | null;
+        activationToken: any;
     }>;
     activateStaff(dto: ActivateStaffDto): Promise<{
         message: string;

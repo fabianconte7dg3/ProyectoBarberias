@@ -27,6 +27,8 @@ const transacciones_module_1 = require("./transacciones/transacciones.module");
 const yappy_module_1 = require("./yappy/yappy.module");
 const dgi_module_1 = require("./dgi/dgi.module");
 const caja_module_1 = require("./caja/caja.module");
+const bullmq_1 = require("@nestjs/bullmq");
+const queue_module_1 = require("./queue/queue.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -38,6 +40,16 @@ exports.AppModule = AppModule = __decorate([
                     ttl: 60000,
                     limit: 10,
                 }]),
+            bullmq_1.BullModule.forRootAsync({
+                imports: [config_1.ConfigModule],
+                useFactory: async (configService) => ({
+                    connection: {
+                        host: configService.get('REDIS_HOST', 'localhost'),
+                        port: configService.get('REDIS_PORT', 6379),
+                    },
+                }),
+                inject: [config_1.ConfigService],
+            }),
             database_module_1.DatabaseModule,
             auth_module_1.AuthModule,
             usuarios_module_1.UsuariosModule,
@@ -49,6 +61,7 @@ exports.AppModule = AppModule = __decorate([
             yappy_module_1.YappyModule,
             dgi_module_1.DgiModule,
             caja_module_1.CajaModule,
+            queue_module_1.QueueModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

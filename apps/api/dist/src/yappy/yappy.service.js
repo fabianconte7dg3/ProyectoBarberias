@@ -106,40 +106,50 @@ let YappyService = class YappyService {
         const adapter = await this.getAdapter(tenantId);
         return adapter.initiatePayment(orderId, monto);
     }
-    async processIpn(orderId, status, hash, domain, globalDb) {
-        const txInfo = await globalDb.query.transacciones.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema.transacciones.yappyOrderId, orderId),
-        });
-        if (!txInfo) {
+    async processIpn(orderId, status, hash, domain, db) {
+        const result = await db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_yappy_order(${orderId}) as tenant_id`);
+        const tenantId = result.rows[0]?.tenant_id;
+        if (!tenantId) {
             throw new common_1.UnauthorizedException('Orden no encontrada');
         }
-        const config = await globalDb.query.yappyConfig.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema_1.yappyConfig.tenantId, txInfo.tenantId),
-        });
-        if (!config || config.modo !== 'comercial' || !config.secretKeyCifrada) {
-            throw new common_1.UnauthorizedException('Configuración Yappy inválida para este tenant');
-        }
-        let secretKey;
-        try {
-            secretKey = decrypt(config.secretKeyCifrada);
-        }
-        catch (e) {
-            throw new common_1.InternalServerErrorException('Error descifrando la llave secreta');
-        }
-        const dataToHash = `${orderId}${status}${domain}`;
-        const expectedHash = crypto
-            .createHmac('sha256', secretKey)
-            .update(dataToHash)
-            .digest('hex');
-        if (hash !== expectedHash) {
-            throw new common_1.UnauthorizedException('Hash inválido');
-        }
-        await (0, tenant_utils_1.runInTenantScope)(globalDb, txInfo.tenantId, async (tenantDb) => {
+        await (0, tenant_utils_1.runInTenantScope)(db, tenantId, async (tenantDb) => {
+            const config = await tenantDb.query.yappyConfig.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.yappyConfig.tenantId, tenantId),
+            });
+            if (!config || config.modo !== 'comercial' || !config.secretKeyCifrada) {
+                throw new common_1.UnauthorizedException('Configuración Yappy inválida para este tenant');
+            }
+            let secretKey;
+            try {
+                secretKey = decrypt(config.secretKeyCifrada);
+            }
+            catch (e) {
+                throw new common_1.InternalServerErrorException('Error descifrando la llave secreta');
+            }
+            const dataToHash = `${orderId}${status}${domain}`;
+            const expectedHash = crypto
+                .createHmac('sha256', secretKey)
+                .update(dataToHash)
+                .digest('hex');
+            if (hash !== expectedHash) {
+                throw new common_1.UnauthorizedException('Hash inválido');
+            }
+            const txInfo = await tenantDb.query.transacciones.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema.transacciones.yappyOrderId, orderId),
+            });
+            if (!txInfo)
+                return;
             if (status === 'E') {
                 console.log(`Pago Yappy ${orderId} exitoso`);
                 await tenantDb.update(schema_1.citas)
                     .set({ estado: 'completada' })
                     .where((0, drizzle_orm_1.eq)(schema_1.citas.id, txInfo.citaId));
+                await tenantDb.update(schema.transacciones)
+                    .set({
+                    yappyWebhookReceivedAt: new Date(),
+                    yappyWebhookPayload: { orderId, status, hash, domain },
+                })
+                    .where((0, drizzle_orm_1.eq)(schema.transacciones.id, txInfo.id));
                 this.dgiService.emitirFacturaAsync(txInfo.tenantId, txInfo.id, txInfo.totalFacturado, txInfo.rucCliente, txInfo.nombreFiscalCliente).catch(err => console.error('Error al emitir factura a DGI desde Yappy IPN:', err));
             }
             else if (status === 'R' || status === 'C' || status === 'X') {

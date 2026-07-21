@@ -25,10 +25,10 @@ const schema_1 = require("../database/schema");
 const database_constants_1 = require("../database/tenant/database.constants");
 let CitasController = class CitasController {
     citasService;
-    globalDb;
-    constructor(citasService, globalDb) {
+    db;
+    constructor(citasService, db) {
         this.citasService = citasService;
-        this.globalDb = globalDb;
+        this.db = db;
     }
     async crearCita(data, idempotencyKey, res) {
         if (!idempotencyKey) {
@@ -49,7 +49,7 @@ let CitasController = class CitasController {
     async cancelarPorCliente(id, token) {
         if (!token)
             throw new common_1.UnauthorizedException('Token de cancelación requerido');
-        const [cita] = await this.globalDb
+        const [cita] = await this.db
             .select()
             .from(schema_1.citas)
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.citas.id, id), (0, drizzle_orm_1.eq)(schema_1.citas.tokenCliente, token), (0, drizzle_orm_1.gt)(schema_1.citas.tokenExpiraEn, new Date())));

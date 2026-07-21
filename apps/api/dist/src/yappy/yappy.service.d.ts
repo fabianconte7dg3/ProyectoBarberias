@@ -7,7 +7,7 @@ export declare class YappyService {
     constructor(dgiService: DgiService);
     getAdapter(tenantId: string, db?: NodePgDatabase<typeof schema>): Promise<IYappyPort>;
     initiatePayment(tenantId: string, orderId: string, monto: number): Promise<IYappyInitResponse>;
-    processIpn(orderId: string, status: string, hash: string, domain: string, globalDb: NodePgDatabase<typeof schema>): Promise<{
+    processIpn(orderId: string, status: string, hash: string, domain: string, db: NodePgDatabase<typeof schema>): Promise<{
         success: boolean;
     }>;
 }

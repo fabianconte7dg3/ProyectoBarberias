@@ -51,10 +51,11 @@ const tenant_context_1 = require("../database/tenant/tenant-context");
 const schema = __importStar(require("../database/schema"));
 const drizzle_orm_1 = require("drizzle-orm");
 const database_constants_1 = require("../database/tenant/database.constants");
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let HorariosService = class HorariosService {
-    globalDb;
-    constructor(globalDb) {
-        this.globalDb = globalDb;
+    db;
+    constructor(db) {
+        this.db = db;
     }
     parseTime(timeStr) {
         const [h, m] = timeStr.split(':').map(Number);
@@ -137,66 +138,73 @@ let HorariosService = class HorariosService {
         });
     }
     async getDisponibilidad(barberoId, fechaYYYYMMDD) {
-        const db = this.globalDb;
-        const fechaDate = new Date(`${fechaYYYYMMDD}T00:00:00Z`);
-        const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
-        const diaString = diasSemana[fechaDate.getUTCDay()];
-        const [horario] = await db.query.horarios.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.barberoId, barberoId), (0, drizzle_orm_1.eq)(schema.horarios.diaSemana, diaString), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
-        });
-        if (!horario) {
+        const res = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${barberoId}) as tenant_id`);
+        const tenantId = res.rows[0]?.tenant_id;
+        if (!tenantId) {
             return { disponible: false, jornada: null, ocupados: [], almuerzo: null };
         }
-        const inicioDia = new Date(fechaDate);
-        const finDia = new Date(fechaDate);
-        finDia.setUTCDate(finDia.getUTCDate() + 1);
-        const citasHoy = await db.query.citas.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.citas.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.citas.finEstimado, inicioDia), (0, drizzle_orm_1.lte)(schema.citas.inicioEstimado, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.citas.estado, 'programada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'en_curso'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'completada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'revision_manual'))),
-        });
-        const bloqueosHoy = await db.query.bloqueosTemporales.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.bloqueosTemporales.fin, inicioDia), (0, drizzle_orm_1.lte)(schema.bloqueosTemporales.inicio, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, new Date()), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
-        });
-        let maxRetrasoMinutos = 0;
-        for (const c of citasHoy) {
-            if (c.inicioReal && c.inicioEstimado) {
-                const diffMs = c.inicioReal.getTime() - c.inicioEstimado.getTime();
-                if (diffMs > 0) {
-                    const diffMins = Math.floor(diffMs / 60000);
-                    if (diffMins > maxRetrasoMinutos) {
-                        maxRetrasoMinutos = diffMins;
+        return (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async () => {
+            const db = tenant_context_1.TenantContext.getDb();
+            const fechaDate = new Date(`${fechaYYYYMMDD}T00:00:00Z`);
+            const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+            const diaString = diasSemana[fechaDate.getUTCDay()];
+            const [horario] = await db.query.horarios.findMany({
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.barberoId, barberoId), (0, drizzle_orm_1.eq)(schema.horarios.diaSemana, diaString), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
+            });
+            if (!horario) {
+                return { disponible: false, jornada: null, ocupados: [], almuerzo: null };
+            }
+            const inicioDia = new Date(fechaDate);
+            const finDia = new Date(fechaDate);
+            finDia.setUTCDate(finDia.getUTCDate() + 1);
+            const citasHoy = await db.query.citas.findMany({
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.citas.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.citas.finEstimado, inicioDia), (0, drizzle_orm_1.lte)(schema.citas.inicioEstimado, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.citas.estado, 'programada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'en_curso'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'completada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'revision_manual'))),
+            });
+            const bloqueosHoy = await db.query.bloqueosTemporales.findMany({
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.bloqueosTemporales.fin, inicioDia), (0, drizzle_orm_1.lte)(schema.bloqueosTemporales.inicio, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, new Date()), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
+            });
+            let maxRetrasoMinutos = 0;
+            for (const c of citasHoy) {
+                if (c.inicioReal && c.inicioEstimado) {
+                    const diffMs = c.inicioReal.getTime() - c.inicioEstimado.getTime();
+                    if (diffMs > 0) {
+                        const diffMins = Math.floor(diffMs / 60000);
+                        if (diffMins > maxRetrasoMinutos) {
+                            maxRetrasoMinutos = diffMins;
+                        }
                     }
                 }
             }
-        }
-        let almuerzoCalculado = null;
-        if (horario.horaAlmuerzoInicio && horario.horaAlmuerzoFin) {
-            const almInicioMins = this.parseTime(horario.horaAlmuerzoInicio) + maxRetrasoMinutos;
-            const jornadaFinMins = this.parseTime(horario.horaFin);
-            const duracionOriginalMins = this.parseTime(horario.horaAlmuerzoFin) - this.parseTime(horario.horaAlmuerzoInicio);
-            let almFinMins = almInicioMins + duracionOriginalMins;
-            if (almFinMins > jornadaFinMins) {
-                almFinMins = jornadaFinMins;
+            let almuerzoCalculado = null;
+            if (horario.horaAlmuerzoInicio && horario.horaAlmuerzoFin) {
+                const almInicioMins = this.parseTime(horario.horaAlmuerzoInicio) + maxRetrasoMinutos;
+                const jornadaFinMins = this.parseTime(horario.horaFin);
+                const duracionOriginalMins = this.parseTime(horario.horaAlmuerzoFin) - this.parseTime(horario.horaAlmuerzoInicio);
+                let almFinMins = almInicioMins + duracionOriginalMins;
+                if (almFinMins > jornadaFinMins) {
+                    almFinMins = jornadaFinMins;
+                }
+                if (almInicioMins < jornadaFinMins && almFinMins > almInicioMins) {
+                    almuerzoCalculado = {
+                        inicioMinutos: almInicioMins,
+                        finMinutos: almFinMins,
+                        strInicio: `${Math.floor(almInicioMins / 60).toString().padStart(2, '0')}:${(almInicioMins % 60).toString().padStart(2, '0')}`,
+                        strFin: `${Math.floor(almFinMins / 60).toString().padStart(2, '0')}:${(almFinMins % 60).toString().padStart(2, '0')}`,
+                    };
+                }
             }
-            if (almInicioMins < jornadaFinMins && almFinMins > almInicioMins) {
-                almuerzoCalculado = {
-                    inicioMinutos: almInicioMins,
-                    finMinutos: almFinMins,
-                    strInicio: `${Math.floor(almInicioMins / 60).toString().padStart(2, '0')}:${(almInicioMins % 60).toString().padStart(2, '0')}`,
-                    strFin: `${Math.floor(almFinMins / 60).toString().padStart(2, '0')}:${(almFinMins % 60).toString().padStart(2, '0')}`,
-                };
-            }
-        }
-        const ocupados = [
-            ...citasHoy.map((c) => ({ tipo: 'cita', id: c.id, inicio: c.inicioEstimado, fin: c.finEstimado })),
-            ...bloqueosHoy.map((b) => ({ tipo: 'bloqueo', id: b.id, inicio: b.inicio, fin: b.fin }))
-        ];
-        return {
-            disponible: true,
-            jornada: { inicio: horario.horaInicio, fin: horario.horaFin },
-            retrasoActualMinutos: maxRetrasoMinutos,
-            almuerzo: almuerzoCalculado,
-            ocupados,
-        };
+            const ocupados = [
+                ...citasHoy.map((c) => ({ tipo: 'cita', id: c.id, inicio: c.inicioEstimado, fin: c.finEstimado })),
+                ...bloqueosHoy.map((b) => ({ tipo: 'bloqueo', id: b.id, inicio: b.inicio, fin: b.fin }))
+            ];
+            return {
+                disponible: true,
+                jornada: { inicio: horario.horaInicio, fin: horario.horaFin },
+                retrasoActualMinutos: maxRetrasoMinutos,
+                almuerzo: almuerzoCalculado,
+                ocupados,
+            };
+        });
     }
 };
 exports.HorariosService = HorariosService;

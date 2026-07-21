@@ -55,16 +55,16 @@ const schema_1 = require("../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const crypto = __importStar(require("crypto"));
 let DgiService = DgiService_1 = class DgiService {
-    globalDb;
+    db;
     logger = new common_1.Logger(DgiService_1.name);
-    constructor(globalDb) {
-        this.globalDb = globalDb;
+    constructor(db) {
+        this.db = db;
     }
     async emitirFacturaAsync(tenantId, transaccionId, monto, rucCliente, nombreCliente) {
         this.logger.log(`[DGI] Emitiendo factura para tenant ${tenantId}, Tx: ${transaccionId}, Monto: ${monto}`);
         setTimeout(async () => {
             try {
-                await (0, tenant_utils_1.runInTenantScope)(this.globalDb, tenantId, async (tx) => {
+                await (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async (tx) => {
                     const numeroFacturaDgi = `DGI-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
                     await tx.update(schema_1.transacciones)
                         .set({

@@ -53,6 +53,7 @@ const database_constants_1 = require("../database/tenant/database.constants");
 const schema = __importStar(require("../database/schema"));
 const drizzle_orm_1 = require("drizzle-orm");
 const config_1 = require("@nestjs/config");
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(passport_jwt_1.Strategy) {
     db;
     configService;
@@ -66,11 +67,14 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.configService = configService;
     }
     async validate(payload) {
-        const [user] = await this.db
-            .select({ id: schema.usuarios.id, activo: schema.usuarios.activo })
-            .from(schema.usuarios)
-            .where((0, drizzle_orm_1.eq)(schema.usuarios.id, payload.sub))
-            .limit(1);
+        const user = await (0, tenant_utils_1.runInTenantScope)(this.db, payload.tenantId, async (tx) => {
+            const [u] = await tx
+                .select({ id: schema.usuarios.id, activo: schema.usuarios.activo })
+                .from(schema.usuarios)
+                .where((0, drizzle_orm_1.eq)(schema.usuarios.id, payload.sub))
+                .limit(1);
+            return u;
+        });
         if (!user || !user.activo) {
             throw new common_1.UnauthorizedException('Usuario inactivo o no encontrado.');
         }

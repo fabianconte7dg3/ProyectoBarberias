@@ -6,7 +6,7 @@ export declare class UsuariosController {
     constructor(usuariosService: UsuariosService);
     inviteStaff(dto: InviteStaffDto, req: any): Promise<{
         message: string;
-        activationToken: string | null;
+        activationToken: any;
     }>;
     activateStaff(dto: ActivateStaffDto): Promise<{
         message: string;

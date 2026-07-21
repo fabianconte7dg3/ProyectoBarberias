@@ -7,8 +7,8 @@ import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 export declare class CitasController {
     private readonly citasService;
-    private readonly globalDb;
-    constructor(citasService: CitasService, globalDb: NodePgDatabase<typeof schema>);
+    private readonly db;
+    constructor(citasService: CitasService, db: NodePgDatabase<typeof schema>);
     crearCita(data: CreateCitaDto, idempotencyKey: string, res: Response): Promise<any>;
     bloquearTurno(data: BloquearTurnoDto): Promise<any>;
     cambiarEstado(id: string, data: UpdateEstadoCitaDto): Promise<any>;

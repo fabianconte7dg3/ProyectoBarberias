@@ -8,10 +8,16 @@ import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 @Injectable()
 export class CitasService {
-  constructor(@Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
+    @InjectQueue('CITAS_QUEUE') private readonly citasQueue: Queue
+  ) {}
+
   /**
    * Crea una nueva cita, manejando idempotencia y concurrencia.
    */
@@ -60,6 +66,26 @@ export class CitasService {
           .from(citas)
           .where(eq(citas.idempotencyKey, idempotencyKey));
         return { cita: citaExistente, isExisting: true };
+      }
+
+      // Encolar trabajos asíncronos para Hito 6
+      const inicioTime = inicio.getTime();
+      const now = Date.now();
+      
+      const delay24h = inicioTime - now - (24 * 60 * 60 * 1000);
+      if (delay24h > 0) {
+        await this.citasQueue.add('recordatorio_24h', 
+          { citaId: nuevaCita.id, tenantId }, 
+          { delay: delay24h, jobId: `recordatorio_${nuevaCita.id}` }
+        );
+      }
+
+      const delayRetraso = inicioTime - now + (15 * 60 * 1000);
+      if (delayRetraso > 0) {
+        await this.citasQueue.add('cancelacion_retraso', 
+          { citaId: nuevaCita.id, tenantId }, 
+          { delay: delayRetraso, jobId: `retraso_${nuevaCita.id}` }
+        );
       }
 
       return { cita: nuevaCita, isExisting: false };
@@ -146,6 +172,11 @@ export class CitasService {
             .where(eq(clientes.id, cita.clienteId));
         }
       }
+      
+      if (nuevoEstado !== 'programada') {
+        await this.citasQueue.remove(`recordatorio_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`retraso_${citaId}`).catch(() => {});
+      }
 
       return cita;
     });
@@ -168,6 +199,11 @@ export class CitasService {
         .set({ estado: 'cancelada' })
         .where(eq(citas.id, citaId))
         .returning();
+        
+      if (citaCancelada) {
+        await this.citasQueue.remove(`recordatorio_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`retraso_${citaId}`).catch(() => {});
+      }
         
       return citaCancelada;
     });
