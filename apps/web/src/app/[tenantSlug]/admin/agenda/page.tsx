@@ -174,6 +174,7 @@ export default function AdminAgendaPage() {
         onClose={() => setIsWalkInOpen(false)}
         onSuccess={loadCitas}
         barberos={barberos}
+        initialDate={selectedDate}
       />
 
       {/* Modal de Cobro de Citas */}

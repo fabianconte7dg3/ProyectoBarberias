@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Scissors, Calendar, Clock, Check } from 'lucide-react';
+import { X, UserPlus, Phone, Calendar, Clock } from 'lucide-react';
+import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
 
 interface Barbero {
@@ -20,6 +21,7 @@ interface QuickWalkInModalProps {
   onClose: () => void;
   onSuccess: () => void;
   barberos: Barbero[];
+  initialDate?: Date;
 }
 
 export function QuickWalkInModal({
@@ -28,11 +30,14 @@ export function QuickWalkInModal({
   onClose,
   onSuccess,
   barberos,
+  initialDate,
 }: QuickWalkInModalProps) {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState('');
   const [servicioId, setServicioId] = useState('');
   const [barberoId, setBarberoId] = useState(barberos[0]?.id || '');
+  
+  const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [inicioHora, setInicioHora] = useState('12:00');
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
@@ -41,7 +46,7 @@ export function QuickWalkInModal({
 
   useEffect(() => {
     if (isOpen) {
-      // Cargar lista de servicios
+      // 1. Cargar lista de servicios
       fetchApi<Servicio[]>('/servicios')
         .then((data) => {
           setServicios(data);
@@ -49,19 +54,22 @@ export function QuickWalkInModal({
         })
         .catch((err) => console.error('Error cargando servicios:', err));
 
-      // Poner la hora actual por defecto
+      // 2. Prellenar Fecha seleccionada y Hora actual
+      const baseDate = initialDate || new Date();
+      setFecha(format(baseDate, 'yyyy-MM-dd'));
+
       const now = new Date();
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       setInicioHora(`${hh}:${mm}`);
     }
-  }, [isOpen]);
+  }, [isOpen, initialDate]);
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreCompleto || !telefonoWhatsapp || !servicioId || !barberoId) {
+    if (!nombreCompleto || !telefonoWhatsapp || !servicioId || !barberoId || !fecha || !inicioHora) {
       setError('Por favor completa todos los campos requeridos');
       return;
     }
@@ -88,12 +96,12 @@ export function QuickWalkInModal({
         }
       }
 
-      // 2. Armar fecha/hora de inicio
-      const today = new Date();
+      // 2. Armar fecha y hora exactas
+      const [yyyy, monthIndex, dd] = fecha.split('-').map(Number);
       const [hh, mm] = inicioHora.split(':').map(Number);
-      const inicioEstimado = new Date(today.getFullYear(), today.getMonth(), today.getDate(), hh, mm);
+      const inicioEstimado = new Date(yyyy, monthIndex - 1, dd, hh, mm);
 
-      // 3. Crear cita Walk-in
+      // 3. Crear cita (Walk-in / Manual)
       await fetchApi('/citas', {
         method: 'POST',
         body: JSON.stringify({
@@ -108,7 +116,7 @@ export function QuickWalkInModal({
       onSuccess();
       onClose();
     } catch (err: any) {
-      console.error('Error al registrar cita walk-in:', err);
+      console.error('Error al agendar cita manual:', err);
       setError(err.message || 'Error al agendar la cita');
     } finally {
       setIsLoading(false);
@@ -123,7 +131,7 @@ export function QuickWalkInModal({
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
           <div className="flex items-center gap-2 font-bold text-lg">
             <UserPlus size={20} className="text-primary" />
-            <span>Nueva Cita (Walk-in)</span>
+            <span>Nueva Cita (Manual / Walk-in)</span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
             <X size={20} />
@@ -207,20 +215,38 @@ export function QuickWalkInModal({
             </select>
           </div>
 
-          {/* Hora de Inicio */}
-          <div>
-            <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
-              Hora de Inicio
-            </label>
-            <div className="relative">
-              <Clock size={16} className="absolute left-3 top-3 text-muted-foreground" />
-              <input
-                type="time"
-                required
-                value={inicioHora}
-                onChange={(e) => setInicioHora(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
-              />
+          {/* Fecha y Hora de Inicio */}
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                Fecha
+              </label>
+              <div className="relative">
+                <Calendar size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                <input
+                  type="date"
+                  required
+                  value={fecha}
+                  onChange={(e) => setFecha(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                Hora de Inicio
+              </label>
+              <div className="relative">
+                <Clock size={16} className="absolute left-3 top-3 text-muted-foreground" />
+                <input
+                  type="time"
+                  required
+                  value={inicioHora}
+                  onChange={(e) => setInicioHora(e.target.value)}
+                  className="w-full pl-10 pr-3 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
+                />
+              </div>
             </div>
           </div>
 
