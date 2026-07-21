@@ -74,20 +74,18 @@ export class CajaService {
       notasAdmin: dto.notasAdmin
     }).returning();
 
-    // Log de auditoría si hay descuadre
-    if (estado !== 'cuadrado') {
-      await this.auditService.logAction({
-        tenantId,
-        usuarioId,
-        tablaAfectada: 'cierres_de_caja',
-        registroId: nuevoCierre.id,
-        accion: 'cierre_emergencia',
-        payloadAntes: { esperado: balance.efectivoEsperado },
-        payloadDespues: { declarado: dto.efectivoDeclarado, diferencia },
-        ipOrigen,
-        userAgent
-      });
-    }
+    // Log inmutable de auditoría para TODOS los cierres de caja (normal o descuadre)
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId,
+      tablaAfectada: 'cierres_de_caja',
+      registroId: nuevoCierre.id,
+      accion: estado === 'cuadrado' ? 'cierre_caja_normal' : 'cierre_caja_descuadre',
+      payloadAntes: { esperado: balance.efectivoEsperado },
+      payloadDespues: { declarado: dto.efectivoDeclarado, diferencia, estado },
+      ipOrigen,
+      userAgent
+    });
 
     return nuevoCierre;
   }

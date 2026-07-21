@@ -13,12 +13,13 @@ export class TransaccionesController {
   constructor(private readonly transaccionesService: TransaccionesService) {}
 
   @Post('citas/:id/cobrar')
-  @Roles('admin', 'recepcion')
+  @Roles('admin', 'recepcion', 'barbero')
   async cobrarCita(
+    @Request() req: any,
     @Param('id') id: string,
     @Body() cobrarCitaDto: CobrarCitaDto,
   ) {
-    return this.transaccionesService.cobrarCita(id, cobrarCitaDto);
+    return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
   }
 
   @Post('citas/:id/confirmar-pago-manual')

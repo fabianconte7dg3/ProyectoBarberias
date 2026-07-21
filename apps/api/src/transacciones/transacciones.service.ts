@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, servicios } from '../database/schema';
 import { eq, desc } from 'drizzle-orm';
@@ -14,7 +14,7 @@ export class TransaccionesService {
     private readonly dgiService: DgiService,
   ) {}
 
-  async cobrarCita(citaId: string, dto: CobrarCitaDto) {
+  async cobrarCita(citaId: string, dto: CobrarCitaDto, user?: any) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
@@ -31,8 +31,20 @@ export class TransaccionesService {
       throw new NotFoundException('Cita no encontrada');
     }
 
-    if (cita.estado !== 'programada' && cita.estado !== 'en_curso') {
-      throw new ConflictException(`No se puede cobrar una cita en estado: ${cita.estado}`);
+    // RBAC: Si el usuario es barbero, sólo puede cobrar sus propias citas
+    if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
+      throw new ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+    }
+
+    // Prevención de Doble Cobro: Estado debe ser programada o en_curso
+    if (cita.estado === 'completada' || cita.estado === 'cancelada') {
+      throw new ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+    }
+
+    // Verificar si ya existe una transacción de cobro registrada
+    const [txExistente] = await db.select({ id: transacciones.id }).from(transacciones).where(eq(transacciones.citaId, citaId)).limit(1);
+    if (txExistente) {
+      throw new ConflictException('Ya existe un cobro registrado para esta cita.');
     }
 
     // 2. Calcular montos

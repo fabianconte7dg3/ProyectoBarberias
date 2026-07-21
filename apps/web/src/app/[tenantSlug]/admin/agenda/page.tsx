@@ -9,6 +9,7 @@ import { AdminHeader } from '@/components/admin/AdminHeader';
 import { TimelineGrid } from '@/components/admin/TimelineGrid';
 import { CitaAgenda } from '@/components/admin/CitaCard';
 import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
+import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
 
 interface Barbero {
   id: string;
@@ -29,6 +30,7 @@ export default function AdminAgendaPage() {
   const [citas, setCitas] = useState<CitaAgenda[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
+  const [citaParaCobrar, setCitaParaCobrar] = useState<CitaAgenda | null>(null);
 
   // 1. Verificar sesión activa contra el backend
   useEffect(() => {
@@ -161,6 +163,7 @@ export default function AdminAgendaPage() {
           currentUserId={currentUser.id}
           currentUserRole={currentUser.rol}
           onStatusChange={handleStatusChange}
+          onCobrarClick={(cita) => setCitaParaCobrar(cita)}
         />
       </main>
 
@@ -171,6 +174,14 @@ export default function AdminAgendaPage() {
         onClose={() => setIsWalkInOpen(false)}
         onSuccess={loadCitas}
         barberos={barberos}
+      />
+
+      {/* Modal de Cobro de Citas */}
+      <CobrarCitaModal
+        cita={citaParaCobrar}
+        isOpen={!!citaParaCobrar}
+        onClose={() => setCitaParaCobrar(null)}
+        onSuccess={loadCitas}
       />
     </div>
   );

@@ -63,19 +63,17 @@ let CajaService = class CajaService {
             estado,
             notasAdmin: dto.notasAdmin
         }).returning();
-        if (estado !== 'cuadrado') {
-            await this.auditService.logAction({
-                tenantId,
-                usuarioId,
-                tablaAfectada: 'cierres_de_caja',
-                registroId: nuevoCierre.id,
-                accion: 'cierre_emergencia',
-                payloadAntes: { esperado: balance.efectivoEsperado },
-                payloadDespues: { declarado: dto.efectivoDeclarado, diferencia },
-                ipOrigen,
-                userAgent
-            });
-        }
+        await this.auditService.logAction({
+            tenantId,
+            usuarioId,
+            tablaAfectada: 'cierres_de_caja',
+            registroId: nuevoCierre.id,
+            accion: estado === 'cuadrado' ? 'cierre_caja_normal' : 'cierre_caja_descuadre',
+            payloadAntes: { esperado: balance.efectivoEsperado },
+            payloadDespues: { declarado: dto.efectivoDeclarado, diferencia, estado },
+            ipOrigen,
+            userAgent
+        });
         return nuevoCierre;
     }
 };

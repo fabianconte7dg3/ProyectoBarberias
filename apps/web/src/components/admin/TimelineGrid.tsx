@@ -16,6 +16,7 @@ interface TimelineGridProps {
   currentUserId: string;
   currentUserRole: string;
   onStatusChange: (citaId: string, nuevoEstado: CitaAgenda['estado']) => void;
+  onCobrarClick?: (cita: CitaAgenda) => void;
 }
 
 const START_HOUR = 8; // 08:00 AM
@@ -29,6 +30,7 @@ export function TimelineGrid({
   currentUserId,
   currentUserRole,
   onStatusChange,
+  onCobrarClick,
 }: TimelineGridProps) {
   const [nowPercent, setNowPercent] = useState<number | null>(null);
 
@@ -133,6 +135,7 @@ export function TimelineGrid({
                         key={cita.id}
                         cita={cita}
                         onStatusChange={onStatusChange}
+                        onCobrarClick={onCobrarClick}
                         canEdit={canEdit}
                       />
                     ))

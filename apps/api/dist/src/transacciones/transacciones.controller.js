@@ -25,8 +25,8 @@ let TransaccionesController = class TransaccionesController {
     constructor(transaccionesService) {
         this.transaccionesService = transaccionesService;
     }
-    async cobrarCita(id, cobrarCitaDto) {
-        return this.transaccionesService.cobrarCita(id, cobrarCitaDto);
+    async cobrarCita(req, id, cobrarCitaDto) {
+        return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
     }
     async confirmarPagoManual(id, req) {
         const usuarioId = req.user.userId;
@@ -39,11 +39,12 @@ let TransaccionesController = class TransaccionesController {
 exports.TransaccionesController = TransaccionesController;
 __decorate([
     (0, common_1.Post)('citas/:id/cobrar'),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, cobrar_cita_dto_1.CobrarCitaDto]),
+    __metadata("design:paramtypes", [Object, String, cobrar_cita_dto_1.CobrarCitaDto]),
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "cobrarCita", null);
 __decorate([

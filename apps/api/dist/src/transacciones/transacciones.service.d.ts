@@ -5,7 +5,7 @@ export declare class TransaccionesService {
     private readonly yappyService;
     private readonly dgiService;
     constructor(yappyService: YappyService, dgiService: DgiService);
-    cobrarCita(citaId: string, dto: CobrarCitaDto): Promise<{
+    cobrarCita(citaId: string, dto: CobrarCitaDto, user?: any): Promise<{
         transaccion: any;
         yappyData: import("../yappy/adapters/yappy.port").IYappyInitResponse | null;
     }>;

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, UserCheck } from 'lucide-react';
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, UserCheck, Lock } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
+import { useRouter } from 'next/navigation';
 import { es } from 'date-fns/locale';
 
 interface AdminHeaderProps {
@@ -22,6 +22,7 @@ export function AdminHeader({
   onLogout,
   onNewCitaClick,
 }: AdminHeaderProps) {
+  const router = useRouter();
   const isSelectedToday = isToday(selectedDate);
 
   return (
@@ -81,8 +82,18 @@ export function AdminHeader({
         )}
       </div>
 
-      {/* 3. Acciones (Nueva Cita + Logout) */}
+      {/* 3. Acciones (Cierre de Caja + Nueva Cita + Logout) */}
       <div className="flex items-center gap-3 w-full md:w-auto justify-end">
+        {userRole === 'admin' && (
+          <button
+            onClick={() => router.push(`/${tenantSlug}/admin/caja`)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-600/20 font-semibold rounded-xl transition-all border border-emerald-500/20 text-xs"
+          >
+            <Lock size={16} />
+            <span>Arqueo de Caja</span>
+          </button>
+        )}
+
         <button
           onClick={onNewCitaClick}
           className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md text-sm"

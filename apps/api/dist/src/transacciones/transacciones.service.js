@@ -57,7 +57,7 @@ let TransaccionesService = class TransaccionesService {
         this.yappyService = yappyService;
         this.dgiService = dgiService;
     }
-    async cobrarCita(citaId, dto) {
+    async cobrarCita(citaId, dto, user) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         const cita = await db.query.citas.findFirst({
@@ -70,8 +70,15 @@ let TransaccionesService = class TransaccionesService {
         if (!cita) {
             throw new common_1.NotFoundException('Cita no encontrada');
         }
-        if (cita.estado !== 'programada' && cita.estado !== 'en_curso') {
-            throw new common_1.ConflictException(`No se puede cobrar una cita en estado: ${cita.estado}`);
+        if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
+            throw new common_1.ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+        }
+        if (cita.estado === 'completada' || cita.estado === 'cancelada') {
+            throw new common_1.ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+        }
+        const [txExistente] = await db.select({ id: schema_1.transacciones.id }).from(schema_1.transacciones).where((0, drizzle_orm_1.eq)(schema_1.transacciones.citaId, citaId)).limit(1);
+        if (txExistente) {
+            throw new common_1.ConflictException('Ya existe un cobro registrado para esta cita.');
         }
         const totalFacturado = Number(cita.servicio.precioBase);
         const porcentajeComision = Number(cita.barbero.porcentajeComision || 0);

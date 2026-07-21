@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { CheckCircle2, Clock, MoreVertical, Phone, Scissors, User, AlertTriangle, XCircle, Play } from 'lucide-react';
+import { CheckCircle2, Clock, MoreVertical, Phone, Scissors, User, AlertTriangle, XCircle, Play, DollarSign } from 'lucide-react';
 
 export interface CitaAgenda {
   id: string;
@@ -22,6 +22,7 @@ export interface CitaAgenda {
 interface CitaCardProps {
   cita: CitaAgenda;
   onStatusChange: (citaId: string, nuevoEstado: CitaAgenda['estado']) => void;
+  onCobrarClick?: (cita: CitaAgenda) => void;
   canEdit: boolean;
 }
 
@@ -53,7 +54,7 @@ const ESTADOS_CONFIG = {
   },
 };
 
-export function CitaCard({ cita, onStatusChange, canEdit }: CitaCardProps) {
+export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaCardProps) {
   const [showPopover, setShowPopover] = useState(false);
 
   const inicio = new Date(cita.inicioEstimado);
@@ -140,13 +141,13 @@ export function CitaCard({ cita, onStatusChange, canEdit }: CitaCardProps) {
             </button>
           )}
 
-          {cita.estado !== 'completada' && (
+          {onCobrarClick && cita.estado !== 'completada' && cita.estado !== 'cancelada' && (
             <button
-              onClick={() => { onStatusChange(cita.id, 'completada'); setShowPopover(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium rounded-lg text-blue-600 hover:bg-blue-500/10 transition-colors"
+              onClick={() => { onCobrarClick(cita); setShowPopover(false); }}
+              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
             >
-              <CheckCircle2 size={14} />
-              <span>Completar (Cobrado)</span>
+              <DollarSign size={14} />
+              <span>Cobrar Cita</span>
             </button>
           )}
 
