@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag
 } from 'lucide-react';
 
 interface Servicio {
@@ -354,6 +354,29 @@ export default function AdminConfiguracionPage() {
                 </button>
               </div>
             ))}
+          </div>
+        </div>
+
+        {/* 3. SECCIÓN: Productos & Inventario Retail */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <ShoppingBag size={20} className="text-emerald-500" />
+              <div>
+                <h2 className="text-base font-bold">Catálogo de Productos & Inventario Retail</h2>
+                <p className="text-xs text-muted-foreground">
+                  Gestiona los productos adicionales que vendes en el mostrador (pomadas, ceras, tónicos).
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => router.push(`/${tenantSlug}/admin/productos`)}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+            >
+              <Plus size={16} />
+              <span>Gestionar Productos</span>
+            </button>
           </div>
         </div>
 

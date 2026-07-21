@@ -531,7 +531,8 @@ export default function AdminDashboardPage() {
                     <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
                     <td className="py-3 px-3 text-center">
                       <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
-                        {b.porcentajeComision}% / {b.porcentajeComisionProducto || 0}%
+                        {b.porcentajeComision}%
+                        {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
