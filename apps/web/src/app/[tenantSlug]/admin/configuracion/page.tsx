@@ -6,8 +6,9 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock
 } from 'lucide-react';
+import { HorariosModal } from '@/components/admin/HorariosModal';
 
 interface Servicio {
   id: string;
@@ -53,6 +54,7 @@ export default function AdminConfiguracionPage() {
   const [editingComisionUserId, setEditingComisionUserId] = useState<string | null>(null);
   const [comisionInput, setComisionInput] = useState<string>('');
   const [comisionProductoInput, setComisionProductoInput] = useState<string>('0');
+  const [horariosModalBarbero, setHorariosModalBarbero] = useState<{ id: string; nombre: string } | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -497,6 +499,15 @@ export default function AdminConfiguracionPage() {
                         >
                           <Edit2 size={14} />
                         </button>
+
+                        <button
+                          onClick={() => setHorariosModalBarbero({ id: u.id, nombre: u.nombreCompleto })}
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-secondary hover:bg-secondary/80 border border-border text-foreground rounded-lg transition-colors"
+                          title="Configurar Horarios y Vacaciones"
+                        >
+                          <Clock size={14} className="text-primary" />
+                          <span>Horarios</span>
+                        </button>
                       </div>
                     )}
                   </div>
@@ -507,6 +518,16 @@ export default function AdminConfiguracionPage() {
         </div>
 
       </main>
+
+      {/* Modal Configuración Horario Barbero */}
+      {horariosModalBarbero && (
+        <HorariosModal
+          isOpen={!!horariosModalBarbero}
+          barberoId={horariosModalBarbero.id}
+          barberoNombre={horariosModalBarbero.nombre}
+          onClose={() => setHorariosModalBarbero(null)}
+        />
+      )}
     </div>
   );
 }
