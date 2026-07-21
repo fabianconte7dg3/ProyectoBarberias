@@ -1,4 +1,4 @@
-# Resumen del Proyecto y Flujos de Funcionamiento (Hito 1 a Hito 7)
+# Resumen de Hitos de Desarrollo Backend y Flujos de Negocio (SaaS Barberías)
 
 Este documento resume el progreso técnico y los flujos de negocio implementados en el backend del Proyecto Barberías (SaaS Multitenant). Se describe cómo interactúan las distintas capas y la lógica que rige los procesos clave de las barberías.
 
