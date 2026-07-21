@@ -6,8 +6,9 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, Filter
 } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subDays, startOfYear } from 'date-fns';
 
 interface RendimientoBarbero {
   barberoId: string;
@@ -39,6 +40,8 @@ interface DashboardData {
   clientesStrikes: ClienteStrike[];
 }
 
+type PeriodoPreset = 'mes_actual' | 'ultimos_30_dias' | 'hoy' | 'ano_actual' | 'personalizado';
+
 export default function AdminDashboardPage() {
   const params = useParams();
   const router = useRouter();
@@ -48,6 +51,11 @@ export default function AdminDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  // Filtros de Período
+  const [preset, setPreset] = useState<PeriodoPreset>('mes_actual');
+  const [fechaDesde, setFechaDesde] = useState(format(startOfMonth(new Date()), 'yyyy-MM-dd'));
+  const [fechaHasta, setFechaHasta] = useState(format(endOfMonth(new Date()), 'yyyy-MM-dd'));
 
   useEffect(() => {
     if (!currentUser) {
@@ -60,14 +68,14 @@ export default function AdminDashboardPage() {
       return;
     }
 
-    loadDashboard();
+    loadDashboard(fechaDesde, fechaHasta);
   }, [currentUser, tenantSlug, router]);
 
-  const loadDashboard = async () => {
+  const loadDashboard = async (desde: string, hasta: string) => {
     setLoading(true);
     setError('');
     try {
-      const res = await fetchApi<DashboardData>('/reportes/dashboard');
+      const res = await fetchApi<DashboardData>(`/reportes/dashboard?desde=${desde}&hasta=${hasta}`);
       setData(res);
     } catch (err: any) {
       console.error('Error cargando métricas:', err);
@@ -77,7 +85,40 @@ export default function AdminDashboardPage() {
     }
   };
 
-  if (loading) {
+  // Manejador de cambio de Preset
+  const handlePresetChange = (newPreset: PeriodoPreset) => {
+    setPreset(newPreset);
+    const today = new Date();
+    let d = format(today, 'yyyy-MM-dd');
+    let h = format(today, 'yyyy-MM-dd');
+
+    if (newPreset === 'mes_actual') {
+      d = format(startOfMonth(today), 'yyyy-MM-dd');
+      h = format(endOfMonth(today), 'yyyy-MM-dd');
+    } else if (newPreset === 'ultimos_30_dias') {
+      d = format(subDays(today, 30), 'yyyy-MM-dd');
+      h = format(today, 'yyyy-MM-dd');
+    } else if (newPreset === 'hoy') {
+      d = format(today, 'yyyy-MM-dd');
+      h = format(today, 'yyyy-MM-dd');
+    } else if (newPreset === 'ano_actual') {
+      d = format(startOfYear(today), 'yyyy-MM-dd');
+      h = format(today, 'yyyy-MM-dd');
+    }
+
+    if (newPreset !== 'personalizado') {
+      setFechaDesde(d);
+      setFechaHasta(h);
+      loadDashboard(d, h);
+    }
+  };
+
+  const handleCustomDateApply = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadDashboard(fechaDesde, fechaHasta);
+  };
+
+  if (loading && !data) {
     return (
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-muted-foreground">
@@ -96,8 +137,8 @@ export default function AdminDashboardPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
       {/* Header Admin */}
-      <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-4">
+      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
+        <div className="flex items-center gap-4 w-full md:w-auto">
           <button
             onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
             className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
@@ -105,28 +146,106 @@ export default function AdminDashboardPage() {
             <ArrowLeft size={20} />
           </button>
           <div>
-            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
+            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
               <TrendingUp size={20} className="text-emerald-500" />
               <span>Analítica Ejecutiva & Finanzas</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Métricas consolidadas · Desglose por Barbero y Método de Pago
+              Período: <strong className="text-foreground">{fechaDesde}</strong> al <strong className="text-foreground">{fechaHasta}</strong>
             </p>
           </div>
         </div>
 
-        <button
-          onClick={loadDashboard}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
-        >
-          <RefreshCw size={14} />
-          <span>Actualizar</span>
-        </button>
+        {/* Control de Filtro de Período */}
+        <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
+          <div className="flex items-center gap-1 bg-secondary/60 p-1 rounded-xl border border-border text-xs font-semibold">
+            <button
+              onClick={() => handlePresetChange('mes_actual')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                preset === 'mes_actual' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Este Mes
+            </button>
+            <button
+              onClick={() => handlePresetChange('ultimos_30_dias')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                preset === 'ultimos_30_dias' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Últimos 30 Días
+            </button>
+            <button
+              onClick={() => handlePresetChange('hoy')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                preset === 'hoy' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Hoy
+            </button>
+            <button
+              onClick={() => handlePresetChange('personalizado')}
+              className={`px-3 py-1.5 rounded-lg transition-all ${
+                preset === 'personalizado' ? 'bg-card text-foreground font-bold shadow-xs border border-border' : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Personalizado
+            </button>
+          </div>
+
+          <button
+            onClick={() => loadDashboard(fechaDesde, fechaHasta)}
+            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+          >
+            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+            <span>Actualizar</span>
+          </button>
+        </div>
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
+        {/* Selector de Rango Personalizado */}
+        {preset === 'personalizado' && (
+          <form onSubmit={handleCustomDateApply} className="bg-card border border-border p-4 rounded-2xl flex flex-wrap items-center gap-3 shadow-xs">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase text-muted-foreground">
+              <Calendar size={16} className="text-primary" />
+              <span>Seleccionar Rango de Fechas</span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Desde:</span>
+              <input
+                type="date"
+                required
+                value={fechaDesde}
+                onChange={(e) => setFechaDesde(e.target.value)}
+                className="px-3 py-1.5 bg-secondary/50 border border-border rounded-xl text-xs font-mono font-semibold"
+              />
+            </div>
+
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-medium text-muted-foreground">Hasta:</span>
+              <input
+                type="date"
+                required
+                value={fechaHasta}
+                onChange={(e) => setFechaHasta(e.target.value)}
+                className="px-3 py-1.5 bg-secondary/50 border border-border rounded-xl text-xs font-mono font-semibold"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="px-4 py-1.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:opacity-90 transition-opacity"
+            >
+              Aplicar Filtro
+            </button>
+          </form>
+        )}
+
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl text-destructive text-sm font-medium flex items-center gap-3">
             <AlertTriangle size={20} className="shrink-0" />
@@ -135,7 +254,7 @@ export default function AdminDashboardPage() {
         )}
 
         {/* Tarjetas KPI Top */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           
           <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
             <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
@@ -145,7 +264,7 @@ export default function AdminDashboardPage() {
               ${(data?.ingresosTotales || 0).toFixed(2)}
             </div>
             <span className="text-[11px] text-muted-foreground block pt-1">
-              Período actual
+              {fechaDesde} al {fechaHasta}
             </span>
           </div>
 
@@ -182,7 +301,7 @@ export default function AdminDashboardPage() {
             <span>Desglose por Métodos de Pago</span>
           </h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             
             <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl space-y-1">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase">
@@ -257,8 +376,9 @@ export default function AdminDashboardPage() {
                 ))}
                 {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
                   <tr>
-                    <td colSpan={6} className="py-4 text-center text-xs text-muted-foreground">
-                      No hay registros de comisiones en el período seleccionado.
+                    <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
+                      <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>
+                      <p className="text-muted-foreground">Prueba seleccionando otro rango de fechas o registrando el cobro de una cita.</p>
                     </td>
                   </tr>
                 )}
