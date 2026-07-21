@@ -411,7 +411,7 @@ export default function AdminDashboardPage() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-            {data?.topServicios.map((s, index) => (
+            {(data?.topServicios || []).map((s, index) => (
               <div key={s.servicioId} className="p-4 bg-secondary/30 border border-border rounded-xl space-y-1 relative overflow-hidden">
                 <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
                   #{index + 1} Popular
@@ -451,7 +451,7 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data?.rendimientoBarberos.map((b) => (
+                {(data?.rendimientoBarberos || []).map((b) => (
                   <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
                     <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
                     <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
@@ -500,7 +500,7 @@ export default function AdminDashboardPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {data?.clientesStrikes.map((c) => (
+                {(data?.clientesStrikes || []).map((c) => (
                   <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
                     <td className="py-3 px-3 font-semibold">{c.nombreCompleto || 'Cliente Registrado'}</td>
                     <td className="py-3 px-3 font-mono text-xs text-muted-foreground">{c.telefonoWhatsapp}</td>
