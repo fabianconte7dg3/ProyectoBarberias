@@ -137,6 +137,24 @@ let HorariosService = class HorariosService {
             orderBy: [(0, drizzle_orm_1.asc)(schema.bloqueosTemporales.inicio)],
         });
     }
+    async getHistorialBloqueosStaff() {
+        const db = tenant_context_1.TenantContext.getDb();
+        const tenantId = tenant_context_1.TenantContext.getTenantId();
+        return db.query.bloqueosTemporales.findMany({
+            where: (0, drizzle_orm_1.eq)(schema.bloqueosTemporales.tenantId, tenantId),
+            orderBy: [(0, drizzle_orm_1.desc)(schema.bloqueosTemporales.inicio)],
+            limit: 100,
+            with: {
+                barbero: {
+                    columns: {
+                        id: true,
+                        nombreCompleto: true,
+                        rol: true,
+                    }
+                }
+            }
+        });
+    }
     async getDisponibilidad(barberoId, fechaYYYYMMDD) {
         const res = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${barberoId}) as tenant_id`);
         const tenantId = res.rows[0]?.tenant_id;

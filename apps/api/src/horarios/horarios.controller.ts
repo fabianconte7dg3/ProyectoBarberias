@@ -40,6 +40,12 @@ export class HorariosController {
     return this.horariosService.getBloqueosVigentes(barberoId);
   }
 
+  @Roles('admin', 'recepcion')
+  @Get('bloqueos-historial')
+  getHistorialBloqueos() {
+    return this.horariosService.getHistorialBloqueosStaff();
+  }
+
   @Public() // Para que el widget del frontend o WhatsApp consulte libremente
   @Get('disponibilidad')
   getDisponibilidad(

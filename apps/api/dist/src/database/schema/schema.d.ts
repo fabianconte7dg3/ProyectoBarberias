@@ -2902,6 +2902,10 @@ export declare const auditLogsRelations: import("drizzle-orm").Relations<"audit_
     barberia: import("drizzle-orm").One<"barberias", false>;
     usuario: import("drizzle-orm").One<"usuarios", false>;
 }>;
+export declare const bloqueosTemporalesRelations: import("drizzle-orm").Relations<"bloqueos_temporales", {
+    barberia: import("drizzle-orm").One<"barberias", true>;
+    barbero: import("drizzle-orm").One<"usuarios", true>;
+}>;
 export declare const detallesTransaccionRelations: import("drizzle-orm").Relations<"detalles_transaccion", {
     barberia: import("drizzle-orm").One<"barberias", true>;
     transaccion: import("drizzle-orm").One<"transacciones", true>;

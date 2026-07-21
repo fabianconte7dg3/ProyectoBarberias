@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 
@@ -42,6 +42,18 @@ interface AuditLog {
   createdAt: string;
 }
 
+interface BloqueoHistorial {
+  id: string;
+  tipo: string;
+  inicio: string;
+  fin: string;
+  notas?: string;
+  barbero?: {
+    nombreCompleto: string;
+    rol: string;
+  };
+}
+
 export default function AdminConfiguracionPage() {
   const params = useParams();
   const router = useRouter();
@@ -52,6 +64,7 @@ export default function AdminConfiguracionPage() {
   const [servicios, setServicios] = useState<Servicio[]>([]);
   const [staff, setStaff] = useState<UsuarioStaff[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [historialBloqueos, setHistorialBloqueos] = useState<BloqueoHistorial[]>([]);
   const [killSwitchActivo, setKillSwitchActivo] = useState(false);
 
   const [loading, setLoading] = useState(true);
@@ -89,14 +102,16 @@ export default function AdminConfiguracionPage() {
     setLoading(true);
     setError('');
     try {
-      const [resServicios, resStaff, resAudit] = await Promise.all([
+      const [resServicios, resStaff, resAudit, resBloqueos] = await Promise.all([
         fetchApi<Servicio[]>('/servicios'),
         fetchApi<UsuarioStaff[]>('/usuarios'),
         fetchApi<AuditLog[]>('/audit?limit=25'),
+        fetchApi<BloqueoHistorial[]>('/horarios/bloqueos-historial'),
       ]);
       setServicios(resServicios || []);
       setStaff(resStaff || []);
       setAuditLogs(resAudit || []);
+      setHistorialBloqueos(resBloqueos || []);
     } catch (err: any) {
       console.error('Error cargando configuración:', err);
       setError(err.message || 'Error al conectar con la configuración.');
@@ -222,6 +237,8 @@ export default function AdminConfiguracionPage() {
     );
   }
 
+  const now = new Date();
+
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
@@ -240,7 +257,7 @@ export default function AdminConfiguracionPage() {
               <span>Configuración del Local</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Servicios · Inventario · Comisiones · Horarios · Registro de Auditoría Inmutable
+              Servicios · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable
             </p>
           </div>
         </div>
@@ -535,7 +552,85 @@ export default function AdminConfiguracionPage() {
           </div>
         </div>
 
-        {/* 5. SECCIÓN: Historial de Auditoría & Trazabilidad Inmutable */}
+        {/* 5. SECCIÓN: Historial de Ausencias, Vacaciones y Licencias del Staff */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Calendar size={20} className="text-blue-500" />
+              <div>
+                <h2 className="text-base font-bold">Historial de Ausencias, Vacaciones & Licencias del Staff</h2>
+                <p className="text-xs text-muted-foreground">
+                  Registro histórico de todos los permisos, días libres y vacaciones otorgados al personal.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={loadData}
+              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+              title="Refrescar historial"
+            >
+              <RefreshCw size={14} />
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-border uppercase text-muted-foreground font-semibold">
+                  <th className="py-2.5 px-3">Barbero</th>
+                  <th className="py-2.5 px-3">Tipo Permiso</th>
+                  <th className="py-2.5 px-3">Período Otorgado</th>
+                  <th className="py-2.5 px-3 text-center">Estado</th>
+                  <th className="py-2.5 px-3 text-right">Motivo / Notas</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {historialBloqueos.map((b) => {
+                  const ini = new Date(b.inicio);
+                  const fin = new Date(b.fin);
+
+                  let estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-secondary text-muted-foreground border border-border">PASADO</span>;
+                  if (now >= ini && now <= fin) {
+                    estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">EN CURSO</span>;
+                  } else if (ini > now) {
+                    estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">PROGRAMADO</span>;
+                  }
+
+                  return (
+                    <tr key={b.id} className="hover:bg-secondary/40 transition-colors">
+                      <td className="py-3 px-3 font-bold text-foreground">
+                        {b.barbero?.nombreCompleto || 'Barbero Staff'}
+                      </td>
+                      <td className="py-3 px-3 uppercase font-mono font-bold text-[11px] text-primary">
+                        {b.tipo}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-muted-foreground whitespace-nowrap">
+                        {ini.toLocaleDateString()} {ini.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} — {fin.toLocaleDateString()} {fin.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </td>
+                      <td className="py-3 px-3 text-center">
+                        {estadoBadge}
+                      </td>
+                      <td className="py-3 px-3 text-right italic text-muted-foreground">
+                        {b.notas || 'Sin especificación'}
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {historialBloqueos.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground italic">
+                      No hay registros históricos de vacaciones o permisos en el sistema.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* 6. SECCIÓN: Historial de Auditoría & Trazabilidad Inmutable */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">

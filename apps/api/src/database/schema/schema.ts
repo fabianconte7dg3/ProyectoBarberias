@@ -366,6 +366,11 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
   usuario: one(usuarios, { fields: [auditLogs.usuarioId], references: [usuarios.id] }),
 }));
 
+export const bloqueosTemporalesRelations = relations(bloqueosTemporales, ({ one }) => ({
+  barberia: one(barberias, { fields: [bloqueosTemporales.tenantId], references: [barberias.id] }),
+  barbero: one(usuarios, { fields: [bloqueosTemporales.barberoId], references: [usuarios.id] }),
+}));
+
 export const detallesTransaccionRelations = relations(detallesTransaccion, ({ one }) => ({
   barberia: one(barberias, { fields: [detallesTransaccion.tenantId], references: [barberias.id] }),
   transaccion: one(transacciones, { fields: [detallesTransaccion.transaccionId], references: [transacciones.id] }),

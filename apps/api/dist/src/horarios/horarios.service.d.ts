@@ -11,6 +11,7 @@ export declare class HorariosService {
     getHorarioSemanal(barberoId: string): Promise<any>;
     createBloqueo(dto: CreateBloqueoDto): Promise<any>;
     getBloqueosVigentes(barberoId: string): Promise<any>;
+    getHistorialBloqueosStaff(): Promise<any>;
     getDisponibilidad(barberoId: string, fechaYYYYMMDD: string): Promise<{
         disponible: boolean;
         jornada: {

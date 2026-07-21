@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import * as schema from '../database/schema';
-import { eq, and, gt, or, isNull, asc, lte, sql } from 'drizzle-orm';
+import { eq, and, gt, or, isNull, asc, lte, sql, desc } from 'drizzle-orm';
 import { UpsertHorarioSemanalDto, DiaHorarioDto } from './dto/upsert-horario-semanal.dto';
 import { CreateBloqueoDto } from './dto/create-bloqueo.dto';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
@@ -126,6 +126,26 @@ export class HorariosService {
         )
       ),
       orderBy: [asc(schema.bloqueosTemporales.inicio)],
+    });
+  }
+
+  async getHistorialBloqueosStaff() {
+    const db = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    return db.query.bloqueosTemporales.findMany({
+      where: eq(schema.bloqueosTemporales.tenantId, tenantId),
+      orderBy: [desc(schema.bloqueosTemporales.inicio)],
+      limit: 100,
+      with: {
+        barbero: {
+          columns: {
+            id: true,
+            nombreCompleto: true,
+            rol: true,
+          }
+        }
+      }
     });
   }
 

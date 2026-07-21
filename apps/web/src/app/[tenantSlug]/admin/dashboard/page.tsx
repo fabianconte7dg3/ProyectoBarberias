@@ -6,7 +6,7 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
-  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package
+  AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart, ShieldAlert
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 
@@ -78,6 +78,8 @@ export type PeriodoPreset =
   | 'este_ano' 
   | 'personalizado';
 
+export type SubDashboardTab = 'finanzas' | 'ventas' | 'staff' | 'riesgos';
+
 const PRESETS_LABEL: Record<PeriodoPreset, string> = {
   hoy: 'Hoy',
   ayer: 'Ayer',
@@ -99,6 +101,9 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Sub-Dashboard Tab activo
+  const [activeTab, setActiveTab] = useState<SubDashboardTab>('finanzas');
+
   // Filtro por defecto: Últimos 30 días
   const today = new Date();
   const [preset, setPreset] = useState<PeriodoPreset>('ultimos_30_dias');
@@ -109,7 +114,6 @@ export default function AdminDashboardPage() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Cerrar menú si se hace clic afuera
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -242,9 +246,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Desplegable de Estilo Personalizado (Sin Emojis) */}
+        {/* Desplegable de Estilo Personalizado */}
         <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          
           <div className="relative" ref={dropdownRef}>
             <button
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -286,9 +289,63 @@ export default function AdminDashboardPage() {
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
             <span className="hidden sm:inline">Actualizar</span>
           </button>
-
         </div>
       </header>
+
+      {/* Sub-Dashboards Tabs Navigation */}
+      <div className="border-b border-border bg-card/50 px-4 sm:px-6">
+        <div className="max-w-6xl mx-auto flex items-center gap-2 overflow-x-auto text-xs font-bold py-2">
+          
+          <button
+            onClick={() => setActiveTab('finanzas')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'finanzas'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <PieChart size={16} />
+            <span>Finanzas & Recaudación</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ventas')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'ventas'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Scissors size={16} />
+            <span>Servicios & Productos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('staff')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'staff'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Award size={16} />
+            <span>Rendimiento de Staff</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('riesgos')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'riesgos'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <ShieldAlert size={16} />
+            <span>Riesgo CRM & Inventario</span>
+          </button>
+
+        </div>
+      </div>
 
       {/* Main Content */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
@@ -356,253 +413,260 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* Tarjetas KPI Top */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          
-          <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Ingresos Facturados Totales
-            </span>
-            <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-              ${(data?.ingresosTotales || 0).toFixed(2)}
+        {/* SUB-DASHBOARD 1: FINANZAS & RECAUDACIÓN */}
+        {activeTab === 'finanzas' && (
+          <div className="space-y-6 animate-in fade-in duration-200">
+            {/* Tarjetas KPI Top */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              
+              <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+                  Ingresos Facturados Totales
+                </span>
+                <div className="text-3xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
+                  ${(data?.ingresosTotales || 0).toFixed(2)}
+                </div>
+                <span className="text-[11px] font-semibold text-muted-foreground block pt-1">
+                  Servicios: ${(data?.ingresosServicios || 0).toFixed(2)} | Productos: ${(data?.ingresosProductos || 0).toFixed(2)}
+                </span>
+              </div>
+
+              <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+                  Total Operaciones Cobradas
+                </span>
+                <div className="text-3xl font-extrabold text-foreground font-mono">
+                  {data?.totalTransacciones || 0}
+                </div>
+                <span className="text-[11px] text-muted-foreground block pt-1">
+                  Citas y ventas de mostrador
+                </span>
+              </div>
+
+              <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
+                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
+                  Ticket Promedio por Cobro
+                </span>
+                <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                  ${ticketPromedio}
+                </div>
+                <span className="text-[11px] text-muted-foreground block pt-1">
+                  Ingreso promedio por operación
+                </span>
+              </div>
+
             </div>
-            <span className="text-[11px] font-semibold text-muted-foreground block pt-1">
-              Servicios: ${(data?.ingresosServicios || 0).toFixed(2)} | Productos: ${(data?.ingresosProductos || 0).toFixed(2)}
-            </span>
+
+            {/* Desglose por Método de Pago */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                <Receipt size={18} className="text-indigo-500" />
+                <span>Desglose por Métodos de Pago</span>
+              </h2>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase">
+                    <DollarSign size={16} />
+                    <span>Efectivo</span>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-foreground">
+                    ${(data?.desgloseMetodosPago.efectivo || 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase">
+                    <QrCode size={16} />
+                    <span>Yappy</span>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-foreground">
+                    ${(data?.desgloseMetodosPago.yappy || 0).toFixed(2)}
+                  </div>
+                </div>
+
+                <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl space-y-1">
+                  <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase">
+                    <CreditCard size={16} />
+                    <span>Mixto / Tarjeta</span>
+                  </div>
+                  <div className="text-2xl font-bold font-mono text-foreground">
+                    ${(data?.desgloseMetodosPago.mixto || 0).toFixed(2)}
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Total Operaciones Cobradas
-            </span>
-            <div className="text-3xl font-extrabold text-foreground font-mono">
-              {data?.totalTransacciones || 0}
+        {/* SUB-DASHBOARD 2: VENTAS & PRODUCTOS */}
+        {activeTab === 'ventas' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in duration-200">
+            {/* Top Servicios */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                <Scissors size={18} className="text-primary" />
+                <span>Servicios Más Demandados</span>
+              </h2>
+
+              <div className="space-y-2.5">
+                {(data?.topServicios || []).map((s, index) => (
+                  <div key={s.servicioId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
+                        #{index + 1}
+                      </span>
+                      <span className="font-bold text-foreground">{s.nombre}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${s.totalRecaudado.toFixed(2)}</span>
+                      <span className="text-muted-foreground text-[10px]">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
+                    </div>
+                  </div>
+                ))}
+                {(!data?.topServicios || data.topServicios.length === 0) && (
+                  <div className="py-4 text-center text-xs text-muted-foreground">
+                    No hay servicios registrados en este período.
+                  </div>
+                )}
+              </div>
             </div>
-            <span className="text-[11px] text-muted-foreground block pt-1">
-              Citas y ventas de mostrador
-            </span>
+
+            {/* Top Productos Retail */}
+            <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
+                <ShoppingBag size={18} className="text-emerald-500" />
+                <span>Productos Retail Más Vendidos</span>
+              </h2>
+
+              <div className="space-y-2.5">
+                {(data?.topProductos || []).map((p, index) => (
+                  <div key={p.productoId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        #{index + 1}
+                      </span>
+                      <span className="font-bold text-foreground">{p.nombre}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${p.totalRecaudado.toFixed(2)}</span>
+                      <span className="text-muted-foreground text-[10px]">{p.totalVendidos} unidad{p.totalVendidos > 1 ? 'es' : ''}</span>
+                    </div>
+                  </div>
+                ))}
+                {(!data?.topProductos || data.topProductos.length === 0) && (
+                  <div className="py-4 text-center text-xs text-muted-foreground">
+                    No hay ventas de productos registradas en este período.
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
+        )}
 
-          <div className="bg-card border border-border p-5 rounded-2xl shadow-xs space-y-1">
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
-              Ticket Promedio por Cobro
-            </span>
-            <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
-              ${ticketPromedio}
-            </div>
-            <span className="text-[11px] text-muted-foreground block pt-1">
-              Ingreso promedio por operación
-            </span>
-          </div>
-
-        </div>
-
-        {/* Desglose por Método de Pago */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-          <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-            <Receipt size={18} className="text-indigo-500" />
-            <span>Desglose por Métodos de Pago</span>
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            
-            <div className="bg-emerald-500/5 border border-emerald-500/20 p-4 rounded-xl space-y-1">
-              <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-semibold uppercase">
-                <DollarSign size={16} />
-                <span>Efectivo</span>
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground">
-                ${(data?.desgloseMetodosPago.efectivo || 0).toFixed(2)}
-              </div>
-            </div>
-
-            <div className="bg-indigo-500/5 border border-indigo-500/20 p-4 rounded-xl space-y-1">
-              <div className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase">
-                <QrCode size={16} />
-                <span>Yappy</span>
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground">
-                ${(data?.desgloseMetodosPago.yappy || 0).toFixed(2)}
-              </div>
-            </div>
-
-            <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl space-y-1">
-              <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase">
-                <CreditCard size={16} />
-                <span>Mixto / Tarjeta</span>
-              </div>
-              <div className="text-2xl font-bold font-mono text-foreground">
-                ${(data?.desgloseMetodosPago.mixto || 0).toFixed(2)}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Ranking de Servicios & Productos Más Vendidos */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          
-          {/* Top Servicios */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+        {/* SUB-DASHBOARD 3: RENDIMIENTO DE STAFF */}
+        {activeTab === 'staff' && (
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4 animate-in fade-in duration-200">
             <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-              <Scissors size={18} className="text-primary" />
-              <span>Servicios Más Demandados</span>
+              <Award size={18} className="text-emerald-500" />
+              <span>Rendimiento & Cálculo Neto de Comisiones ({PRESETS_LABEL[preset]})</span>
             </h2>
 
-            <div className="space-y-2.5">
-              {(data?.topServicios || []).map((s, index) => (
-                <div key={s.servicioId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-primary/10 text-primary border border-primary/20">
-                      #{index + 1}
-                    </span>
-                    <span className="font-bold text-foreground">{s.nombre}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${s.totalRecaudado.toFixed(2)}</span>
-                    <span className="text-muted-foreground text-[10px]">{s.totalCitas} cita{s.totalCitas > 1 ? 's' : ''}</span>
-                  </div>
-                </div>
-              ))}
-              {(!data?.topServicios || data.topServicios.length === 0) && (
-                <div className="py-4 text-center text-xs text-muted-foreground">
-                  No hay servicios registrados en este período.
-                </div>
-              )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                    <th className="py-2.5 px-3">Barbero</th>
+                    <th className="py-2.5 px-3 text-center">Citas</th>
+                    <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
+                    <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
+                    <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
+                    <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(data?.rendimientoBarberos || []).map((b) => (
+                    <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
+                      <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
+                      <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
+                      <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
+                      <td className="py-3 px-3 text-center">
+                        <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
+                          {b.porcentajeComision}%
+                          {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
+                        ${b.comisionTotal.toFixed(2)}
+                      </td>
+                      <td className="py-3 px-3 text-right font-mono font-semibold text-rose-500">
+                        ${b.propinaTotal.toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
+                    <tr>
+                      <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
+                        <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>
+                        <p className="text-muted-foreground">Prueba seleccionando otro rango de fechas o registrando el cobro de una cita.</p>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
+        )}
 
-          {/* Top Productos Retail */}
-          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+        {/* SUB-DASHBOARD 4: RIESGO CRM & INVENTARIO */}
+        {activeTab === 'riesgos' && (
+          <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4 animate-in fade-in duration-200">
             <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-              <ShoppingBag size={18} className="text-emerald-500" />
-              <span>Productos Retail Más Vendidos</span>
+              <Users size={18} className="text-rose-500" />
+              <span>CRM de Clientes & Registro de Ausencias (Strikes)</span>
             </h2>
 
-            <div className="space-y-2.5">
-              {(data?.topProductos || []).map((p, index) => (
-                <div key={p.productoId} className="p-3 bg-secondary/30 border border-border rounded-xl flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-[10px] uppercase px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                      #{index + 1}
-                    </span>
-                    <span className="font-bold text-foreground">{p.nombre}</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="font-extrabold font-mono text-emerald-600 dark:text-emerald-400 block">${p.totalRecaudado.toFixed(2)}</span>
-                    <span className="text-muted-foreground text-[10px]">{p.totalVendidos} unidad{p.totalVendidos > 1 ? 'es' : ''}</span>
-                  </div>
-                </div>
-              ))}
-              {(!data?.topProductos || data.topProductos.length === 0) && (
-                <div className="py-4 text-center text-xs text-muted-foreground">
-                  No hay ventas de productos registradas en este período.
-                </div>
-              )}
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead>
+                  <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
+                    <th className="py-2.5 px-3">Cliente</th>
+                    <th className="py-2.5 px-3">WhatsApp</th>
+                    <th className="py-2.5 px-3 text-center">Ausencias (Strikes)</th>
+                    <th className="py-2.5 px-3 text-right">Estado CRM</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {(data?.clientesStrikes || []).map((c) => (
+                    <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
+                      <td className="py-3 px-3 font-semibold">{c.nombreCompleto || 'Cliente Registrado'}</td>
+                      <td className="py-3 px-3 font-mono text-xs text-muted-foreground">{c.telefonoWhatsapp}</td>
+                      <td className="py-3 px-3 text-center font-mono font-bold">
+                        <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs">
+                          {c.strikesCount} strike{c.strikesCount > 1 ? 's' : ''}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        {c.strikesCount >= 3 ? (
+                          <span className="text-xs font-bold text-rose-600 dark:text-rose-400">BLOQUEADO</span>
+                        ) : (
+                          <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">ADVERTENCIA</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {(!data?.clientesStrikes || data.clientesStrikes.length === 0) && (
+                    <tr>
+                      <td colSpan={4} className="py-4 text-center text-xs text-muted-foreground">
+                        No hay clientes registrados con ausencias/strikes. ¡Excelente historial!
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
           </div>
-
-        </div>
-
-        {/* Rendimiento & Comisiones por Barbero */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-          <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-            <Award size={18} className="text-emerald-500" />
-            <span>Rendimiento & Cálculo Neto de Comisiones ({PRESETS_LABEL[preset]})</span>
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
-                  <th className="py-2.5 px-3">Barbero</th>
-                  <th className="py-2.5 px-3 text-center">Citas</th>
-                  <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
-                  <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
-                  <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
-                  <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {(data?.rendimientoBarberos || []).map((b) => (
-                  <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
-                    <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
-                    <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
-                    <td className="py-3 px-3 text-center">
-                      <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
-                        {b.porcentajeComision}%
-                        {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right font-mono font-extrabold text-emerald-600 dark:text-emerald-400">
-                      ${b.comisionTotal.toFixed(2)}
-                    </td>
-                    <td className="py-3 px-3 text-right font-mono font-semibold text-rose-500">
-                      ${b.propinaTotal.toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-                {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
-                  <tr>
-                    <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
-                      <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>
-                      <p className="text-muted-foreground">Prueba seleccionando otro rango de fechas o registrando el cobro de una cita.</p>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* CRM de Ausencias & Strikes */}
-        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
-          <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-            <Users size={18} className="text-rose-500" />
-            <span>CRM de Clientes & Registro de Ausencias (Strikes)</span>
-          </h2>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead>
-                <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
-                  <th className="py-2.5 px-3">Cliente</th>
-                  <th className="py-2.5 px-3">WhatsApp</th>
-                  <th className="py-2.5 px-3 text-center">Ausencias (Strikes)</th>
-                  <th className="py-2.5 px-3 text-right">Estado CRM</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {(data?.clientesStrikes || []).map((c) => (
-                  <tr key={c.id} className="hover:bg-secondary/40 transition-colors">
-                    <td className="py-3 px-3 font-semibold">{c.nombreCompleto || 'Cliente Registrado'}</td>
-                    <td className="py-3 px-3 font-mono text-xs text-muted-foreground">{c.telefonoWhatsapp}</td>
-                    <td className="py-3 px-3 text-center font-mono font-bold">
-                      <span className="px-2.5 py-1 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 text-xs">
-                        {c.strikesCount} strike{c.strikesCount > 1 ? 's' : ''}
-                      </span>
-                    </td>
-                    <td className="py-3 px-3 text-right">
-                      {c.strikesCount >= 3 ? (
-                        <span className="text-xs font-bold text-rose-600 dark:text-rose-400">BLOQUEADO</span>
-                      ) : (
-                        <span className="text-xs text-amber-600 dark:text-amber-400 font-medium">ADVERTENCIA</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {(!data?.clientesStrikes || data.clientesStrikes.length === 0) && (
-                  <tr>
-                    <td colSpan={4} className="py-4 text-center text-xs text-muted-foreground">
-                      No hay clientes registrados con ausencias/strikes. ¡Excelente historial!
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        )}
 
       </main>
     </div>

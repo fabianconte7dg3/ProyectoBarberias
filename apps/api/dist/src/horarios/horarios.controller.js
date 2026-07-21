@@ -36,6 +36,9 @@ let HorariosController = class HorariosController {
     getBloqueos(barberoId) {
         return this.horariosService.getBloqueosVigentes(barberoId);
     }
+    getHistorialBloqueos() {
+        return this.horariosService.getHistorialBloqueosStaff();
+    }
     getDisponibilidad(barberoId, fecha) {
         return this.horariosService.getDisponibilidad(barberoId, fecha);
     }
@@ -74,6 +77,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], HorariosController.prototype, "getBloqueos", null);
+__decorate([
+    (0, roles_decorator_1.Roles)('admin', 'recepcion'),
+    (0, common_1.Get)('bloqueos-historial'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], HorariosController.prototype, "getHistorialBloqueos", null);
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('disponibilidad'),
