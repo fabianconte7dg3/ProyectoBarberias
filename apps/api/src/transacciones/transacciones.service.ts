@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException, ConflictException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ConflictException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
-import { citas, transacciones, usuarios, servicios } from '../database/schema';
-import { eq, desc } from 'drizzle-orm';
+import { citas, transacciones, usuarios, servicios, detallesTransaccion, productos } from '../database/schema';
+import { eq, and, desc } from 'drizzle-orm';
 import { CobrarCitaDto } from './dto/cobrar-cita.dto';
 import { YappyService } from '../yappy/yappy.service';
 import { DgiService } from '../dgi/dgi.service';
+import { ProductosService } from '../productos/productos.service';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -12,85 +13,178 @@ export class TransaccionesService {
   constructor(
     private readonly yappyService: YappyService,
     private readonly dgiService: DgiService,
+    private readonly productosService: ProductosService,
   ) {}
 
-  async cobrarCita(citaId: string, dto: CobrarCitaDto, user?: any) {
+  async cobrarCita(citaId: string | null, dto: CobrarCitaDto, user?: any) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
-    // 1. Obtener la cita con sus relaciones
-    const cita = await db.query.citas.findFirst({
-      where: eq(citas.id, citaId),
+    const idempotencyKey = dto.idempotencyKey || `tx_${citaId || 'mostrador'}_${Date.now()}`;
+
+    // 1. Verificación de Idempotencia por idempotencyKey
+    const txExistenteKey = await db.query.transacciones.findFirst({
+      where: and(
+        eq(transacciones.tenantId, tenantId),
+        eq(transacciones.idempotencyKey, idempotencyKey)
+      ),
       with: {
-        barbero: true,
-        servicio: true,
-      },
+        detalles: true,
+      }
     });
 
-    if (!cita) {
-      throw new NotFoundException('Cita no encontrada');
+    if (txExistenteKey) {
+      // Idempotencia: Devolver la transacción ya procesada sin cobrar ni descontar stock dos veces
+      return {
+        ...txExistenteKey,
+        idempotent: true,
+      };
     }
 
-    // RBAC: Si el usuario es barbero, sólo puede cobrar sus propias citas
-    if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
-      throw new ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+    let cita: any = null;
+    let barbero: any = null;
+    let subtotalServicio = 0;
+    let comisionServicio = 0;
+
+    // 2. Procesar Cita (si aplica)
+    if (citaId) {
+      cita = await db.query.citas.findFirst({
+        where: eq(citas.id, citaId),
+        with: {
+          barbero: true,
+          servicio: true,
+        },
+      });
+
+      if (!cita) {
+        throw new NotFoundException('Cita no encontrada');
+      }
+
+      if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
+        throw new ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+      }
+
+      if (cita.estado === 'completada' || cita.estado === 'cancelada') {
+        throw new ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+      }
+
+      const txExistenteCita = await db.query.transacciones.findFirst({
+        where: eq(transacciones.citaId, citaId),
+      });
+
+      if (txExistenteCita) {
+        throw new ConflictException('Ya existe un cobro registrado para esta cita.');
+      }
+
+      barbero = cita.barbero;
+      subtotalServicio = Number(cita.servicio.precioBase || 0);
+      const pctServicio = Number(barbero.porcentajeComision || 0);
+      comisionServicio = (subtotalServicio * pctServicio) / 100;
+    } else if (dto.barberoId) {
+      // Venta directa de mostrador sin cita: Obtener barbero vendedor si fue asignado
+      barbero = await db.query.usuarios.findFirst({
+        where: eq(usuarios.id, dto.barberoId),
+      });
     }
 
-    // Prevención de Doble Cobro: Estado debe ser programada o en_curso
-    if (cita.estado === 'completada' || cita.estado === 'cancelada') {
-      throw new ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+    // 3. Procesar Productos Adicionales (Descuento atómico de stock)
+    const lineasDetalle: {
+      tipoItem: 'servicio' | 'producto';
+      servicioId?: string;
+      productoId?: string;
+      cantidad: number;
+      precioUnitario: number;
+      subtotal: number;
+      comisionAplicada: number;
+    }[] = [];
+
+    if (cita) {
+      lineasDetalle.push({
+        tipoItem: 'servicio',
+        servicioId: cita.servicio.id,
+        cantidad: 1,
+        precioUnitario: subtotalServicio,
+        subtotal: subtotalServicio,
+        comisionAplicada: comisionServicio,
+      });
     }
 
-    // Verificar si ya existe una transacción de cobro registrada
-    const [txExistente] = await db.select({ id: transacciones.id }).from(transacciones).where(eq(transacciones.citaId, citaId)).limit(1);
-    if (txExistente) {
-      throw new ConflictException('Ya existe un cobro registrado para esta cita.');
+    let subtotalProductosTotal = 0;
+    let comisionProductosTotal = 0;
+
+    if (dto.productosAdicionales && dto.productosAdicionales.length > 0) {
+      for (const item of dto.productosAdicionales) {
+        // Descuento atómico de stock (lanza BadRequestException si no hay stock)
+        const prod = await this.productosService.descontarStockAtomico(item.productoId, item.cantidad, db);
+
+        const precioUnitario = Number(prod.precio_venta || prod.precioVenta || 0);
+        const subtotalProd = precioUnitario * item.cantidad;
+        const pctComisionProd = Number(barbero?.porcentajeComisionProducto || 0);
+        const comisionProd = (subtotalProd * pctComisionProd) / 100;
+
+        subtotalProductosTotal += subtotalProd;
+        comisionProductosTotal += comisionProd;
+
+        lineasDetalle.push({
+          tipoItem: 'producto',
+          productoId: item.productoId,
+          cantidad: item.cantidad,
+          precioUnitario,
+          subtotal: subtotalProd,
+          comisionAplicada: comisionProd,
+        });
+      }
     }
 
-    // 2. Calcular montos
-    const totalFacturado = Number(cita.servicio.precioBase);
-    const porcentajeComision = Number(cita.barbero.porcentajeComision || 0);
-    const comisionBarbero = (totalFacturado * porcentajeComision) / 100;
+    if (!cita && lineasDetalle.length === 0) {
+      throw new BadRequestException('Una venta de mostrador debe incluir al menos un producto.');
+    }
 
-    // 3. Crear transacción y actualizar cita (Atómico, ya estamos dentro de una tx gracias al interceptor, 
-    // pero para asegurar atomicidad si lo llamamos desde otro lado, podríamos usar db.transaction. 
-    // Sin embargo, el tenant context asume que db ya es una tx si viene del interceptor.
-    // Drizzle permite hacer sub-transacciones).
-    
-    // Asumimos que `db` ya es una transacción o la base de datos principal. 
-    // Si viene del TenantInterceptor, ES una transacción.
-    
+    const totalFacturado = subtotalServicio + subtotalProductosTotal;
+    const comisionBarberoTotal = comisionServicio + comisionProductosTotal;
     const yappyOrderId = dto.metodoPago === 'yappy' ? crypto.randomBytes(6).toString('hex') : null;
 
+    // 4. Insertar Transacción Maestro
     const [nuevaTransaccion] = await db.insert(transacciones).values({
       tenantId,
-      citaId: cita.id,
+      citaId: cita ? cita.id : null,
+      idempotencyKey,
       metodoPago: dto.metodoPago,
-      totalFacturado: totalFacturado.toString(),
-      montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toString() : null,
-      comisionBarbero: comisionBarbero.toString(),
-      propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toString() : '0',
+      totalFacturado: totalFacturado.toFixed(2),
+      montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toFixed(2) : null,
+      comisionBarbero: comisionBarberoTotal.toFixed(2),
+      propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toFixed(2) : '0.00',
       rucCliente: dto.rucCliente,
       nombreFiscalCliente: dto.nombreFiscalCliente,
       yappyOrderId,
     }).returning();
 
-    // Si es yappy, iniciamos el pago. La cita no se marca completada hasta que se procese el IPN?
-    // Depende del negocio. Si es manual el pago ya se verificó visualmente. 
-    // Por simplicidad, si es yappy, delegamos al servicio y si es manual se aprueba, 
-    // pero para comercial devolvemos los datos para el frontend.
+    // 5. Insertar Detalles de Transacción (Líneas de Venta)
+    for (const detalle of lineasDetalle) {
+      await db.insert(detallesTransaccion).values({
+        tenantId,
+        transaccionId: nuevaTransaccion.id,
+        tipoItem: detalle.tipoItem,
+        servicioId: detalle.servicioId || null,
+        productoId: detalle.productoId || null,
+        cantidad: detalle.cantidad,
+        precioUnitario: detalle.precioUnitario.toFixed(2),
+        subtotal: detalle.subtotal.toFixed(2),
+        comisionAplicada: detalle.comisionAplicada.toFixed(2),
+      });
+    }
+
+    // 6. Procesar Pago Yappy o Actualizar Cita
     let yappyData = null;
     if (dto.metodoPago === 'yappy') {
       yappyData = await this.yappyService.initiatePayment(tenantId, yappyOrderId!, totalFacturado);
     }
 
-    // Solo marcamos como completada si NO es Yappy
-    if (dto.metodoPago !== 'yappy') {
+    if (cita && dto.metodoPago !== 'yappy') {
       await db.update(citas)
         .set({ estado: 'completada' })
         .where(eq(citas.id, cita.id));
         
-      // Emitir factura a DGI asincronamente
       this.dgiService.emitirFacturaAsync(
         tenantId,
         nuevaTransaccion.id,
@@ -100,63 +194,36 @@ export class TransaccionesService {
       ).catch(err => console.error('Error al emitir factura a DGI:', err));
     }
 
-    return { transaccion: nuevaTransaccion, yappyData };
+    return {
+      ...nuevaTransaccion,
+      yappyData,
+      detalles: lineasDetalle,
+    };
   }
 
-  async confirmarPagoManual(citaId: string, confirmadoPorId: string) {
+  async getHistorialTransacciones(limit = 20) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
-    const [transaccion] = await db.query.transacciones.findMany({
-      where: eq(transacciones.citaId, citaId),
+    return db.query.transacciones.findMany({
+      where: eq(transacciones.tenantId, tenantId),
       orderBy: [desc(transacciones.createdAt)],
-      limit: 1,
-    });
-
-    if (!transaccion) throw new NotFoundException('Transacción no encontrada');
-
-    // Marcamos la transacción como confirmada
-    await db.update(transacciones)
-      .set({ confirmadoPorId })
-      .where(eq(transacciones.id, transaccion.id));
-
-    // Marcamos la cita como completada
-    await db.update(citas)
-      .set({ estado: 'completada' })
-      .where(eq(citas.id, citaId));
-
-    // Emitir factura
-    this.dgiService.emitirFacturaAsync(
-      tenantId,
-      transaccion.id,
-      transaccion.totalFacturado,
-      transaccion.rucCliente,
-      transaccion.nombreFiscalCliente
-    ).catch(err => console.error('Error al emitir factura a DGI:', err));
-
-    return { success: true };
-  }
-
-  async findAll(page: number = 1, limit: number = 20) {
-    const db = TenantContext.getDb();
-    const offset = (page - 1) * limit;
-
-    const data = await db.query.transacciones.findMany({
       limit,
-      offset,
-      orderBy: [desc(transacciones.createdAt)],
       with: {
         cita: {
           with: {
-            cliente: true,
             barbero: true,
             servicio: true,
+            cliente: true,
+          }
+        },
+        detalles: {
+          with: {
+            servicio: true,
+            producto: true,
           }
         }
       }
     });
-
-    return { data, page, limit };
   }
 }
-

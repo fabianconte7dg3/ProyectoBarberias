@@ -28,12 +28,11 @@ let TransaccionesController = class TransaccionesController {
     async cobrarCita(req, id, cobrarCitaDto) {
         return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
     }
-    async confirmarPagoManual(id, req) {
-        const usuarioId = req.user.userId;
-        return this.transaccionesService.confirmarPagoManual(id, usuarioId);
+    async ventaMostrador(req, cobrarCitaDto) {
+        return this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
     }
-    async findAll(page = '1', limit = '20') {
-        return this.transaccionesService.findAll(Number(page), Number(limit));
+    async findAll() {
+        return this.transaccionesService.getHistorialTransacciones(20);
     }
 };
 exports.TransaccionesController = TransaccionesController;
@@ -48,21 +47,19 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "cobrarCita", null);
 __decorate([
-    (0, common_1.Post)('citas/:id/confirmar-pago-manual'),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
+    (0, common_1.Post)('transacciones/mostrador'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Object, cobrar_cita_dto_1.CobrarCitaDto]),
     __metadata("design:returntype", Promise)
-], TransaccionesController.prototype, "confirmarPagoManual", null);
+], TransaccionesController.prototype, "ventaMostrador", null);
 __decorate([
     (0, common_1.Get)('transacciones'),
     (0, roles_decorator_1.Roles)('admin'),
-    __param(0, (0, common_1.Query)('page')),
-    __param(1, (0, common_1.Query)('limit')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], TransaccionesController.prototype, "findAll", null);
 exports.TransaccionesController = TransaccionesController = __decorate([

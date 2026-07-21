@@ -12,14 +12,16 @@ const transacciones_controller_1 = require("./transacciones.controller");
 const transacciones_service_1 = require("./transacciones.service");
 const yappy_module_1 = require("../yappy/yappy.module");
 const dgi_module_1 = require("../dgi/dgi.module");
+const productos_module_1 = require("../productos/productos.module");
 let TransaccionesModule = class TransaccionesModule {
 };
 exports.TransaccionesModule = TransaccionesModule;
 exports.TransaccionesModule = TransaccionesModule = __decorate([
     (0, common_1.Module)({
-        imports: [yappy_module_1.YappyModule, dgi_module_1.DgiModule],
+        imports: [yappy_module_1.YappyModule, dgi_module_1.DgiModule, productos_module_1.ProductosModule],
         controllers: [transacciones_controller_1.TransaccionesController],
-        providers: [transacciones_service_1.TransaccionesService]
+        providers: [transacciones_service_1.TransaccionesService],
+        exports: [transacciones_service_1.TransaccionesService],
     })
 ], TransaccionesModule);
 //# sourceMappingURL=transacciones.module.js.map

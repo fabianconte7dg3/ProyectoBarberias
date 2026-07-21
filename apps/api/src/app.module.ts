@@ -9,6 +9,7 @@ import { TenantInterceptor } from './database/tenant/tenant.interceptor';
 import { AuthModule } from './auth/auth.module';
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { ServiciosModule } from './servicios/servicios.module';
+import { ProductosModule } from './productos/productos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
@@ -47,6 +48,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     AuthModule,
     UsuariosModule,
     ServiciosModule,
+    ProductosModule,
     ClientesModule,
     HorariosModule,
     CitasModule,
@@ -61,6 +63,10 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
   providers: [
     AppService,
     {
+      provide: APP_INTERCEPTOR,
+      useClass: TenantInterceptor,
+    },
+    {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
     },
@@ -71,10 +77,6 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     {
       provide: APP_GUARD,
       useClass: RolesGuard,
-    },
-    {
-      provide: APP_INTERCEPTOR,
-      useClass: TenantInterceptor,
     },
   ],
 })

@@ -9,20 +9,43 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CobrarCitaDto = void 0;
+exports.CobrarCitaDto = exports.ProductoAdicionalDto = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
+class ProductoAdicionalDto {
+    productoId;
+    cantidad;
+}
+exports.ProductoAdicionalDto = ProductoAdicionalDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ProductoAdicionalDto.prototype, "productoId", void 0);
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], ProductoAdicionalDto.prototype, "cantidad", void 0);
 class CobrarCitaDto {
     metodoPago;
+    idempotencyKey;
     montoEfectivoIngresado;
     propinaBarbero;
     rucCliente;
     nombreFiscalCliente;
+    productosAdicionales;
+    barberoId;
 }
 exports.CobrarCitaDto = CobrarCitaDto;
 __decorate([
     (0, class_validator_1.IsEnum)(['efectivo', 'yappy', 'mixto', 'deuda']),
     __metadata("design:type", String)
 ], CobrarCitaDto.prototype, "metodoPago", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CobrarCitaDto.prototype, "idempotencyKey", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsNumber)(),
@@ -43,4 +66,16 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CobrarCitaDto.prototype, "nombreFiscalCliente", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => ProductoAdicionalDto),
+    __metadata("design:type", Array)
+], CobrarCitaDto.prototype, "productosAdicionales", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CobrarCitaDto.prototype, "barberoId", void 0);
 //# sourceMappingURL=cobrar-cita.dto.js.map

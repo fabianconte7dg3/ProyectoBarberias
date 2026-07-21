@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.transacciones = exports.citas = exports.clientes = exports.servicios = exports.usuarios = exports.barberias = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.detallesTransaccionRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
@@ -32,6 +32,7 @@ exports.tipoPlantillaEnum = (0, pg_core_1.pgEnum)('tipo_plantilla', [
     'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
 exports.yappyModoEnum = (0, pg_core_1.pgEnum)('yappy_modo', ['manual', 'comercial']);
+exports.tipoItemEnum = (0, pg_core_1.pgEnum)('tipo_item', ['servicio', 'producto']);
 exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     nombreComercial: (0, pg_core_1.varchar)('nombre_comercial', { length: 255 }).notNull(),
@@ -53,6 +54,7 @@ exports.usuarios = (0, pg_core_1.pgTable)('usuarios', {
     password: (0, pg_core_1.varchar)('password', { length: 255 }),
     rol: (0, exports.rolUsuarioEnum)('rol').notNull(),
     porcentajeComision: (0, pg_core_1.decimal)('porcentaje_comision', { precision: 4, scale: 2 }),
+    porcentajeComisionProducto: (0, pg_core_1.decimal)('porcentaje_comision_producto', { precision: 4, scale: 2 }),
     pinAcceso: (0, pg_core_1.varchar)('pin_acceso', { length: 255 }),
     tokenActivacion: (0, pg_core_1.varchar)('token_activacion', { length: 255 }),
     tokenExpiraEn: (0, pg_core_1.timestamp)('token_expira_en', { withTimezone: true }),
@@ -67,6 +69,18 @@ exports.servicios = (0, pg_core_1.pgTable)('servicios', {
     duracionMinutos: (0, pg_core_1.integer)('duracion_minutos').notNull(),
     precioBase: (0, pg_core_1.decimal)('precio_base', { precision: 10, scale: 2 }).notNull(),
     activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
+});
+exports.productos = (0, pg_core_1.pgTable)('productos', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
+    nombre: (0, pg_core_1.varchar)('nombre', { length: 255 }).notNull(),
+    descripcion: (0, pg_core_1.text)('descripcion'),
+    precioVenta: (0, pg_core_1.decimal)('precio_venta', { precision: 10, scale: 2 }).notNull(),
+    costoCompra: (0, pg_core_1.decimal)('costo_compra', { precision: 10, scale: 2 }).notNull(),
+    stockActual: (0, pg_core_1.integer)('stock_actual').notNull().default(0),
+    stockMinimo: (0, pg_core_1.integer)('stock_minimo').notNull().default(2),
+    activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 exports.clientes = (0, pg_core_1.pgTable)('clientes', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
@@ -105,7 +119,8 @@ exports.citas = (0, pg_core_1.pgTable)('citas', {
 exports.transacciones = (0, pg_core_1.pgTable)('transacciones', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
-    citaId: (0, pg_core_1.uuid)('cita_id').notNull().unique().references(() => exports.citas.id),
+    citaId: (0, pg_core_1.uuid)('cita_id').references(() => exports.citas.id),
+    idempotencyKey: (0, pg_core_1.varchar)('idempotency_key', { length: 255 }).notNull().unique(),
     metodoPago: (0, exports.metodoPagoEnum)('metodo_pago').notNull(),
     totalFacturado: (0, pg_core_1.decimal)('total_facturado', { precision: 10, scale: 2 }).notNull(),
     montoEfectivoIngresado: (0, pg_core_1.decimal)('monto_efectivo_ingresado', { precision: 10, scale: 2 }),
@@ -120,6 +135,19 @@ exports.transacciones = (0, pg_core_1.pgTable)('transacciones', {
     yappyWebhookReceivedAt: (0, pg_core_1.timestamp)('yappy_webhook_received_at', { withTimezone: true }),
     yappyWebhookPayload: (0, pg_core_1.jsonb)('yappy_webhook_payload'),
     confirmadoPorId: (0, pg_core_1.uuid)('confirmado_por_id').references(() => exports.usuarios.id),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+exports.detallesTransaccion = (0, pg_core_1.pgTable)('detalles_transaccion', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
+    transaccionId: (0, pg_core_1.uuid)('transaccion_id').notNull().references(() => exports.transacciones.id, { onDelete: 'cascade' }),
+    tipoItem: (0, exports.tipoItemEnum)('tipo_item').notNull(),
+    servicioId: (0, pg_core_1.uuid)('servicio_id').references(() => exports.servicios.id),
+    productoId: (0, pg_core_1.uuid)('producto_id').references(() => exports.productos.id),
+    cantidad: (0, pg_core_1.integer)('cantidad').notNull().default(1),
+    precioUnitario: (0, pg_core_1.decimal)('precio_unitario', { precision: 10, scale: 2 }).notNull(),
+    subtotal: (0, pg_core_1.decimal)('subtotal', { precision: 10, scale: 2 }).notNull(),
+    comisionAplicada: (0, pg_core_1.decimal)('comision_aplicada', { precision: 10, scale: 2 }).notNull().default('0'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 exports.horarios = (0, pg_core_1.pgTable)('horarios', {
@@ -198,6 +226,7 @@ exports.yappyConfig = (0, pg_core_1.pgTable)('yappy_config', {
 exports.barberiasRelations = (0, drizzle_orm_1.relations)(exports.barberias, ({ many, one }) => ({
     usuarios: many(exports.usuarios),
     servicios: many(exports.servicios),
+    productos: many(exports.productos),
     clientes: many(exports.clientes),
     citas: many(exports.citas),
     whatsappConfig: one(exports.whatsappConfig),
@@ -207,6 +236,10 @@ exports.usuariosRelations = (0, drizzle_orm_1.relations)(exports.usuarios, ({ on
     barberia: one(exports.barberias, { fields: [exports.usuarios.tenantId], references: [exports.barberias.id] }),
     horarios: many(exports.horarios),
     citasComoBarbero: many(exports.citas),
+}));
+exports.productosRelations = (0, drizzle_orm_1.relations)(exports.productos, ({ one, many }) => ({
+    barberia: one(exports.barberias, { fields: [exports.productos.tenantId], references: [exports.barberias.id] }),
+    detalles: many(exports.detallesTransaccion),
 }));
 exports.clientesRelations = (0, drizzle_orm_1.relations)(exports.clientes, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.clientes.tenantId], references: [exports.barberias.id] }),
@@ -220,8 +253,15 @@ exports.citasRelations = (0, drizzle_orm_1.relations)(exports.citas, ({ one }) =
     servicio: one(exports.servicios, { fields: [exports.citas.servicioId], references: [exports.servicios.id] }),
     transaccion: one(exports.transacciones, { fields: [exports.citas.id], references: [exports.transacciones.citaId] }),
 }));
-exports.transaccionesRelations = (0, drizzle_orm_1.relations)(exports.transacciones, ({ one }) => ({
+exports.transaccionesRelations = (0, drizzle_orm_1.relations)(exports.transacciones, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.transacciones.tenantId], references: [exports.barberias.id] }),
     cita: one(exports.citas, { fields: [exports.transacciones.citaId], references: [exports.citas.id] }),
+    detalles: many(exports.detallesTransaccion),
+}));
+exports.detallesTransaccionRelations = (0, drizzle_orm_1.relations)(exports.detallesTransaccion, ({ one }) => ({
+    barberia: one(exports.barberias, { fields: [exports.detallesTransaccion.tenantId], references: [exports.barberias.id] }),
+    transaccion: one(exports.transacciones, { fields: [exports.detallesTransaccion.transaccionId], references: [exports.transacciones.id] }),
+    servicio: one(exports.servicios, { fields: [exports.detallesTransaccion.servicioId], references: [exports.servicios.id] }),
+    producto: one(exports.productos, { fields: [exports.detallesTransaccion.productoId], references: [exports.productos.id] }),
 }));
 //# sourceMappingURL=schema.js.map

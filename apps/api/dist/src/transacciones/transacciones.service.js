@@ -49,108 +49,180 @@ const schema_1 = require("../database/schema");
 const drizzle_orm_1 = require("drizzle-orm");
 const yappy_service_1 = require("../yappy/yappy.service");
 const dgi_service_1 = require("../dgi/dgi.service");
+const productos_service_1 = require("../productos/productos.service");
 const crypto = __importStar(require("crypto"));
 let TransaccionesService = class TransaccionesService {
     yappyService;
     dgiService;
-    constructor(yappyService, dgiService) {
+    productosService;
+    constructor(yappyService, dgiService, productosService) {
         this.yappyService = yappyService;
         this.dgiService = dgiService;
+        this.productosService = productosService;
     }
     async cobrarCita(citaId, dto, user) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
-        const cita = await db.query.citas.findFirst({
-            where: (0, drizzle_orm_1.eq)(schema_1.citas.id, citaId),
+        const idempotencyKey = dto.idempotencyKey || `tx_${citaId || 'mostrador'}_${Date.now()}`;
+        const txExistenteKey = await db.query.transacciones.findFirst({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.transacciones.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.transacciones.idempotencyKey, idempotencyKey)),
             with: {
-                barbero: true,
-                servicio: true,
-            },
+                detalles: true,
+            }
         });
-        if (!cita) {
-            throw new common_1.NotFoundException('Cita no encontrada');
+        if (txExistenteKey) {
+            return {
+                ...txExistenteKey,
+                idempotent: true,
+            };
         }
-        if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
-            throw new common_1.ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+        let cita = null;
+        let barbero = null;
+        let subtotalServicio = 0;
+        let comisionServicio = 0;
+        if (citaId) {
+            cita = await db.query.citas.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.citas.id, citaId),
+                with: {
+                    barbero: true,
+                    servicio: true,
+                },
+            });
+            if (!cita) {
+                throw new common_1.NotFoundException('Cita no encontrada');
+            }
+            if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
+                throw new common_1.ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+            }
+            if (cita.estado === 'completada' || cita.estado === 'cancelada') {
+                throw new common_1.ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+            }
+            const txExistenteCita = await db.query.transacciones.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.transacciones.citaId, citaId),
+            });
+            if (txExistenteCita) {
+                throw new common_1.ConflictException('Ya existe un cobro registrado para esta cita.');
+            }
+            barbero = cita.barbero;
+            subtotalServicio = Number(cita.servicio.precioBase || 0);
+            const pctServicio = Number(barbero.porcentajeComision || 0);
+            comisionServicio = (subtotalServicio * pctServicio) / 100;
         }
-        if (cita.estado === 'completada' || cita.estado === 'cancelada') {
-            throw new common_1.ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
+        else if (dto.barberoId) {
+            barbero = await db.query.usuarios.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.usuarios.id, dto.barberoId),
+            });
         }
-        const [txExistente] = await db.select({ id: schema_1.transacciones.id }).from(schema_1.transacciones).where((0, drizzle_orm_1.eq)(schema_1.transacciones.citaId, citaId)).limit(1);
-        if (txExistente) {
-            throw new common_1.ConflictException('Ya existe un cobro registrado para esta cita.');
+        const lineasDetalle = [];
+        if (cita) {
+            lineasDetalle.push({
+                tipoItem: 'servicio',
+                servicioId: cita.servicio.id,
+                cantidad: 1,
+                precioUnitario: subtotalServicio,
+                subtotal: subtotalServicio,
+                comisionAplicada: comisionServicio,
+            });
         }
-        const totalFacturado = Number(cita.servicio.precioBase);
-        const porcentajeComision = Number(cita.barbero.porcentajeComision || 0);
-        const comisionBarbero = (totalFacturado * porcentajeComision) / 100;
+        let subtotalProductosTotal = 0;
+        let comisionProductosTotal = 0;
+        if (dto.productosAdicionales && dto.productosAdicionales.length > 0) {
+            for (const item of dto.productosAdicionales) {
+                const prod = await this.productosService.descontarStockAtomico(item.productoId, item.cantidad, db);
+                const precioUnitario = Number(prod.precio_venta || prod.precioVenta || 0);
+                const subtotalProd = precioUnitario * item.cantidad;
+                const pctComisionProd = Number(barbero?.porcentajeComisionProducto || 0);
+                const comisionProd = (subtotalProd * pctComisionProd) / 100;
+                subtotalProductosTotal += subtotalProd;
+                comisionProductosTotal += comisionProd;
+                lineasDetalle.push({
+                    tipoItem: 'producto',
+                    productoId: item.productoId,
+                    cantidad: item.cantidad,
+                    precioUnitario,
+                    subtotal: subtotalProd,
+                    comisionAplicada: comisionProd,
+                });
+            }
+        }
+        if (!cita && lineasDetalle.length === 0) {
+            throw new common_1.BadRequestException('Una venta de mostrador debe incluir al menos un producto.');
+        }
+        const totalFacturado = subtotalServicio + subtotalProductosTotal;
+        const comisionBarberoTotal = comisionServicio + comisionProductosTotal;
         const yappyOrderId = dto.metodoPago === 'yappy' ? crypto.randomBytes(6).toString('hex') : null;
         const [nuevaTransaccion] = await db.insert(schema_1.transacciones).values({
             tenantId,
-            citaId: cita.id,
+            citaId: cita ? cita.id : null,
+            idempotencyKey,
             metodoPago: dto.metodoPago,
-            totalFacturado: totalFacturado.toString(),
-            montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toString() : null,
-            comisionBarbero: comisionBarbero.toString(),
-            propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toString() : '0',
+            totalFacturado: totalFacturado.toFixed(2),
+            montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toFixed(2) : null,
+            comisionBarbero: comisionBarberoTotal.toFixed(2),
+            propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toFixed(2) : '0.00',
             rucCliente: dto.rucCliente,
             nombreFiscalCliente: dto.nombreFiscalCliente,
             yappyOrderId,
         }).returning();
+        for (const detalle of lineasDetalle) {
+            await db.insert(schema_1.detallesTransaccion).values({
+                tenantId,
+                transaccionId: nuevaTransaccion.id,
+                tipoItem: detalle.tipoItem,
+                servicioId: detalle.servicioId || null,
+                productoId: detalle.productoId || null,
+                cantidad: detalle.cantidad,
+                precioUnitario: detalle.precioUnitario.toFixed(2),
+                subtotal: detalle.subtotal.toFixed(2),
+                comisionAplicada: detalle.comisionAplicada.toFixed(2),
+            });
+        }
         let yappyData = null;
         if (dto.metodoPago === 'yappy') {
             yappyData = await this.yappyService.initiatePayment(tenantId, yappyOrderId, totalFacturado);
         }
-        if (dto.metodoPago !== 'yappy') {
+        if (cita && dto.metodoPago !== 'yappy') {
             await db.update(schema_1.citas)
                 .set({ estado: 'completada' })
                 .where((0, drizzle_orm_1.eq)(schema_1.citas.id, cita.id));
             this.dgiService.emitirFacturaAsync(tenantId, nuevaTransaccion.id, nuevaTransaccion.totalFacturado, dto.rucCliente, dto.nombreFiscalCliente).catch(err => console.error('Error al emitir factura a DGI:', err));
         }
-        return { transaccion: nuevaTransaccion, yappyData };
+        return {
+            ...nuevaTransaccion,
+            yappyData,
+            detalles: lineasDetalle,
+        };
     }
-    async confirmarPagoManual(citaId, confirmadoPorId) {
+    async getHistorialTransacciones(limit = 20) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
-        const [transaccion] = await db.query.transacciones.findMany({
-            where: (0, drizzle_orm_1.eq)(schema_1.transacciones.citaId, citaId),
+        return db.query.transacciones.findMany({
+            where: (0, drizzle_orm_1.eq)(schema_1.transacciones.tenantId, tenantId),
             orderBy: [(0, drizzle_orm_1.desc)(schema_1.transacciones.createdAt)],
-            limit: 1,
-        });
-        if (!transaccion)
-            throw new common_1.NotFoundException('Transacción no encontrada');
-        await db.update(schema_1.transacciones)
-            .set({ confirmadoPorId })
-            .where((0, drizzle_orm_1.eq)(schema_1.transacciones.id, transaccion.id));
-        await db.update(schema_1.citas)
-            .set({ estado: 'completada' })
-            .where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId));
-        this.dgiService.emitirFacturaAsync(tenantId, transaccion.id, transaccion.totalFacturado, transaccion.rucCliente, transaccion.nombreFiscalCliente).catch(err => console.error('Error al emitir factura a DGI:', err));
-        return { success: true };
-    }
-    async findAll(page = 1, limit = 20) {
-        const db = tenant_context_1.TenantContext.getDb();
-        const offset = (page - 1) * limit;
-        const data = await db.query.transacciones.findMany({
             limit,
-            offset,
-            orderBy: [(0, drizzle_orm_1.desc)(schema_1.transacciones.createdAt)],
             with: {
                 cita: {
                     with: {
-                        cliente: true,
                         barbero: true,
                         servicio: true,
+                        cliente: true,
+                    }
+                },
+                detalles: {
+                    with: {
+                        servicio: true,
+                        producto: true,
                     }
                 }
             }
         });
-        return { data, page, limit };
     }
 };
 exports.TransaccionesService = TransaccionesService;
 exports.TransaccionesService = TransaccionesService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [yappy_service_1.YappyService,
-        dgi_service_1.DgiService])
+        dgi_service_1.DgiService,
+        productos_service_1.ProductosService])
 ], TransaccionesService);
 //# sourceMappingURL=transacciones.service.js.map

@@ -8,7 +8,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @UseInterceptors(TenantInterceptor)
-@Controller() // Dejamos en blanco para personalizar las rutas
+@Controller()
 export class TransaccionesController {
   constructor(private readonly transaccionesService: TransaccionesService) {}
 
@@ -22,23 +22,18 @@ export class TransaccionesController {
     return this.transaccionesService.cobrarCita(id, cobrarCitaDto, req.user);
   }
 
-  @Post('citas/:id/confirmar-pago-manual')
-  @Roles('admin', 'recepcion')
-  async confirmarPagoManual(
-    @Param('id') id: string,
+  @Post('transacciones/mostrador')
+  @Roles('admin', 'recepcion', 'barbero')
+  async ventaMostrador(
     @Request() req: any,
+    @Body() cobrarCitaDto: CobrarCitaDto,
   ) {
-    const usuarioId = req.user.userId;
-    return this.transaccionesService.confirmarPagoManual(id, usuarioId);
+    return this.transaccionesService.cobrarCita(null, cobrarCitaDto, req.user);
   }
 
   @Get('transacciones')
   @Roles('admin')
-  async findAll(
-    @Query('page') page: string = '1',
-    @Query('limit') limit: string = '20',
-  ) {
-    return this.transaccionesService.findAll(Number(page), Number(limit));
+  async findAll() {
+    return this.transaccionesService.getHistorialTransacciones(20);
   }
 }
-

@@ -18,6 +18,7 @@ const tenant_interceptor_1 = require("./database/tenant/tenant.interceptor");
 const auth_module_1 = require("./auth/auth.module");
 const usuarios_module_1 = require("./usuarios/usuarios.module");
 const servicios_module_1 = require("./servicios/servicios.module");
+const productos_module_1 = require("./productos/productos.module");
 const clientes_module_1 = require("./clientes/clientes.module");
 const horarios_module_1 = require("./horarios/horarios.module");
 const jwt_auth_guard_1 = require("./common/guards/jwt-auth.guard");
@@ -58,6 +59,7 @@ exports.AppModule = AppModule = __decorate([
             auth_module_1.AuthModule,
             usuarios_module_1.UsuariosModule,
             servicios_module_1.ServiciosModule,
+            productos_module_1.ProductosModule,
             clientes_module_1.ClientesModule,
             horarios_module_1.HorariosModule,
             citas_module_1.CitasModule,
@@ -72,6 +74,10 @@ exports.AppModule = AppModule = __decorate([
         providers: [
             app_service_1.AppService,
             {
+                provide: core_1.APP_INTERCEPTOR,
+                useClass: tenant_interceptor_1.TenantInterceptor,
+            },
+            {
                 provide: core_1.APP_GUARD,
                 useClass: jwt_auth_guard_1.JwtAuthGuard,
             },
@@ -82,10 +88,6 @@ exports.AppModule = AppModule = __decorate([
             {
                 provide: core_1.APP_GUARD,
                 useClass: roles_guard_1.RolesGuard,
-            },
-            {
-                provide: core_1.APP_INTERCEPTOR,
-                useClass: tenant_interceptor_1.TenantInterceptor,
             },
         ],
     })

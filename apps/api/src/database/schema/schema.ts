@@ -48,6 +48,7 @@ export const tipoPlantillaEnum = pgEnum('tipo_plantilla', [
   'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
 export const yappyModoEnum = pgEnum('yappy_modo', ['manual', 'comercial']);
+export const tipoItemEnum = pgEnum('tipo_item', ['servicio', 'producto']);
 
 // ============================================================================
 // TABLA 1: barberias (tenant maestro — NO lleva tenant_id, ES el tenant)
@@ -79,6 +80,7 @@ export const usuarios = pgTable('usuarios', {
   password: varchar('password', { length: 255 }),
   rol: rolUsuarioEnum('rol').notNull(),
   porcentajeComision: decimal('porcentaje_comision', { precision: 4, scale: 2 }),
+  porcentajeComisionProducto: decimal('porcentaje_comision_producto', { precision: 4, scale: 2 }),
   pinAcceso: varchar('pin_acceso', { length: 255 }), // hash (nullable para admin)
   tokenActivacion: varchar('token_activacion', { length: 255 }),
   tokenExpiraEn: timestamp('token_expira_en', { withTimezone: true }),
@@ -98,6 +100,23 @@ export const servicios = pgTable('servicios', {
   duracionMinutos: integer('duracion_minutos').notNull(),
   precioBase: decimal('precio_base', { precision: 10, scale: 2 }).notNull(),
   activo: boolean('activo').notNull().default(true),
+});
+
+// ============================================================================
+// TABLA 3.5: productos (catálogo e inventario retail)
+// ============================================================================
+
+export const productos = pgTable('productos', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  nombre: varchar('nombre', { length: 255 }).notNull(),
+  descripcion: text('descripcion'),
+  precioVenta: decimal('precio_venta', { precision: 10, scale: 2 }).notNull(),
+  costoCompra: decimal('costo_compra', { precision: 10, scale: 2 }).notNull(),
+  stockActual: integer('stock_actual').notNull().default(0),
+  stockMinimo: integer('stock_minimo').notNull().default(2),
+  activo: boolean('activo').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
@@ -151,7 +170,8 @@ export const citas = pgTable('citas', {
 export const transacciones = pgTable('transacciones', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
-  citaId: uuid('cita_id').notNull().unique().references(() => citas.id),
+  citaId: uuid('cita_id').references(() => citas.id), // NULLABLE para ventas directas de mostrador
+  idempotencyKey: varchar('idempotency_key', { length: 255 }).notNull().unique(),
   metodoPago: metodoPagoEnum('metodo_pago').notNull(),
   totalFacturado: decimal('total_facturado', { precision: 10, scale: 2 }).notNull(),
   montoEfectivoIngresado: decimal('monto_efectivo_ingresado', { precision: 10, scale: 2 }),
@@ -166,6 +186,24 @@ export const transacciones = pgTable('transacciones', {
   yappyWebhookReceivedAt: timestamp('yappy_webhook_received_at', { withTimezone: true }),
   yappyWebhookPayload: jsonb('yappy_webhook_payload'),
   confirmadoPorId: uuid('confirmado_por_id').references(() => usuarios.id),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ============================================================================
+// TABLA 6.5: detalles_transaccion (líneas de venta itemizadas)
+// ============================================================================
+
+export const detallesTransaccion = pgTable('detalles_transaccion', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  transaccionId: uuid('transaccion_id').notNull().references(() => transacciones.id, { onDelete: 'cascade' }),
+  tipoItem: tipoItemEnum('tipo_item').notNull(),
+  servicioId: uuid('servicio_id').references(() => servicios.id),
+  productoId: uuid('producto_id').references(() => productos.id),
+  cantidad: integer('cantidad').notNull().default(1),
+  precioUnitario: decimal('precio_unitario', { precision: 10, scale: 2 }).notNull(),
+  subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
+  comisionAplicada: decimal('comision_aplicada', { precision: 10, scale: 2 }).notNull().default('0'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -285,6 +323,7 @@ export const yappyConfig = pgTable('yappy_config', {
 export const barberiasRelations = relations(barberias, ({ many, one }) => ({
   usuarios: many(usuarios),
   servicios: many(servicios),
+  productos: many(productos),
   clientes: many(clientes),
   citas: many(citas),
   whatsappConfig: one(whatsappConfig),
@@ -295,6 +334,11 @@ export const usuariosRelations = relations(usuarios, ({ one, many }) => ({
   barberia: one(barberias, { fields: [usuarios.tenantId], references: [barberias.id] }),
   horarios: many(horarios),
   citasComoBarbero: many(citas),
+}));
+
+export const productosRelations = relations(productos, ({ one, many }) => ({
+  barberia: one(barberias, { fields: [productos.tenantId], references: [barberias.id] }),
+  detalles: many(detallesTransaccion),
 }));
 
 export const clientesRelations = relations(clientes, ({ one, many }) => ({
@@ -311,7 +355,15 @@ export const citasRelations = relations(citas, ({ one }) => ({
   transaccion: one(transacciones, { fields: [citas.id], references: [transacciones.citaId] }),
 }));
 
-export const transaccionesRelations = relations(transacciones, ({ one }) => ({
+export const transaccionesRelations = relations(transacciones, ({ one, many }) => ({
   barberia: one(barberias, { fields: [transacciones.tenantId], references: [barberias.id] }),
   cita: one(citas, { fields: [transacciones.citaId], references: [citas.id] }),
+  detalles: many(detallesTransaccion),
+}));
+
+export const detallesTransaccionRelations = relations(detallesTransaccion, ({ one }) => ({
+  barberia: one(barberias, { fields: [detallesTransaccion.tenantId], references: [barberias.id] }),
+  transaccion: one(transacciones, { fields: [detallesTransaccion.transaccionId], references: [transacciones.id] }),
+  servicio: one(servicios, { fields: [detallesTransaccion.servicioId], references: [servicios.id] }),
+  producto: one(productos, { fields: [detallesTransaccion.productoId], references: [productos.id] }),
 }));
