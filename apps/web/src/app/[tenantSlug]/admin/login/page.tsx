@@ -50,8 +50,9 @@ export default function AdminLoginPage() {
   }, [tenantSlug, currentUser, logout]);
 
   // 2. Manejar envío del PIN
-  const handleSubmitPin = async () => {
-    if (!selectedUser || pin.length !== 4) return;
+  const handleSubmitPin = async (pinToSubmit?: string) => {
+    const pinFinal = pinToSubmit || pin;
+    if (!selectedUser || pinFinal.length !== 4) return;
     
     setIsLoading(true);
     setIsError(false);
@@ -62,7 +63,7 @@ export default function AdminLoginPage() {
         body: JSON.stringify({
           slug: tenantSlug,
           userId: selectedUser.id,
-          pin: pin
+          pin: pinFinal
         }),
       });
 
