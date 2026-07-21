@@ -1,6 +1,10 @@
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, UserCheck, Lock, TrendingUp, Settings } from 'lucide-react';
+import React, { useState } from 'react';
+import { 
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, 
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar
+} from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { es } from 'date-fns/locale';
 
 interface AdminHeaderProps {
@@ -23,114 +27,182 @@ export function AdminHeader({
   onNewCitaClick,
 }: AdminHeaderProps) {
   const router = useRouter();
+  const pathname = usePathname();
   const isSelectedToday = isToday(selectedDate);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const isAdmin = userRole === 'admin';
+
+  const navLinks = [
+    { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
+    ...(isAdmin ? [
+      { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
+      { label: 'Caja', href: `/${tenantSlug}/admin/caja`, icon: Lock },
+      { label: 'Configuración', href: `/${tenantSlug}/admin/configuracion`, icon: Settings },
+    ] : []),
+  ];
 
   return (
-    <header className="w-full bg-card border-b border-border px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 sticky top-0 z-30 shadow-sm">
-      {/* 1. Branding & Usuario */}
-      <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-start">
-        <div className="flex flex-col">
-          <span className="text-xs uppercase tracking-wider text-muted-foreground font-semibold">
-            {tenantSlug}
-          </span>
-          <h1 className="text-xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            Agenda Operativa
-          </h1>
+    <header className="w-full bg-card/95 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-xs">
+      
+      {/* Container Principal Desktop / Mobile Header */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-4">
+        
+        {/* 1. Logo & Branding */}
+        <div className="flex items-center gap-3">
+          <div className="flex flex-col">
+            <span className="text-[10px] sm:text-xs uppercase tracking-wider text-muted-foreground font-bold">
+              {tenantSlug}
+            </span>
+            <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
+              <span>BarberOS</span>
+            </h1>
+          </div>
+
+          <div className="hidden lg:flex items-center gap-1.5 bg-secondary/80 px-2.5 py-1 rounded-full border border-border">
+            <UserCheck size={14} className="text-primary" />
+            <span className="text-xs font-semibold text-foreground">{userName}</span>
+            <span className="text-[9px] uppercase font-extrabold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
+              {userRole}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 bg-secondary/80 px-3 py-1.5 rounded-full border border-border">
-          <UserCheck size={16} className="text-primary" />
-          <span className="text-xs font-medium text-foreground">{userName}</span>
-          <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-primary/10 text-primary">
-            {userRole}
-          </span>
-        </div>
-      </div>
-
-      {/* 2. Navegador de Fechas */}
-      <div className="flex items-center gap-2 bg-background border border-border rounded-xl p-1 shadow-inner">
-        <button
-          onClick={() => onDateChange(subDays(selectedDate, 1))}
-          className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          title="Día anterior"
-        >
-          <ChevronLeft size={18} />
-        </button>
-
-        <div className="flex items-center gap-2 px-3">
-          <CalendarIcon size={16} className="text-primary" />
-          <span className="text-sm font-semibold capitalize min-w-[140px] text-center">
-            {format(selectedDate, "EEEE, d 'de' MMMM", { locale: es })}
-          </span>
-        </div>
-
-        <button
-          onClick={() => onDateChange(addDays(selectedDate, 1))}
-          className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          title="Día siguiente"
-        >
-          <ChevronRight size={18} />
-        </button>
-
-        {!isSelectedToday && (
+        {/* 2. Navegador de Fechas (Centrado en Pantallas Medianas / Grandes) */}
+        <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm">
           <button
-            onClick={() => onDateChange(new Date())}
-            className="text-xs font-semibold px-2.5 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-1"
+            onClick={() => onDateChange(subDays(selectedDate, 1))}
+            className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Día anterior"
           >
-            Hoy
+            <ChevronLeft size={16} />
           </button>
-        )}
+
+          <div className="flex items-center gap-1.5 px-2 sm:px-3">
+            <CalendarIcon size={14} className="text-primary shrink-0" />
+            <span className="text-xs sm:text-sm font-bold capitalize whitespace-nowrap">
+              {format(selectedDate, "EEE d 'de' MMM", { locale: es })}
+            </span>
+          </div>
+
+          <button
+            onClick={() => onDateChange(addDays(selectedDate, 1))}
+            className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            title="Día siguiente"
+          >
+            <ChevronRight size={16} />
+          </button>
+
+          {!isSelectedToday && (
+            <button
+              onClick={() => onDateChange(new Date())}
+              className="text-[11px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-0.5"
+            >
+              Hoy
+            </button>
+          )}
+        </div>
+
+        {/* 3. Navegación Desktop (Pestañas horizontales) */}
+        <nav className="hidden md:flex items-center gap-1 bg-secondary/40 p-1 rounded-xl border border-border">
+          {navLinks.map((link) => {
+            const Icon = link.icon;
+            const isActive = pathname === link.href;
+            return (
+              <button
+                key={link.href}
+                onClick={() => router.push(link.href)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  isActive
+                    ? 'bg-card text-foreground shadow-xs border border-border font-bold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
+                }`}
+              >
+                <Icon size={14} className={isActive ? 'text-primary' : ''} />
+                <span>{link.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* 4. Acciones Derecha (Nueva Cita + Logout + Hamburger en Mobile) */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onNewCitaClick}
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 bg-primary text-primary-foreground font-semibold rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-sm text-xs sm:text-sm"
+          >
+            <Plus size={16} />
+            <span className="hidden sm:inline">Nueva Cita</span>
+            <span className="sm:hidden">Cita</span>
+          </button>
+
+          <button
+            onClick={onLogout}
+            className="hidden sm:flex p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
+            title="Cerrar sesión"
+          >
+            <LogOut size={18} />
+          </button>
+
+          {/* Menú Hamburguesa en Pantallas Pequeñas */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-2 text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary border border-border"
+          >
+            {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
+
       </div>
 
-      {/* 3. Acciones (Navegación Admin + Nueva Cita + Logout) */}
-      <div className="flex items-center gap-2 w-full md:w-auto justify-end">
-        {userRole === 'admin' && (
-          <>
-            <button
-              onClick={() => router.push(`/${tenantSlug}/admin/dashboard`)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
-              title="Analítica Ejecutiva"
-            >
-              <TrendingUp size={16} className="text-emerald-500" />
-              <span>Métricas</span>
-            </button>
+      {/* Menú Desplegable en Móviles */}
+      {mobileMenuOpen && (
+        <div className="md:hidden border-t border-border bg-card p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+          
+          <div className="flex items-center justify-between p-2.5 bg-secondary/50 rounded-xl border border-border">
+            <div className="flex items-center gap-2">
+              <UserCheck size={16} className="text-primary" />
+              <span className="text-xs font-bold">{userName}</span>
+            </div>
+            <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-primary/10 text-primary">
+              {userRole}
+            </span>
+          </div>
 
-            <button
-              onClick={() => router.push(`/${tenantSlug}/admin/caja`)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
-              title="Arqueo de Caja"
-            >
-              <Lock size={16} className="text-emerald-500" />
-              <span>Caja</span>
-            </button>
+          <div className="grid grid-cols-2 gap-2">
+            {navLinks.map((link) => {
+              const Icon = link.icon;
+              const isActive = pathname === link.href;
+              return (
+                <button
+                  key={link.href}
+                  onClick={() => {
+                    router.push(link.href);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center gap-2 p-3 rounded-xl text-xs font-semibold border transition-all ${
+                    isActive
+                      ? 'bg-primary/10 border-primary text-primary font-bold'
+                      : 'bg-background border-border text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  <Icon size={16} />
+                  <span>{link.label}</span>
+                </button>
+              );
+            })}
+          </div>
 
-            <button
-              onClick={() => router.push(`/${tenantSlug}/admin/configuracion`)}
-              className="flex items-center gap-1.5 px-3 py-2 bg-secondary hover:bg-secondary/80 font-semibold rounded-xl transition-all border border-border text-xs"
-              title="Configuración del Local"
-            >
-              <Settings size={16} className="text-primary" />
-              <span>Configuración</span>
-            </button>
-          </>
-        )}
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center justify-center gap-2 p-2.5 text-xs font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl"
+          >
+            <LogOut size={16} />
+            <span>Cerrar Sesión</span>
+          </button>
+        </div>
+      )}
 
-        <button
-          onClick={onNewCitaClick}
-          className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground font-medium rounded-xl hover:opacity-90 active:scale-95 transition-all shadow-md text-sm"
-        >
-          <Plus size={18} />
-          <span>Nueva Cita (Walk-in)</span>
-        </button>
-
-        <button
-          onClick={onLogout}
-          className="p-2.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-xl transition-all"
-          title="Cerrar sesión"
-        >
-          <LogOut size={20} />
-        </button>
-      </div>
     </header>
   );
 }
