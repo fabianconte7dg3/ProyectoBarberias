@@ -32,6 +32,30 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: any) {
+    if (payload.rol === 'superadmin') {
+      const [superAdmin] = await this.db
+        .select({ id: schema.plataformaAdmins.id, activo: schema.plataformaAdmins.activo })
+        .from(schema.plataformaAdmins)
+        .where(eq(schema.plataformaAdmins.id, payload.sub))
+        .limit(1);
+
+      if (!superAdmin || !superAdmin.activo) {
+        throw new UnauthorizedException('SuperAdmin inactivo o no encontrado.');
+      }
+
+      return {
+        userId: payload.sub,
+        rol: 'superadmin',
+      };
+    }
+
+    if (!payload.tenantId) {
+      return {
+        userId: payload.sub,
+        type: payload.type,
+      };
+    }
+
     // Validar en BD que el usuario siga activo (Kill Switch y revocaciones)
     const user = await runInTenantScope(this.db, payload.tenantId, async (tx) => {
       const [u] = await tx

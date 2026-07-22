@@ -9,7 +9,7 @@ import { SuperAdminService } from './super-admin.service';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get('JWT_SECRET', 'super_secret_jwt_key_default_barberos'),
+        secret: configService.get('JWT_SECRET', 'super_secret_dev_key_change_in_prod'),
         signOptions: { expiresIn: '12h' },
       }),
       inject: [ConfigService],

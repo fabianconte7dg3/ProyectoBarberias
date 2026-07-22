@@ -66,7 +66,14 @@ let SuperAdminService = class SuperAdminService {
         if (!admin) {
             throw new common_1.UnauthorizedException('Credenciales inválidas de plataforma.');
         }
-        const matches = await bcrypt.compare(password, admin.password_hash);
+        let matches = false;
+        try {
+            matches = await bcrypt.compare(password, admin.password_hash);
+        }
+        catch (err) {
+            console.error('Error en bcrypt.compare superadmin:', err);
+            throw new common_1.UnauthorizedException('Credenciales inválidas de plataforma.');
+        }
         if (!matches) {
             throw new common_1.UnauthorizedException('Credenciales inválidas de plataforma.');
         }

@@ -21,7 +21,7 @@ exports.SuperAdminModule = SuperAdminModule = __decorate([
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: async (configService) => ({
-                    secret: configService.get('JWT_SECRET', 'super_secret_jwt_key_default_barberos'),
+                    secret: configService.get('JWT_SECRET', 'super_secret_dev_key_change_in_prod'),
                     signOptions: { expiresIn: '12h' },
                 }),
                 inject: [config_1.ConfigService],

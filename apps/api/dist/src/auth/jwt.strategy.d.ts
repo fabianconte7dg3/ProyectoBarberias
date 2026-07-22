@@ -11,8 +11,19 @@ export declare class JwtStrategy extends JwtStrategy_base {
     constructor(db: NodePgDatabase<typeof schema>, configService: ConfigService);
     validate(payload: any): Promise<{
         userId: any;
+        rol: string;
+        type?: undefined;
+        tenantId?: undefined;
+    } | {
+        userId: any;
+        type: any;
+        rol?: undefined;
+        tenantId?: undefined;
+    } | {
+        userId: any;
         tenantId: any;
         rol: any;
+        type?: undefined;
     }>;
 }
 export {};

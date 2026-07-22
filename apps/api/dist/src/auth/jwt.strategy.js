@@ -75,6 +75,26 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.configService = configService;
     }
     async validate(payload) {
+        if (payload.rol === 'superadmin') {
+            const [superAdmin] = await this.db
+                .select({ id: schema.plataformaAdmins.id, activo: schema.plataformaAdmins.activo })
+                .from(schema.plataformaAdmins)
+                .where((0, drizzle_orm_1.eq)(schema.plataformaAdmins.id, payload.sub))
+                .limit(1);
+            if (!superAdmin || !superAdmin.activo) {
+                throw new common_1.UnauthorizedException('SuperAdmin inactivo o no encontrado.');
+            }
+            return {
+                userId: payload.sub,
+                rol: 'superadmin',
+            };
+        }
+        if (!payload.tenantId) {
+            return {
+                userId: payload.sub,
+                type: payload.type,
+            };
+        }
         const user = await (0, tenant_utils_1.runInTenantScope)(this.db, payload.tenantId, async (tx) => {
             const [u] = await tx
                 .select({ id: schema.usuarios.id, activo: schema.usuarios.activo })

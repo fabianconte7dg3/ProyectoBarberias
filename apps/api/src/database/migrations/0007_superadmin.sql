@@ -4,14 +4,18 @@
 ALTER TYPE rol_usuario ADD VALUE IF NOT EXISTS 'superadmin';
 
 CREATE TABLE IF NOT EXISTS plataforma_admins (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  email VARCHAR(255) NOT NULL UNIQUE,
-  password_hash TEXT NOT NULL,
-  totp_secret_cifrado TEXT NOT NULL,
-  totp_habilitado BOOLEAN NOT NULL DEFAULT true,
-  activo BOOLEAN NOT NULL DEFAULT true,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    email VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    totp_secret_cifrado TEXT,
+    totp_habilitado BOOLEAN NOT NULL DEFAULT true,
+    activo BOOLEAN NOT NULL DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+
+-- Permisos para app_user en la tabla de plataforma_admins
+GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE plataforma_admins TO app_user;
 
 -- Agregar columna de bloqueo preventivo por la plataforma (Kill-Switch Plataforma)
 ALTER TABLE barberias ADD COLUMN IF NOT EXISTS bloqueado_por_plataforma BOOLEAN NOT NULL DEFAULT false;
