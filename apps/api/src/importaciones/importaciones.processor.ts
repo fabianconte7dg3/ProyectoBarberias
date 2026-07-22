@@ -5,7 +5,7 @@ import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
-import { eq, and } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import {
@@ -50,7 +50,6 @@ export class ImportacionesProcessor extends WorkerHost {
               telefonoWhatsapp: data.telefonowhatsapp || data.telefono || data.celular,
               email: data.email || data.emailfacturacion,
               notasPreferencia: data.notaspreferencia || data.notas,
-              aceptaMarketing: data.aceptamarketing === 'true' || data.aceptamarketing === '1' || data.aceptamarketing === true,
             });
 
             const validationErrors = await validate(dto);
@@ -68,26 +67,25 @@ export class ImportacionesProcessor extends WorkerHost {
               .where(eq(schema.clientes.telefonoWhatsapp, dto.telefonoWhatsapp));
 
             if (clienteExistente) {
-              // Actualizar SOLO datos editables de contacto
+              // Actualizar SOLO datos editables de contacto (NUNCA aceptaMarketing ni métricas calculadas)
               await tx
                 .update(schema.clientes)
                 .set({
                   ...(dto.nombreCompleto && { nombreCompleto: dto.nombreCompleto }),
                   ...(dto.email && { emailFacturacion: dto.email }),
                   ...(dto.notasPreferencia && { notasPreferencia: dto.notasPreferencia }),
-                  ...(dto.aceptaMarketing !== undefined && { aceptaMarketing: dto.aceptaMarketing }),
                 })
                 .where(eq(schema.clientes.id, clienteExistente.id));
               actualizados++;
             } else {
-              // Crear cliente nuevo
+              // Crear cliente nuevo con aceptaMarketing = false (NUNCA masivo por CSV)
               await tx.insert(schema.clientes).values({
                 tenantId,
                 telefonoWhatsapp: dto.telefonoWhatsapp,
                 nombreCompleto: dto.nombreCompleto,
                 emailFacturacion: dto.email || null,
                 notasPreferencia: dto.notasPreferencia || null,
-                aceptaMarketing: dto.aceptaMarketing ?? false,
+                aceptaMarketing: false,
               });
               creados++;
             }

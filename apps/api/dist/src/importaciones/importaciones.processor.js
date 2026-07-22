@@ -78,7 +78,6 @@ let ImportacionesProcessor = class ImportacionesProcessor extends bullmq_1.Worke
                             telefonoWhatsapp: data.telefonowhatsapp || data.telefono || data.celular,
                             email: data.email || data.emailfacturacion,
                             notasPreferencia: data.notaspreferencia || data.notas,
-                            aceptaMarketing: data.aceptamarketing === 'true' || data.aceptamarketing === '1' || data.aceptamarketing === true,
                         });
                         const validationErrors = await (0, class_validator_1.validate)(dto);
                         if (validationErrors.length > 0) {
@@ -98,7 +97,6 @@ let ImportacionesProcessor = class ImportacionesProcessor extends bullmq_1.Worke
                                 ...(dto.nombreCompleto && { nombreCompleto: dto.nombreCompleto }),
                                 ...(dto.email && { emailFacturacion: dto.email }),
                                 ...(dto.notasPreferencia && { notasPreferencia: dto.notasPreferencia }),
-                                ...(dto.aceptaMarketing !== undefined && { aceptaMarketing: dto.aceptaMarketing }),
                             })
                                 .where((0, drizzle_orm_1.eq)(schema.clientes.id, clienteExistente.id));
                             actualizados++;
@@ -110,7 +108,7 @@ let ImportacionesProcessor = class ImportacionesProcessor extends bullmq_1.Worke
                                 nombreCompleto: dto.nombreCompleto,
                                 emailFacturacion: dto.email || null,
                                 notasPreferencia: dto.notasPreferencia || null,
-                                aceptaMarketing: dto.aceptaMarketing ?? false,
+                                aceptaMarketing: false,
                             });
                             creados++;
                         }

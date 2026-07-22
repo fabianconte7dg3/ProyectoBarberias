@@ -3,7 +3,6 @@ export declare class FilaImportClienteDto {
     telefonoWhatsapp: string;
     email?: string;
     notasPreferencia?: string;
-    aceptaMarketing?: boolean;
 }
 export declare class FilaImportProductoDto {
     nombre: string;

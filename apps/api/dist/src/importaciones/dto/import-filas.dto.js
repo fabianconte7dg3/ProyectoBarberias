@@ -17,7 +17,6 @@ class FilaImportClienteDto {
     telefonoWhatsapp;
     email;
     notasPreferencia;
-    aceptaMarketing;
 }
 exports.FilaImportClienteDto = FilaImportClienteDto;
 __decorate([
@@ -44,11 +43,6 @@ __decorate([
     (0, class_validator_1.MaxLength)(2000),
     __metadata("design:type", String)
 ], FilaImportClienteDto.prototype, "notasPreferencia", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsBoolean)(),
-    __metadata("design:type", Boolean)
-], FilaImportClienteDto.prototype, "aceptaMarketing", void 0);
 class FilaImportProductoDto {
     nombre;
     precioVenta;

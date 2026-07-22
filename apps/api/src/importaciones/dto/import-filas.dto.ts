@@ -21,10 +21,6 @@ export class FilaImportClienteDto {
   @IsString()
   @MaxLength(2000)
   notasPreferencia?: string;
-
-  @IsOptional()
-  @IsBoolean()
-  aceptaMarketing?: boolean;
 }
 
 export class FilaImportProductoDto {
