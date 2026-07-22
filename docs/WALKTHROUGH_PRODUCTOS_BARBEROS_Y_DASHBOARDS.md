@@ -1,6 +1,6 @@
 # 🚀 Documentación Técnica de Avances — BarberOS
 
-Documentación integral de las nuevas características de analítica ejecutiva, gráficos interactivos con Recharts, gestión de vacaciones/ausencias del staff, comisiones duplas, inventario retail y auditoría técnica inmutable.
+Documentación integral de las nuevas características de analítica ejecutiva, gráficos interactivos con Recharts, gestión de vacaciones/ausencias del staff, comisiones duplas, inventario retail, auditoría técnica inmutable y el Centro Seguro de Importación/Exportación de Datos.
 
 ---
 
@@ -57,8 +57,15 @@ Se instaló `recharts` en el frontend y se implementaron **6 Gráficos Interacti
 
 ---
 
-## 🧪 Verificación y Estado del Repositorio
-
-- **NestJS API (`apps/api`)**: Compilado y verificado (0 errores TypeScript).
-- **Next.js Web App (`apps/web`)**: Compilado y verificado con `next build` (0 errores TypeScript).
-- **Control de Versiones**: Todos los cambios pusheados a la rama principal de GitHub (`master`).
+### 6. 📁 Centro Seguro de Importación & Exportación de Datos (`/admin/datos`)
+- **Protección Anti-OWASP CSV Injection**: Escapa automáticamente cualquier celda de texto que comience con `=`, `+`, `-`, `@`, `\t` o `\r` anteponiendo una comilla (`'`), evitando inyecciones de código al abrir reportes en Microsoft Excel o Google Sheets.
+- **Cumplimiento Ley 81 de Protección de Datos (`clientes.aceptaMarketing`)**:
+  - Nueva columna en DB `acepta_marketing: boolean` (default `false`).
+  - La exportación de datos con fines comerciales/marketing filtra estrictamente a los clientes con `aceptaMarketing === true`.
+- **Importador Masivo con Regla de Merge**:
+  - Permite subir archivos CSV/Excel de Clientes y Productos.
+  - Si un cliente ya existe por número de WhatsApp, se actualizan únicamente sus datos de contacto sin sobreescribir ni alterar sus métricas históricas del sistema (`totalAsistencias`, `totalGastado`, `ausenciasStrikes`).
+  - Límite de seguridad de 5,000 filas por archivo y reporte granular de filas creadas, actualizadas o rechazadas.
+- **Exportación de Nómina con Comisión Congelada**:
+  - Lee las comisiones históricas congeladas en `detallesTransaccion.comisionAplicada`, garantizando que un cambio en el % de comisión hoy no altere retroactivamente los pagos de meses pasados.
+- **Plantillas Descargables**: Botones para descargar plantillas CSV oficiales de muestra para Clientes y Productos.
