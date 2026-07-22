@@ -39,6 +39,7 @@ export function AdminHeader({
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isAdmin ? [
       { label: 'Barberos', href: `/${tenantSlug}/admin/barberos`, icon: Users },
+      { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },
       { label: 'Datos', href: `/${tenantSlug}/admin/datos`, icon: Database },

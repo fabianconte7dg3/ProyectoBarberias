@@ -13,9 +13,11 @@ exports.UpdateClienteDto = void 0;
 const class_validator_1 = require("class-validator");
 class UpdateClienteDto {
     nombreCompleto;
+    emailFacturacion;
     notasPreferencia;
     barberoFrecuenteId;
     bloqueado;
+    aceptaMarketing;
 }
 exports.UpdateClienteDto = UpdateClienteDto;
 __decorate([
@@ -24,6 +26,12 @@ __decorate([
     (0, class_validator_1.MaxLength)(255),
     __metadata("design:type", String)
 ], UpdateClienteDto.prototype, "nombreCompleto", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEmail)(),
+    (0, class_validator_1.MaxLength)(255),
+    __metadata("design:type", String)
+], UpdateClienteDto.prototype, "emailFacturacion", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
@@ -39,4 +47,9 @@ __decorate([
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)
 ], UpdateClienteDto.prototype, "bloqueado", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UpdateClienteDto.prototype, "aceptaMarketing", void 0);
 //# sourceMappingURL=update-cliente.dto.js.map

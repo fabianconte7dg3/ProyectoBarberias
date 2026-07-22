@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import * as schema from '../database/schema';
-import { eq, or, ilike, asc } from 'drizzle-orm';
+import { eq, or, ilike, asc, desc } from 'drizzle-orm';
 import { CreateClienteDto } from './dto/create-cliente.dto';
 import { UpdateClienteDto } from './dto/update-cliente.dto';
 
@@ -37,12 +37,12 @@ export class ClientesService {
           ilike(schema.clientes.nombreCompleto, `%${q}%`),
           ilike(schema.clientes.telefonoWhatsapp, `%${q}%`)
         ),
-        orderBy: [asc(schema.clientes.nombreCompleto)],
+        orderBy: [desc(schema.clientes.createdAt)],
       });
     }
 
     return db.query.clientes.findMany({
-      orderBy: [asc(schema.clientes.nombreCompleto)],
+      orderBy: [desc(schema.clientes.createdAt)],
     });
   }
 
@@ -66,9 +66,11 @@ export class ClientesService {
 
     const [clienteActualizado] = await db.update(schema.clientes).set({
       ...(dto.nombreCompleto !== undefined && { nombreCompleto: dto.nombreCompleto }),
+      ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
       ...(dto.notasPreferencia !== undefined && { notasPreferencia: dto.notasPreferencia }),
       ...(dto.barberoFrecuenteId !== undefined && { barberoFrecuenteId: dto.barberoFrecuenteId }),
       ...(dto.bloqueado !== undefined && { bloqueado: dto.bloqueado }),
+      ...(dto.aceptaMarketing !== undefined && { aceptaMarketing: dto.aceptaMarketing }),
     })
     .where(eq(schema.clientes.id, id))
     .returning();

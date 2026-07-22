@@ -69,11 +69,11 @@ let ClientesService = class ClientesService {
         if (q) {
             return db.query.clientes.findMany({
                 where: (0, drizzle_orm_1.or)((0, drizzle_orm_1.ilike)(schema.clientes.nombreCompleto, `%${q}%`), (0, drizzle_orm_1.ilike)(schema.clientes.telefonoWhatsapp, `%${q}%`)),
-                orderBy: [(0, drizzle_orm_1.asc)(schema.clientes.nombreCompleto)],
+                orderBy: [(0, drizzle_orm_1.desc)(schema.clientes.createdAt)],
             });
         }
         return db.query.clientes.findMany({
-            orderBy: [(0, drizzle_orm_1.asc)(schema.clientes.nombreCompleto)],
+            orderBy: [(0, drizzle_orm_1.desc)(schema.clientes.createdAt)],
         });
     }
     async findOne(id) {
@@ -91,9 +91,11 @@ let ClientesService = class ClientesService {
         await this.findOne(id);
         const [clienteActualizado] = await db.update(schema.clientes).set({
             ...(dto.nombreCompleto !== undefined && { nombreCompleto: dto.nombreCompleto }),
+            ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
             ...(dto.notasPreferencia !== undefined && { notasPreferencia: dto.notasPreferencia }),
             ...(dto.barberoFrecuenteId !== undefined && { barberoFrecuenteId: dto.barberoFrecuenteId }),
             ...(dto.bloqueado !== undefined && { bloqueado: dto.bloqueado }),
+            ...(dto.aceptaMarketing !== undefined && { aceptaMarketing: dto.aceptaMarketing }),
         })
             .where((0, drizzle_orm_1.eq)(schema.clientes.id, id))
             .returning();
