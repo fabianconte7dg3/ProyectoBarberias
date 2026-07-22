@@ -30,6 +30,7 @@ const dgi_module_1 = require("./dgi/dgi.module");
 const caja_module_1 = require("./caja/caja.module");
 const reportes_module_1 = require("./reportes/reportes.module");
 const datos_module_1 = require("./datos/datos.module");
+const importaciones_module_1 = require("./importaciones/importaciones.module");
 const bullmq_1 = require("@nestjs/bullmq");
 const queue_module_1 = require("./queue/queue.module");
 const audit_module_1 = require("./audit/audit.module");
@@ -70,6 +71,7 @@ exports.AppModule = AppModule = __decorate([
             caja_module_1.CajaModule,
             reportes_module_1.ReportesModule,
             datos_module_1.DatosModule,
+            importaciones_module_1.ImportacionesModule,
             queue_module_1.QueueModule,
         ],
         controllers: [app_controller_1.AppController],

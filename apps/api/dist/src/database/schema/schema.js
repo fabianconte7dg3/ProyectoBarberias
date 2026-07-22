@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
@@ -32,6 +32,10 @@ exports.tipoPlantillaEnum = (0, pg_core_1.pgEnum)('tipo_plantilla', [
     'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
 exports.yappyModoEnum = (0, pg_core_1.pgEnum)('yappy_modo', ['manual', 'comercial']);
+exports.tipoImportacionEnum = (0, pg_core_1.pgEnum)('tipo_importacion', ['clientes', 'productos', 'servicios']);
+exports.estadoTrabajoImportacionEnum = (0, pg_core_1.pgEnum)('estado_trabajo_importacion', [
+    'procesando', 'completado', 'completado_con_errores', 'fallido',
+]);
 exports.tipoItemEnum = (0, pg_core_1.pgEnum)('tipo_item', ['servicio', 'producto']);
 exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
@@ -272,5 +276,24 @@ exports.detallesTransaccionRelations = (0, drizzle_orm_1.relations)(exports.deta
     transaccion: one(exports.transacciones, { fields: [exports.detallesTransaccion.transaccionId], references: [exports.transacciones.id] }),
     servicio: one(exports.servicios, { fields: [exports.detallesTransaccion.servicioId], references: [exports.servicios.id] }),
     producto: one(exports.productos, { fields: [exports.detallesTransaccion.productoId], references: [exports.productos.id] }),
+}));
+exports.trabajosImportacion = (0, pg_core_1.pgTable)('trabajos_importacion', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
+    iniciadoPorId: (0, pg_core_1.uuid)('iniciado_por_id').references(() => exports.usuarios.id, { onDelete: 'set null' }),
+    tipo: (0, exports.tipoImportacionEnum)('tipo').notNull(),
+    nombreArchivo: (0, pg_core_1.varchar)('nombre_archivo', { length: 255 }).notNull(),
+    estado: (0, exports.estadoTrabajoImportacionEnum)('estado').notNull().default('procesando'),
+    totalFilas: (0, pg_core_1.integer)('total_filas').notNull().default(0),
+    filasCreadas: (0, pg_core_1.integer)('filas_creadas').notNull().default(0),
+    filasActualizadas: (0, pg_core_1.integer)('filas_actualizadas').notNull().default(0),
+    filasConError: (0, pg_core_1.integer)('filas_con_error').notNull().default(0),
+    detalleErrores: (0, pg_core_1.jsonb)('detalle_errores').default([]),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+    completadoAt: (0, pg_core_1.timestamp)('completado_at', { withTimezone: true }),
+});
+exports.trabajosImportacionRelations = (0, drizzle_orm_1.relations)(exports.trabajosImportacion, ({ one }) => ({
+    barberia: one(exports.barberias, { fields: [exports.trabajosImportacion.tenantId], references: [exports.barberias.id] }),
+    iniciadoPor: one(exports.usuarios, { fields: [exports.trabajosImportacion.iniciadoPorId], references: [exports.usuarios.id] }),
 }));
 //# sourceMappingURL=schema.js.map

@@ -48,6 +48,10 @@ export const tipoPlantillaEnum = pgEnum('tipo_plantilla', [
   'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
 export const yappyModoEnum = pgEnum('yappy_modo', ['manual', 'comercial']);
+export const tipoImportacionEnum = pgEnum('tipo_importacion', ['clientes', 'productos', 'servicios']);
+export const estadoTrabajoImportacionEnum = pgEnum('estado_trabajo_importacion', [
+  'procesando', 'completado', 'completado_con_errores', 'fallido',
+]);
 export const tipoItemEnum = pgEnum('tipo_item', ['servicio', 'producto']);
 
 // ============================================================================
@@ -377,4 +381,29 @@ export const detallesTransaccionRelations = relations(detallesTransaccion, ({ on
   transaccion: one(transacciones, { fields: [detallesTransaccion.transaccionId], references: [transacciones.id] }),
   servicio: one(servicios, { fields: [detallesTransaccion.servicioId], references: [servicios.id] }),
   producto: one(productos, { fields: [detallesTransaccion.productoId], references: [productos.id] }),
+}));
+
+// ============================================================================
+// TABLA 18: trabajos_importacion (auditoría y estado de cargas masivas)
+// ============================================================================
+
+export const trabajosImportacion = pgTable('trabajos_importacion', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  iniciadoPorId: uuid('iniciado_por_id').references(() => usuarios.id, { onDelete: 'set null' }),
+  tipo: tipoImportacionEnum('tipo').notNull(),
+  nombreArchivo: varchar('nombre_archivo', { length: 255 }).notNull(),
+  estado: estadoTrabajoImportacionEnum('estado').notNull().default('procesando'),
+  totalFilas: integer('total_filas').notNull().default(0),
+  filasCreadas: integer('filas_creadas').notNull().default(0),
+  filasActualizadas: integer('filas_actualizadas').notNull().default(0),
+  filasConError: integer('filas_con_error').notNull().default(0),
+  detalleErrores: jsonb('detalle_errores').default([]),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  completadoAt: timestamp('completado_at', { withTimezone: true }),
+});
+
+export const trabajosImportacionRelations = relations(trabajosImportacion, ({ one }) => ({
+  barberia: one(barberias, { fields: [trabajosImportacion.tenantId], references: [barberias.id] }),
+  iniciadoPor: one(usuarios, { fields: [trabajosImportacion.iniciadoPorId], references: [usuarios.id] }),
 }));

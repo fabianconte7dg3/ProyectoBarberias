@@ -21,6 +21,7 @@ import { DgiModule } from './dgi/dgi.module';
 import { CajaModule } from './caja/caja.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { DatosModule } from './datos/datos.module';
+import { ImportacionesModule } from './importaciones/importaciones.module';
 
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
@@ -59,6 +60,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     CajaModule,
     ReportesModule,
     DatosModule,
+    ImportacionesModule,
     QueueModule,
   ],
   controllers: [AppController],
