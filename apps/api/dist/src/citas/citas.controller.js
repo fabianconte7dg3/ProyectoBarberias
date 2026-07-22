@@ -34,7 +34,7 @@ let CitasController = class CitasController {
         if (!idempotencyKey) {
             idempotencyKey = `pub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
         }
-        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM barberias WHERE slug = ${tenantSlug || 'barberia-carlos'}`);
+        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM auth_get_tenant_by_slug(${tenantSlug || 'barberia-carlos'})`);
         const tenantId = tenantResult.rows[0]?.id;
         if (!tenantId)
             throw new common_1.NotFoundException('Barbería no encontrada');

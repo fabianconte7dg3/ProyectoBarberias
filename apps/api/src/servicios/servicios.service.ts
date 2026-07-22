@@ -37,7 +37,7 @@ export class ServiciosService {
   }
 
   async findPublicBySlug(slug: string) {
-    const tenantResult = await this.db.execute(sql`SELECT id FROM barberias WHERE slug = ${slug}`);
+    const tenantResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${slug})`);
     const tenantId = tenantResult.rows[0]?.id as string;
     if (!tenantId) throw new NotFoundException('Barbería no encontrada');
 

@@ -76,7 +76,7 @@ let ServiciosService = class ServiciosService {
         });
     }
     async findPublicBySlug(slug) {
-        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM barberias WHERE slug = ${slug}`);
+        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM auth_get_tenant_by_slug(${slug})`);
         const tenantId = tenantResult.rows[0]?.id;
         if (!tenantId)
             throw new common_1.NotFoundException('Barbería no encontrada');

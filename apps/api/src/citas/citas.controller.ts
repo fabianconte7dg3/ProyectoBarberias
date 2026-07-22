@@ -33,7 +33,7 @@ export class CitasController {
     }
     
     // Resolver Tenant por Slug para peticiones públicas
-    const tenantResult = await this.db.execute(sql`SELECT id FROM barberias WHERE slug = ${tenantSlug || 'barberia-carlos'}`);
+    const tenantResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${tenantSlug || 'barberia-carlos'})`);
     const tenantId = tenantResult.rows[0]?.id as string;
     if (!tenantId) throw new NotFoundException('Barbería no encontrada');
 
