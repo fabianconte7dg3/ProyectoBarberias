@@ -960,6 +960,23 @@ export declare const clientes: import("drizzle-orm/pg-core").PgTableWithColumns<
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        aceptaMarketing: import("drizzle-orm/pg-core").PgColumn<{
+            name: "acepta_marketing";
+            tableName: "clientes";
+            dataType: "boolean";
+            columnType: "PgBoolean";
+            data: boolean;
+            driverParam: boolean;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         ultimoMensajeRecibidoAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "ultimo_mensaje_recibido_at";
             tableName: "clientes";
