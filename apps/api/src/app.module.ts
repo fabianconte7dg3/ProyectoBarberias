@@ -22,6 +22,7 @@ import { CajaModule } from './caja/caja.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { DatosModule } from './datos/datos.module';
 import { ImportacionesModule } from './importaciones/importaciones.module';
+import { SuperAdminModule } from './super-admin/super-admin.module';
 
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
@@ -61,6 +62,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     ReportesModule,
     DatosModule,
     ImportacionesModule,
+    SuperAdminModule,
     QueueModule,
   ],
   controllers: [AppController],

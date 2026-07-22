@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.plataformaAdmins = exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
 exports.estadoBarberiaEnum = (0, pg_core_1.pgEnum)('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
-exports.rolUsuarioEnum = (0, pg_core_1.pgEnum)('rol_usuario', ['admin', 'barbero', 'recepcion']);
+exports.rolUsuarioEnum = (0, pg_core_1.pgEnum)('rol_usuario', ['superadmin', 'admin', 'barbero', 'recepcion']);
 exports.diaSemanaEnum = (0, pg_core_1.pgEnum)('dia_semana', [
     'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
@@ -46,6 +46,7 @@ exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     estado: (0, exports.estadoBarberiaEnum)('estado').notNull().default('activo'),
     slug: (0, pg_core_1.varchar)('slug', { length: 255 }).notNull().unique(),
     killSwitchActivo: (0, pg_core_1.boolean)('kill_switch_activo').notNull().default(false),
+    bloqueadoPorPlataforma: (0, pg_core_1.boolean)('bloqueado_por_plataforma').notNull().default(false),
     colorPrimario: (0, pg_core_1.varchar)('color_primario', { length: 7 }),
     logoUrl: (0, pg_core_1.text)('logo_url'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -296,4 +297,13 @@ exports.trabajosImportacionRelations = (0, drizzle_orm_1.relations)(exports.trab
     barberia: one(exports.barberias, { fields: [exports.trabajosImportacion.tenantId], references: [exports.barberias.id] }),
     iniciadoPor: one(exports.usuarios, { fields: [exports.trabajosImportacion.iniciadoPorId], references: [exports.usuarios.id] }),
 }));
+exports.plataformaAdmins = (0, pg_core_1.pgTable)('plataforma_admins', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    email: (0, pg_core_1.varchar)('email', { length: 255 }).notNull().unique(),
+    passwordHash: (0, pg_core_1.text)('password_hash').notNull(),
+    totpSecretCifrado: (0, pg_core_1.text)('totp_secret_cifrado').notNull(),
+    totpHabilitado: (0, pg_core_1.boolean)('totp_habilitado').notNull().default(true),
+    activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 //# sourceMappingURL=schema.js.map

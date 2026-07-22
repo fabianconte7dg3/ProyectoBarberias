@@ -21,7 +21,7 @@ import { relations, sql } from 'drizzle-orm';
 
 export const planSuscripcionEnum = pgEnum('plan_suscripcion', ['basico', 'premium']);
 export const estadoBarberiaEnum = pgEnum('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
-export const rolUsuarioEnum = pgEnum('rol_usuario', ['admin', 'barbero', 'recepcion']);
+export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'barbero', 'recepcion']);
 export const diaSemanaEnum = pgEnum('dia_semana', [
   'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
@@ -67,6 +67,7 @@ export const barberias = pgTable('barberias', {
   estado: estadoBarberiaEnum('estado').notNull().default('activo'),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   killSwitchActivo: boolean('kill_switch_activo').notNull().default(false),
+  bloqueadoPorPlataforma: boolean('bloqueado_por_plataforma').notNull().default(false),
   colorPrimario: varchar('color_primario', { length: 7 }),
   logoUrl: text('logo_url'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -407,3 +408,17 @@ export const trabajosImportacionRelations = relations(trabajosImportacion, ({ on
   barberia: one(barberias, { fields: [trabajosImportacion.tenantId], references: [barberias.id] }),
   iniciadoPor: one(usuarios, { fields: [trabajosImportacion.iniciadoPorId], references: [usuarios.id] }),
 }));
+
+// ============================================================================
+// TABLA 19: plataforma_admins (Administradores globales del SaaS - fuera de RLS)
+// ============================================================================
+
+export const plataformaAdmins = pgTable('plataforma_admins', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  email: varchar('email', { length: 255 }).notNull().unique(),
+  passwordHash: text('password_hash').notNull(),
+  totpSecretCifrado: text('totp_secret_cifrado').notNull(),
+  totpHabilitado: boolean('totp_habilitado').notNull().default(true),
+  activo: boolean('activo').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});

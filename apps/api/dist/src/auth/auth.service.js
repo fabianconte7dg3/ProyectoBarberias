@@ -113,11 +113,19 @@ let AuthService = class AuthService {
             throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
         }
         const resultTenant = await (0, tenant_utils_1.runInTenantScope)(this.db, admin.tenantId, async (tx) => {
-            return await tx.execute((0, drizzle_orm_1.sql) `SELECT estado FROM barberias WHERE id = ${admin.tenantId}`);
+            return await tx.execute((0, drizzle_orm_1.sql) `SELECT estado, bloqueado_por_plataforma FROM barberias WHERE id = ${admin.tenantId}`);
         });
-        console.log('ResultTenant in loginAdmin:', resultTenant.rows);
-        if (resultTenant.rows[0] && resultTenant.rows[0].estado !== 'activo') {
-            throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
+        const tenantRow = resultTenant.rows[0];
+        if (tenantRow) {
+            if (tenantRow.bloqueado_por_plataforma) {
+                throw new common_1.ForbiddenException('Esta cuenta ha sido bloqueada preventivamente por la plataforma por razones de seguridad. Contacta a soporte.');
+            }
+            if (tenantRow.estado === 'suspendido_pago') {
+                throw new common_1.ForbiddenException('La suscripción de la barbería está suspendida por falta de pago. Contacta a soporte.');
+            }
+            if (tenantRow.estado !== 'activo') {
+                throw new common_1.ForbiddenException('La suscripción de la barbería está inactiva.');
+            }
         }
         const payload = { sub: admin.id, tenantId: admin.tenantId, rol: admin.rol };
         return {

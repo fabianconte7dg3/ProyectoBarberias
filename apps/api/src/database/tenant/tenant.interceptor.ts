@@ -28,11 +28,11 @@ export class TenantInterceptor implements NestInterceptor {
       context.getClass(),
     ]);
 
-    if (isPublic) {
+    const request = context.switchToHttp().getRequest();
+
+    if (isPublic || request.user?.rol === 'superadmin') {
       return next.handle();
     }
-
-    const request = context.switchToHttp().getRequest();
     const tenantId: string | undefined = request.user?.tenantId;
 
     const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
