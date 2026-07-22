@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Headers, Patch, Param, Get, Query, Req, UnauthorizedException, Inject, Res, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Body, Headers, Patch, Param, Get, Query, Req, UnauthorizedException, Inject, Res, HttpStatus, NotFoundException } from '@nestjs/common';
 import type { Response, Request } from 'express';
 import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
@@ -6,11 +6,12 @@ import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
 import { UpdateEstadoCitaDto } from './dto/update-estado.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../common/decorators/public.decorator';
-import { eq, and, gt } from 'drizzle-orm';
-import { citas } from '../database/schema';
+import { eq, and, gt, sql } from 'drizzle-orm';
+import { citas, barberias } from '../database/schema';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
+import { runInTenantScope } from '../database/tenant/tenant.utils';
 
 @Controller('citas')
 export class CitasController {
@@ -18,6 +19,32 @@ export class CitasController {
     private readonly citasService: CitasService,
     @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>
   ) {}
+
+  @Public()
+  @Post('publica')
+  async crearCitaPublica(
+    @Body() data: CreateCitaDto,
+    @Headers('idempotency-key') idempotencyKey: string,
+    @Headers('x-tenant-slug') tenantSlug: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!idempotencyKey) {
+      idempotencyKey = `pub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+    
+    // Resolver Tenant por Slug para peticiones públicas
+    const tenantResult = await this.db.execute(sql`SELECT id FROM barberias WHERE slug = ${tenantSlug || 'barberia-carlos'}`);
+    const tenantId = tenantResult.rows[0]?.id as string;
+    if (!tenantId) throw new NotFoundException('Barbería no encontrada');
+
+    return runInTenantScope(this.db, tenantId, async () => {
+      const result = await this.citasService.crearCita(data, idempotencyKey);
+      if (result.isExisting) {
+        res.status(HttpStatus.OK);
+      }
+      return result.cita;
+    });
+  }
 
   @Roles('admin', 'recepcion', 'barbero')
   @Post()
@@ -62,35 +89,16 @@ export class CitasController {
   @Roles('admin', 'recepcion', 'barbero')
   @Patch(':id/estado')
   async cambiarEstado(
-    @Req() req: Request,
-    @Param('id') id: string, 
-    @Body() data: UpdateEstadoCitaDto
+    @Param('id') id: string,
+    @Body() dto: UpdateEstadoCitaDto,
+    @Req() req: Request
   ) {
-    const user = (req as any).user;
-    return this.citasService.cambiarEstado(id, data.estado, user);
+    return this.citasService.cambiarEstado(id, dto.estado, (req as any).user);
   }
 
-  @Public()
+  @Roles('admin', 'recepcion', 'barbero')
   @Post(':id/cancelar')
-  async cancelarPorCliente(@Param('id') id: string, @Body('token') token: string) {
-    if (!token) throw new UnauthorizedException('Token de cancelación requerido');
-    
-    // Verificación manual simple para el cliente (public route, usa db)
-    const [cita] = await this.db
-      .select()
-      .from(citas)
-      .where(
-        and(
-          eq(citas.id, id),
-          eq(citas.tokenCliente, token),
-          gt(citas.tokenExpiraEn, new Date())
-        )
-      );
-
-    if (!cita) {
-      throw new UnauthorizedException('Token inválido o expirado');
-    }
-
+  async cancelarCita(@Param('id') id: string) {
     return this.citasService.cancelarPorCliente(id);
   }
 }

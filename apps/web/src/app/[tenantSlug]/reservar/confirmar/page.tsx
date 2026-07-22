@@ -1,4 +1,5 @@
 'use client';
+
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
@@ -9,19 +10,7 @@ import { SuccessView } from '@/components/booking/SuccessView';
 import { BottomAction } from '@/components/ui/BottomAction';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { reservaClienteSchema } from '@/lib/types';
-
-// MOCK DATA (En el futuro vendrá de React Query cache)
-const MOCK_SERVICIOS: Record<string, { nombre: string; precio: string }> = {
-  '123e4567-e89b-12d3-a456-426614174000': { nombre: 'Corte Clásico', precio: '15.00' },
-  '123e4567-e89b-12d3-a456-426614174001': { nombre: 'Corte + Barba', precio: '22.00' },
-  '123e4567-e89b-12d3-a456-426614174002': { nombre: 'Perfilado de Barba', precio: '10.00' },
-};
-
-const MOCK_BARBEROS: Record<string, string> = {
-  '123e4567-e89b-12d3-a456-426614174003': 'Carlos',
-  '123e4567-e89b-12d3-a456-426614174004': 'Juan',
-  '123e4567-e89b-12d3-a456-426614174005': 'Pedro',
-};
+import { fetchApi } from '@/lib/api';
 
 type FormStatus = 'idle' | 'loading' | 'error' | 'success';
 
@@ -54,33 +43,58 @@ function ConfirmarContent() {
   const isValid = reservaClienteSchema.safeParse({ nombre, telefono }).success;
 
   const handleConfirm = async () => {
-    // Evitar doble submit localmente
     if (!isValid || status === 'loading') return;
     
     setStatus('loading');
     setErrorMessage('');
 
     try {
-      // MOCK: Simular latencia de red y backend
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Simulamos que 1 de cada 10 veces ocurre una race condition o fallo de red
-      // if (Math.random() > 0.9) throw new Error("El horario seleccionado acaba de ser ocupado. Por favor, elige otro.");
+      // 1. Obtener o crear Cliente por número de WhatsApp en la API
+      let clienteId = '';
+      try {
+        const nuevoCliente = await fetchApi<{ id: string }>('/clientes', {
+          method: 'POST',
+          body: JSON.stringify({
+            nombreCompleto: nombre.trim(),
+            telefonoWhatsapp: telefono.trim(),
+          })
+        });
+        clienteId = nuevoCliente.id;
+      } catch (err: any) {
+        // Si el cliente ya existe, lo buscamos en la base de datos
+        const clientesExistentes = await fetchApi<Array<{ id: string; telefonoWhatsapp: string }>>(`/clientes?q=${encodeURIComponent(telefono.trim())}`);
+        if (clientesExistentes && clientesExistentes.length > 0) {
+          clienteId = clientesExistentes[0].id;
+        } else {
+          throw new Error('No se pudo asociar la ficha del cliente.');
+        }
+      }
 
-      // Analytics: track event (Mock)
-      console.log('trackEvent: booking_confirmed', { 
-        tenant: tenantSlug, servicioId, barberoId, fecha, hora, nombre, telefono 
+      // 2. Crear Cita Real en Backend (`POST /citas/publica`)
+      const inicioEstimado = `${fecha}T${hora}:00`;
+      await fetchApi('/citas/publica', {
+        method: 'POST',
+        headers: {
+          'x-tenant-slug': tenantSlug,
+        },
+        body: JSON.stringify({
+          servicioId,
+          barberoId: barberoId || undefined,
+          clienteId,
+          inicioEstimado,
+          origen: 'web_publica',
+        })
       });
 
-      // Éxito: Limpiar store para que el botón "Atrás" no reviva un formulario, 
-      // y mutar la URL usando replace (sin agregar al historial).
+      // 3. Limpiar estado de reserva global
       reset();
       router.replace(`/${tenantSlug}/reservar/confirmar?status=success`);
       setStatus('success');
 
     } catch (error: any) {
+      console.error('Error al confirmar reserva:', error);
       setStatus('error');
-      setErrorMessage(error.message || 'Error al confirmar la reserva. Revisa tu conexión.');
+      setErrorMessage(error.message || 'Error al guardar la reserva en el calendario. Por favor intenta nuevamente.');
     }
   };
 
@@ -90,7 +104,7 @@ function ConfirmarContent() {
   };
 
   if (!isHydrated) {
-    return <div className="min-h-[50vh] flex items-center justify-center opacity-50">Cargando...</div>;
+    return <div className="min-h-[50vh] flex items-center justify-center opacity-50 font-semibold text-xs">Cargando...</div>;
   }
 
   // VISTA 1: ÉXITO
@@ -98,52 +112,63 @@ function ConfirmarContent() {
     return <SuccessView tenantSlug={tenantSlug} />;
   }
 
-  // VISTA 2: FORMULARIO PRINCIPAL
-  // Renderizado seguro por si useEffect tarda en redirigir
-  if (!servicioId || !fecha || !hora) return null;
-
-  const servicioMock = MOCK_SERVICIOS[servicioId];
-  const barberoMockNombre = barberoId ? MOCK_BARBEROS[barberoId] : 'Cualquier Barbero';
-
+  // VISTA 2: FORMULARIO DE CONFIRMACIÓN
   return (
-    <div className="animate-in slide-in-from-right-8 fade-in duration-500 relative pb-4">
-      {/* Botón Volver */}
-      <button 
-        onClick={() => router.back()}
-        className="mb-4 flex items-center text-sm font-medium text-gray-500 hover:text-foreground active:scale-95 transition-all"
-        disabled={status === 'loading'}
-      >
-        <ArrowLeft size={16} className="mr-1" />
-        Volver a fecha
-      </button>
-
-      {status === 'error' && (
-        <div className="mb-4 p-4 bg-red-50 border border-red-200 text-red-600 rounded-xl flex items-start text-sm">
-          <AlertCircle size={18} className="mr-2 mt-0.5 flex-shrink-0" />
-          <p>{errorMessage}</p>
+    <div className="min-h-screen bg-background pb-28">
+      {/* Header flotante */}
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3 flex items-center gap-3">
+        <button
+          onClick={() => router.back()}
+          className="p-2 -ml-2 rounded-full hover:bg-secondary transition-colors"
+          aria-label="Volver"
+        >
+          <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+        <div>
+          <h1 className="text-base font-extrabold text-foreground">Confirmar Reserva</h1>
+          <p className="text-[11px] text-muted-foreground">Paso 3 de 3 — Datos de contacto</p>
         </div>
-      )}
+      </header>
 
-      <BookingSummary 
-        servicioNombre={servicioMock?.nombre || 'Servicio'}
-        barberoNombre={barberoMockNombre || 'Barbero'}
-        fecha={fecha}
-        hora={hora}
-        precio={servicioMock?.precio || '0.00'}
-      />
+      <main className="max-w-md mx-auto px-4 py-6 space-y-6">
+        {/* Banner Error */}
+        {status === 'error' && (
+          <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-2xl flex items-start gap-3 text-destructive animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+            <div className="text-xs font-medium space-y-1">
+              <p className="font-bold">No se pudo procesar la reserva</p>
+              <p>{errorMessage}</p>
+            </div>
+          </div>
+        )}
 
-      <ClientForm 
-        nombre={nombre} 
-        telefono={telefono} 
-        onChange={handleFormChange} 
-      />
+        {/* Resumen de Servicio y Fecha */}
+        <BookingSummary
+          servicioNombre="Servicio Seleccionado"
+          barberoNombre="Barbero Asignado"
+          fecha={fecha || '2026-07-21'}
+          hora={hora || '12:00'}
+          precio="15.00"
+        />
 
-      <BottomAction disabled={!isValid || status === 'loading'} onClick={handleConfirm}>
+        {/* Formulario Cliente */}
+        <ClientForm
+          nombre={nombre}
+          telefono={telefono}
+          onChange={handleFormChange}
+        />
+      </main>
+
+      {/* Acción fija inferior */}
+      <BottomAction
+        onClick={handleConfirm}
+        disabled={!isValid || status === 'loading'}
+      >
         {status === 'loading' ? (
-          <>
-            <Loader2 className="animate-spin mr-2" size={20} />
-            <span>Confirmando...</span>
-          </>
+          <span className="flex items-center gap-2">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span>Guardando Cita en Calendario...</span>
+          </span>
         ) : (
           <span>Confirmar Reserva</span>
         )}
@@ -152,10 +177,9 @@ function ConfirmarContent() {
   );
 }
 
-// Necesario envolver en Suspense porque usamos useSearchParams en Next.js (App Router)
 export default function ConfirmarPage() {
   return (
-    <Suspense fallback={<div className="min-h-[50vh] flex items-center justify-center opacity-50">Cargando...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-xs font-bold text-muted-foreground">Cargando...</div>}>
       <ConfirmarContent />
     </Suspense>
   );

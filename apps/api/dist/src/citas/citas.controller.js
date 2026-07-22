@@ -21,14 +21,30 @@ const update_estado_dto_1 = require("./dto/update-estado.dto");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
 const public_decorator_1 = require("../common/decorators/public.decorator");
 const drizzle_orm_1 = require("drizzle-orm");
-const schema_1 = require("../database/schema");
 const database_constants_1 = require("../database/tenant/database.constants");
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let CitasController = class CitasController {
     citasService;
     db;
     constructor(citasService, db) {
         this.citasService = citasService;
         this.db = db;
+    }
+    async crearCitaPublica(data, idempotencyKey, tenantSlug, res) {
+        if (!idempotencyKey) {
+            idempotencyKey = `pub_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+        }
+        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM barberias WHERE slug = ${tenantSlug || 'barberia-carlos'}`);
+        const tenantId = tenantResult.rows[0]?.id;
+        if (!tenantId)
+            throw new common_1.NotFoundException('Barbería no encontrada');
+        return (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async () => {
+            const result = await this.citasService.crearCita(data, idempotencyKey);
+            if (result.isExisting) {
+                res.status(common_1.HttpStatus.OK);
+            }
+            return result.cita;
+        });
     }
     async crearCita(data, idempotencyKey, res) {
         if (!idempotencyKey) {
@@ -51,24 +67,25 @@ let CitasController = class CitasController {
     async bloquearTurno(data) {
         return this.citasService.bloquearTurno(data);
     }
-    async cambiarEstado(req, id, data) {
-        const user = req.user;
-        return this.citasService.cambiarEstado(id, data.estado, user);
+    async cambiarEstado(id, dto, req) {
+        return this.citasService.cambiarEstado(id, dto.estado, req.user);
     }
-    async cancelarPorCliente(id, token) {
-        if (!token)
-            throw new common_1.UnauthorizedException('Token de cancelación requerido');
-        const [cita] = await this.db
-            .select()
-            .from(schema_1.citas)
-            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.citas.id, id), (0, drizzle_orm_1.eq)(schema_1.citas.tokenCliente, token), (0, drizzle_orm_1.gt)(schema_1.citas.tokenExpiraEn, new Date())));
-        if (!cita) {
-            throw new common_1.UnauthorizedException('Token inválido o expirado');
-        }
+    async cancelarCita(id) {
         return this.citasService.cancelarPorCliente(id);
     }
 };
 exports.CitasController = CitasController;
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('publica'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('idempotency-key')),
+    __param(2, (0, common_1.Headers)('x-tenant-slug')),
+    __param(3, (0, common_1.Res)({ passthrough: true })),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_cita_dto_1.CreateCitaDto, String, String, Object]),
+    __metadata("design:returntype", Promise)
+], CitasController.prototype, "crearCitaPublica", null);
 __decorate([
     (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Post)(),
@@ -100,22 +117,21 @@ __decorate([
 __decorate([
     (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Patch)(':id/estado'),
-    __param(0, (0, common_1.Req)()),
-    __param(1, (0, common_1.Param)('id')),
-    __param(2, (0, common_1.Body)()),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String, update_estado_dto_1.UpdateEstadoCitaDto]),
+    __metadata("design:paramtypes", [String, update_estado_dto_1.UpdateEstadoCitaDto, Object]),
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "cambiarEstado", null);
 __decorate([
-    (0, public_decorator_1.Public)(),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Post)(':id/cancelar'),
     __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)('token')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
-], CitasController.prototype, "cancelarPorCliente", null);
+], CitasController.prototype, "cancelarCita", null);
 exports.CitasController = CitasController = __decorate([
     (0, common_1.Controller)('citas'),
     __param(1, (0, common_1.Inject)(database_constants_1.DRIZZLE_POOL_DB)),

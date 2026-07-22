@@ -9,9 +9,10 @@ export declare class CitasController {
     private readonly citasService;
     private readonly db;
     constructor(citasService: CitasService, db: NodePgDatabase<typeof schema>);
+    crearCitaPublica(data: CreateCitaDto, idempotencyKey: string, tenantSlug: string, res: Response): Promise<any>;
     crearCita(data: CreateCitaDto, idempotencyKey: string, res: Response): Promise<any>;
     getCitas(req: Request, fechaStr?: string, barberoId?: string): Promise<any>;
     bloquearTurno(data: BloquearTurnoDto): Promise<any>;
-    cambiarEstado(req: Request, id: string, data: UpdateEstadoCitaDto): Promise<any>;
-    cancelarPorCliente(id: string, token: string): Promise<any>;
+    cambiarEstado(id: string, dto: UpdateEstadoCitaDto, req: Request): Promise<any>;
+    cancelarCita(id: string): Promise<any>;
 }
