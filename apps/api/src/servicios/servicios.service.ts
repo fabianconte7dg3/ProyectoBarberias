@@ -1,12 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
+import { runInTenantScope } from '../database/tenant/tenant.utils';
+import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
+import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
-import { eq, and, asc } from 'drizzle-orm';
+import { eq, and, asc, sql } from 'drizzle-orm';
 import { CreateServicioDto } from './dto/create-servicio.dto';
 import { UpdateServicioDto } from './dto/update-servicio.dto';
 
 @Injectable()
 export class ServiciosService {
+  constructor(
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>
+  ) {}
+
   async create(dto: CreateServicioDto) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
@@ -26,6 +33,19 @@ export class ServiciosService {
     return db.query.servicios.findMany({
       where: eq(schema.servicios.activo, true),
       orderBy: [asc(schema.servicios.nombre)],
+    });
+  }
+
+  async findPublicBySlug(slug: string) {
+    const tenantResult = await this.db.execute(sql`SELECT id FROM barberias WHERE slug = ${slug}`);
+    const tenantId = tenantResult.rows[0]?.id as string;
+    if (!tenantId) throw new NotFoundException('Barbería no encontrada');
+
+    return runInTenantScope(this.db, tenantId, async (tx) => {
+      return tx.query.servicios.findMany({
+        where: eq(schema.servicios.activo, true),
+        orderBy: [asc(schema.servicios.nombre)],
+      });
     });
   }
 

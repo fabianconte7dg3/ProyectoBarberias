@@ -3,10 +3,17 @@ import { ServiciosService } from './servicios.service';
 import { CreateServicioDto } from './dto/create-servicio.dto';
 import { UpdateServicioDto } from './dto/update-servicio.dto';
 import { Roles } from '../common/decorators/roles.decorator';
+import { Public } from '../common/decorators/public.decorator';
 
 @Controller('servicios')
 export class ServiciosController {
   constructor(private readonly serviciosService: ServiciosService) {}
+
+  @Public()
+  @Get('publico/:slug')
+  findPublicBySlug(@Param('slug') slug: string) {
+    return this.serviciosService.findPublicBySlug(slug);
+  }
 
   @Roles('admin')
   @Post()

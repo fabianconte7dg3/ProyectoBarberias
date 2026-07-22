@@ -18,10 +18,14 @@ const servicios_service_1 = require("./servicios.service");
 const create_servicio_dto_1 = require("./dto/create-servicio.dto");
 const update_servicio_dto_1 = require("./dto/update-servicio.dto");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const public_decorator_1 = require("../common/decorators/public.decorator");
 let ServiciosController = class ServiciosController {
     serviciosService;
     constructor(serviciosService) {
         this.serviciosService = serviciosService;
+    }
+    findPublicBySlug(slug) {
+        return this.serviciosService.findPublicBySlug(slug);
     }
     create(dto) {
         return this.serviciosService.create(dto);
@@ -40,6 +44,14 @@ let ServiciosController = class ServiciosController {
     }
 };
 exports.ServiciosController = ServiciosController;
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Get)('publico/:slug'),
+    __param(0, (0, common_1.Param)('slug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], ServiciosController.prototype, "findPublicBySlug", null);
 __decorate([
     (0, roles_decorator_1.Roles)('admin'),
     (0, common_1.Post)(),

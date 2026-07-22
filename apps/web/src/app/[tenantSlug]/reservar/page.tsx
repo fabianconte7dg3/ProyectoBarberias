@@ -37,7 +37,7 @@ export default function ReservarPage() {
       setLoadingData(true);
       try {
         const [serviciosData, staffData] = await Promise.all([
-          fetchApi<Servicio[]>('/servicios'),
+          fetchApi<Servicio[]>(`/servicios/publico/${tenantSlug}`),
           fetchApi<Array<{ id: string; nombreCompleto: string; rol: string }>>(`/auth/staff/${tenantSlug}`)
         ]);
 
