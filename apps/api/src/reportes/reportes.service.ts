@@ -337,9 +337,11 @@ export class ReportesService {
       curr.setDate(curr.getDate() + 1);
     }
 
+    const esSoloPreneurODueno = barbero.rol === 'admin' || Number(barbero.porcentajeComision || 0) === 0;
+
     for (const tx of txsFiltradas) {
       const montoTx = Number(tx.totalFacturado || 0);
-      const comisionTx = Number(tx.comisionBarbero || 0);
+      const comisionTx = esSoloPreneurODueno ? montoTx : Number(tx.comisionBarbero || 0);
       const propinaTx = Number(tx.propinaBarbero || 0);
 
       totalCitas += tx.cita ? 1 : 0;
@@ -360,7 +362,7 @@ export class ReportesService {
 
       if (tx.detalles && tx.detalles.length > 0) {
         for (const det of tx.detalles) {
-          const comDet = Number(det.comisionAplicada || 0);
+          const comDet = esSoloPreneurODueno ? Number(det.subtotal || 0) : Number(det.comisionAplicada || 0);
           if (det.tipoItem === 'servicio') comisionServicios += comDet;
           else if (det.tipoItem === 'producto') comisionProductos += comDet;
         }
@@ -368,6 +370,11 @@ export class ReportesService {
         comisionServicios += comisionTx;
       }
     }
+
+    // Filtrar solo los días que tienen actividad real (citas, facturado o propina > 0)
+    const resumenDiarioFiltrado = Array.from(resumenDiarioMap.values())
+      .filter((d) => d.citas > 0 || d.facturado > 0 || d.comision > 0 || d.propina > 0)
+      .sort((a, b) => b.fecha.localeCompare(a.fecha)); // Más reciente primero
 
     return {
       barberoId: barbero.id,
@@ -377,11 +384,11 @@ export class ReportesService {
       rangoFechas: { desde, hasta },
       totalCitas,
       totalFacturado,
-      comisionServicios,
+      comisionServicios: esSoloPreneurODueno ? totalFacturado : comisionServicios,
       comisionProductos,
-      comisionTotal,
+      comisionTotal: esSoloPreneurODueno ? totalFacturado : comisionTotal,
       propinaTotal,
-      resumenDiario: Array.from(resumenDiarioMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha))
+      resumenDiario: resumenDiarioFiltrado
     };
   }
 }

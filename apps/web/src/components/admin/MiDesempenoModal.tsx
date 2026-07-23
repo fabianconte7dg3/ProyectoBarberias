@@ -88,11 +88,11 @@ export function MiDesempenoModal({ isOpen, onClose }: MiDesempenoModalProps) {
               <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-600 dark:text-emerald-400">
                 <div>
                   <h3 className="font-extrabold text-base text-foreground">Hola, {data.nombreCompleto}</h3>
-                  <p className="text-xs text-muted-foreground">Resumen acumulado de tus ingresos y comisiones ganadas.</p>
+                  <p className="text-xs text-muted-foreground">Resumen acumulado de tus ingresos y ganancias.</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 font-mono font-bold text-xs">
-                    {data.porcentajeComision}% Serv.
+                    {data.porcentajeComision > 0 ? `${data.porcentajeComision}% Serv.` : '100% Ingresos Directos'}
                   </span>
                   {data.porcentajeComisionProducto > 0 && (
                     <span className="px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-600 dark:text-indigo-400 border border-indigo-500/30 font-mono font-bold text-xs">
@@ -115,7 +115,9 @@ export function MiDesempenoModal({ isOpen, onClose }: MiDesempenoModalProps) {
                 </div>
 
                 <div className="bg-emerald-500/10 border border-emerald-500/30 p-3.5 rounded-xl space-y-1">
-                  <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 block">Comisión Total</span>
+                  <span className="text-[10px] font-bold uppercase text-emerald-600 dark:text-emerald-400 block">
+                    {data.porcentajeComision > 0 ? 'Comisión Total' : 'Ganancia Total'}
+                  </span>
                   <div className="text-2xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">${data.comisionTotal.toFixed(2)}</div>
                 </div>
 
@@ -132,34 +134,44 @@ export function MiDesempenoModal({ isOpen, onClose }: MiDesempenoModalProps) {
                   <span>Detalle de Producción Diaria</span>
                 </h4>
 
-                <div className="max-h-56 overflow-y-auto border border-border rounded-xl">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-muted-foreground text-[10px]">
-                        <th className="py-2 px-3">Fecha</th>
-                        <th className="py-2 px-3 text-center">Citas</th>
-                        <th className="py-2 px-3 text-right">Facturado</th>
-                        <th className="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión</th>
-                        <th className="py-2 px-3 text-right text-rose-500">Propinas</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {data.resumenDiario.map((d) => (
-                        <tr key={d.fecha} className="hover:bg-secondary/30">
-                          <td className="py-2 px-3 font-semibold">{d.label}</td>
-                          <td className="py-2 px-3 text-center font-mono">{d.citas}</td>
-                          <td className="py-2 px-3 text-right font-mono font-bold">${d.facturado.toFixed(2)}</td>
-                          <td className="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                            ${d.comision.toFixed(2)}
-                          </td>
-                          <td className="py-2 px-3 text-right font-mono font-semibold text-rose-500">
-                            ${d.propina.toFixed(2)}
-                          </td>
+                {data.resumenDiario.length === 0 ? (
+                  <div className="py-8 px-4 text-center text-muted-foreground text-xs font-semibold bg-secondary/20 rounded-xl border border-dashed border-border flex flex-col items-center gap-1.5">
+                    <Calendar size={20} className="text-muted-foreground/60 mb-1" />
+                    <span>Sin actividad registrada en los últimos 30 días.</span>
+                    <span className="text-[11px] text-muted-foreground/70">Tus citas y ventas cobradas aparecerán automáticamente aquí.</span>
+                  </div>
+                ) : (
+                  <div className="max-h-56 overflow-y-auto border border-border rounded-xl">
+                    <table className="w-full text-left text-xs border-collapse">
+                      <thead>
+                        <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-muted-foreground text-[10px]">
+                          <th className="py-2 px-3">Fecha</th>
+                          <th className="py-2 px-3 text-center">Citas</th>
+                          <th className="py-2 px-3 text-right">Facturado</th>
+                          <th className="py-2 px-3 text-right text-emerald-600 dark:text-emerald-400">
+                            {data.porcentajeComision > 0 ? 'Comisión' : 'Ganancia'}
+                          </th>
+                          <th className="py-2 px-3 text-right text-rose-500">Propinas</th>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {data.resumenDiario.map((d) => (
+                          <tr key={d.fecha} className="hover:bg-secondary/30">
+                            <td className="py-2 px-3 font-semibold">{d.label}</td>
+                            <td className="py-2 px-3 text-center font-mono">{d.citas}</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold">${d.facturado.toFixed(2)}</td>
+                            <td className="py-2 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                              ${d.comision.toFixed(2)}
+                            </td>
+                            <td className="py-2 px-3 text-right font-mono font-semibold text-rose-500">
+                              ${d.propina.toFixed(2)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </>
           ) : null}
