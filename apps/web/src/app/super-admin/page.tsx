@@ -47,6 +47,10 @@ interface TenantSummary {
   totalFacturadoMes: number;
 }
 
+import CrearBarberiaModal from '@/components/super-admin/CrearBarberiaModal';
+import AlertasSeguridadPanel from '@/components/super-admin/AlertasSeguridadPanel';
+import BarberiasEnRiesgoCard from '@/components/super-admin/BarberiasEnRiesgoCard';
+
 export default function SuperAdminDashboard() {
   const router = useRouter();
 
@@ -56,6 +60,7 @@ export default function SuperAdminDashboard() {
   const [search, setSearch] = useState('');
   const [filterState, setFilterState] = useState<'todos' | 'activo' | 'suspendido_pago' | 'bloqueado_plataforma'>('todos');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [modalCrearOpen, setModalCrearOpen] = useState(false);
 
   const loadData = async () => {
     setLoading(true);
@@ -175,6 +180,14 @@ export default function SuperAdminDashboard() {
 
         <div className="flex items-center gap-3">
           <button
+            onClick={() => setModalCrearOpen(true)}
+            className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-xl transition-all shadow-md shadow-blue-600/20 flex items-center gap-1.5"
+          >
+            <Store size={16} />
+            <span>+ Crear Barbería</span>
+          </button>
+
+          <button
             onClick={loadData}
             className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-all"
             title="Recargar datos"
@@ -254,8 +267,11 @@ export default function SuperAdminDashboard() {
               <p className="text-[10px] text-slate-400 font-medium mt-1">{stats?.totalCitasMes || 0} citas procesadas este mes</p>
             </div>
           </div>
-
         </div>
+
+        {/* COMPONENTES DE OBSERVABILIDAD Y RIESGO DE NEGOCIO */}
+        <AlertasSeguridadPanel />
+        <BarberiasEnRiesgoCard />
 
         {/* CONTROLES DE FILTRO Y BÚSQUEDA */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -347,7 +363,13 @@ export default function SuperAdminDashboard() {
                     <tr key={t.id} className="hover:bg-slate-800/40 transition-colors">
                       {/* Columna 1: Barbería */}
                       <td className="py-4 px-6">
-                        <div className="font-bold text-white text-sm">{t.nombreComercial}</div>
+                        <a
+                          href={`/super-admin/tenants/${t.id}`}
+                          className="font-bold text-white text-sm hover:text-blue-400 transition-colors flex items-center gap-1.5"
+                        >
+                          <span>{t.nombreComercial}</span>
+                          <ExternalLink size={12} className="text-slate-500" />
+                        </a>
                         <div className="text-[11px] font-mono text-slate-400">{t.slug}</div>
                       </td>
 
@@ -440,6 +462,12 @@ export default function SuperAdminDashboard() {
         </div>
 
       </main>
+
+      <CrearBarberiaModal
+        isOpen={modalCrearOpen}
+        onClose={() => setModalCrearOpen(false)}
+        onSuccess={loadData}
+      />
     </div>
   );
 }

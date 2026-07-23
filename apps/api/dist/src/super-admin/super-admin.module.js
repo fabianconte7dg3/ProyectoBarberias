@@ -12,12 +12,15 @@ const jwt_1 = require("@nestjs/jwt");
 const config_1 = require("@nestjs/config");
 const super_admin_controller_1 = require("./super-admin.controller");
 const super_admin_service_1 = require("./super-admin.service");
+const super_admin_guard_1 = require("./super-admin.guard");
+const audit_module_1 = require("../audit/audit.module");
 let SuperAdminModule = class SuperAdminModule {
 };
 exports.SuperAdminModule = SuperAdminModule;
 exports.SuperAdminModule = SuperAdminModule = __decorate([
     (0, common_1.Module)({
         imports: [
+            audit_module_1.AuditModule,
             jwt_1.JwtModule.registerAsync({
                 imports: [config_1.ConfigModule],
                 useFactory: async (configService) => ({
@@ -28,7 +31,7 @@ exports.SuperAdminModule = SuperAdminModule = __decorate([
             }),
         ],
         controllers: [super_admin_controller_1.SuperAdminController],
-        providers: [super_admin_service_1.SuperAdminService],
+        providers: [super_admin_service_1.SuperAdminService, super_admin_guard_1.SuperAdminGuard],
         exports: [super_admin_service_1.SuperAdminService],
     })
 ], SuperAdminModule);

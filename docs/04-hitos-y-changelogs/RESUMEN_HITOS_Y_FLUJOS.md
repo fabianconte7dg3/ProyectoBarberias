@@ -49,11 +49,17 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **UI Numpad & Teclado Físico:** Selector de perfiles estilo Netflix + Numpad táctil de 4 dígitos con soporte para teclado de PC y animación de error (*shake*).
 * **Gestión de Sesión & Logout:** Endpoint `POST /auth/logout` para limpiar la cookie en dispositivos compartidos y validación previa `GET /auth/me` al cargar la app.
 
-### Hito 9: Productos Retail, Sub-Dashboards Recharts, Módulo de Barberos & Historial de Ausencias del Staff
-* **Venta de Productos Retail e Inventario Atómico:** Catálogo `/admin/productos`, tabla `detalles_transaccion` append-only, descuento de stock con SQL atómico `stock_actual >= cantidad` e idempotencia por `idempotencyKey`.
-* **Sub-Dashboards Modulares por Pestañas & Gráficos Recharts:** `/admin/dashboard` dividido en 4 pestañas (*Finanzas*, *Ventas & Productos*, *Rendimiento Staff*, *Riesgos & CRM*) con gráficos de área (tendencia diaria) y donuts (métodos de pago).
-* **Módulo Dedicado de Gestión de Barberos (`/admin/barberos`):** Tarjetas de personal, edición rápida de comisiones duplas (`% Servicios` y `% Productos`), modal de invitación `InviteBarberoModal.tsx` con generador de link de activación.
-* **Historial de Ausencias y Vacaciones del Staff (`GET /horarios/bloqueos-historial`):** Tabla histórica en `/admin/configuracion` con trazabilidad de vacaciones y licencias clasificadas dinámicamente como `[PROGRAMADO]`, `[EN CURSO]` o `[PASADO]`.
+### Hito 8: Módulo SuperAdmin & Operatividad de Plataforma (Onboarding Asistido, 2FA & Enforcement)
+* **Tabla `plataforma_admins` Fuera de RLS & 2FA Mandatorio**: Autenticación de dos pasos con TOTP de 6 dígitos cifrado con AES-256-CBC. `SuperAdminGuard` rechaza tokens temporales (`mfa_pending`) y valida el claim `superadmin_access`.
+* **Onboarding Asistido con `runInTenantScope`**: Creación manual de barberías mediante `crearTenantManual`, generando la barbería y la cuenta de usuario inactiva con token de activación de 72 horas para que el dueño establezca su propia contraseña privada en `/[tenantSlug]/activar-admin`.
+* **Enforcement de Límites por Plan**: `UsuariosService.inviteStaff` valida que el personal no supere el `limiteBarberos` según el plan (`basico` = 3, `premium` = 10).
+* **Unificación Relacional de Planes**: `plan_id` (FK a la tabla `planes`) como fuente relacional de verdad, sincronizado de forma atómica con `planSuscripcion`.
+
+### Hito 9: Observabilidad Centralizada, Canario de RLS Automatizado & Alertas de Seguridad
+* **Canario de RLS Automatizado (BullMQ Job)**: `CanaryProcessor` (`apps/api/src/queue/canary.processor.ts`) ejecuta un job horario sobre `CANARY_QUEUE`. Realiza consultas a la BD como `app_user` sin tenant scope. Si detecta `> 0` filas expuestas, genera una alerta crítica `canario_rls`.
+* **Notificación Activa e Inmediata ante Logins Fallidos**: `SuperAdminService` captura intentos fallidos de contraseña y TOTP con `IP`, `UserAgent`, `email` y `timestamp`, e invoca un despachador de notificación de emergencia de nivel crítico.
+* **Métricas Avanzadas de Negocio & Detección de Barberías en Riesgo**: Función `get_platform_business_metrics()` calcula tendencias de altas, churn y detecta barberías en riesgo (inactivas `> 7 días` o WhatsApp desconectado).
+* **Consola UI SuperAdmin**: Badge en tiempo real **`[🟢 Canario RLS: Íntegro]`**, panel de Alertas de Seguridad con acción *Marcar Atendida* y tarjetas de Barberías en Riesgo de Churn en `/super-admin`.
 
 ---
 

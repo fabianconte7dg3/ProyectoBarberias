@@ -66,6 +66,26 @@ let UsuariosService = class UsuariosService {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 48);
         const txDb = tenant_context_1.TenantContext.getDb();
+        const [barberia] = await txDb
+            .select({ planId: schema.barberias.planId })
+            .from(schema.barberias)
+            .where((0, drizzle_orm_1.eq)(schema.barberias.id, tenantId))
+            .limit(1);
+        const planId = barberia?.planId || 'basico';
+        const [plan] = await this.db
+            .select({ limiteBarberos: schema.planes.limiteBarberos })
+            .from(schema.planes)
+            .where((0, drizzle_orm_1.eq)(schema.planes.id, planId))
+            .limit(1);
+        const limiteMaximo = plan?.limiteBarberos || 3;
+        const resultCount = await txDb
+            .select({ count: (0, drizzle_orm_1.sql) `count(*)` })
+            .from(schema.usuarios)
+            .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema.usuarios.rol, 'barbero')));
+        const totalActual = Number(resultCount[0]?.count || 0);
+        if (totalActual >= limiteMaximo) {
+            throw new common_1.BadRequestException(`Has alcanzado el límite de ${limiteMaximo} barberos de tu plan actual (${planId.toUpperCase()}). Actualiza tu plan para agregar más personal.`);
+        }
         const [nuevoUsuario] = await txDb.insert(schema.usuarios).values({
             tenantId,
             nombreCompleto: dto.nombreCompleto,

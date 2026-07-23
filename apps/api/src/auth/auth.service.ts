@@ -75,13 +75,13 @@ export class AuthService {
       rol: adminRow.rol
     };
 
+    if (!admin.password || !admin.activo) {
+      throw new UnauthorizedException('Credenciales inválidas o cuenta no activada.');
+    }
+
     const passwordMatches = await bcrypt.compare(dto.password, admin.password);
     if (!passwordMatches) {
       throw new UnauthorizedException('Credenciales inválidas.');
-    }
-
-    if (!admin.activo) {
-      throw new ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
     }
 
     // Checking if the tenant is active & not blocked by platform

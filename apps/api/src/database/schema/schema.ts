@@ -25,7 +25,7 @@ export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'bar
 export const diaSemanaEnum = pgEnum('dia_semana', [
   'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
-export const origenCitaEnum = pgEnum('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin']);
+export const origenCitaEnum = pgEnum('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin', 'web_publica']);
 export const estadoCitaEnum = pgEnum('estado_cita', [
   'programada', 'en_curso', 'completada', 'ausente_strike', 'cancelada', 'revision_manual',
 ]);
@@ -38,6 +38,7 @@ export const origenBloqueoEnum = pgEnum('origen_bloqueo', ['sistema', 'barbero',
 export const accionAuditEnum = pgEnum('accion_audit', [
   'login', 'logout', 'cobro', 'update_intento', 'delete_intento',
   'kill_switch', 'cambio_comision', 'cierre_emergencia', 'conciliacion_yappy',
+  'crear_tenant', 'cambiar_estado_tenant', 'cambiar_plan_tenant', 'kill_switch_plataforma',
 ]);
 export const estadoWhatsappEnum = pgEnum('estado_whatsapp', [
   'conectado', 'desconectado', 'pendiente_qr', 'suspendido',
@@ -58,12 +59,22 @@ export const tipoItemEnum = pgEnum('tipo_item', ['servicio', 'producto']);
 // TABLA 1: barberias (tenant maestro — NO lleva tenant_id, ES el tenant)
 // ============================================================================
 
+export const planes = pgTable('planes', {
+  id: varchar('id', { length: 50 }).primaryKey(),
+  nombre: varchar('nombre', { length: 255 }).notNull(),
+  precioMensual: decimal('precio_mensual', { precision: 10, scale: 2 }).notNull(),
+  limiteBarberos: integer('limite_barberos').notNull().default(3),
+  activo: boolean('activo').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 export const barberias = pgTable('barberias', {
   id: uuid('id').primaryKey().defaultRandom(),
   nombreComercial: varchar('nombre_comercial', { length: 255 }).notNull(),
   ruc: varchar('ruc', { length: 50 }),
   telefonoNegocio: varchar('telefono_negocio', { length: 30 }),
   planSuscripcion: planSuscripcionEnum('plan_suscripcion').notNull().default('basico'),
+  planId: varchar('plan_id', { length: 50 }).references(() => planes.id).default('basico'),
   estado: estadoBarberiaEnum('estado').notNull().default('activo'),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   killSwitchActivo: boolean('kill_switch_activo').notNull().default(false),
@@ -422,3 +433,22 @@ export const plataformaAdmins = pgTable('plataforma_admins', {
   activo: boolean('activo').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ============================================================================
+// TABLA 20: alertas_seguridad (observabilidad de seguridad y salud del SaaS)
+// ============================================================================
+
+export const alertasSeguridad = pgTable('alertas_seguridad', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').references(() => barberias.id, { onDelete: 'cascade' }),
+  tipo: varchar('tipo', { length: 50 }).notNull(),
+  nivel: varchar('nivel', { length: 20 }).notNull().default('info'),
+  mensaje: text('mensaje').notNull(),
+  metadatos: jsonb('metadatos').default({}),
+  atendida: boolean('atendida').notNull().default(false),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const alertasSeguridadRelations = relations(alertasSeguridad, ({ one }) => ({
+  barberia: one(barberias, { fields: [alertasSeguridad.tenantId], references: [barberias.id] }),
+}));

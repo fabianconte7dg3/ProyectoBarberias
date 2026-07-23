@@ -33,12 +33,22 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.generarSecretBase32 = generarSecretBase32;
 exports.cifrarSecret = cifrarSecret;
 exports.descifrarSecret = descifrarSecret;
 exports.verificarCodigoTotp = verificarCodigoTotp;
 const crypto = __importStar(require("crypto"));
 const ENCRYPTION_KEY = process.env.MFA_SECRET_KEY || '12345678901234567890123456789012';
 const IV_LENGTH = 16;
+function generarSecretBase32() {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    let secret = '';
+    const randomBytes = crypto.randomBytes(20);
+    for (let i = 0; i < 16; i++) {
+        secret += chars[randomBytes[i] % 32];
+    }
+    return secret;
+}
 function cifrarSecret(text) {
     const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
@@ -54,6 +64,25 @@ function descifrarSecret(text) {
     let decrypted = decipher.update(encryptedText);
     decrypted = Buffer.concat([decrypted, decipher.final()]);
     return decrypted.toString();
+}
+function base32Decode(base32) {
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+    const clean = base32.toUpperCase().replace(/=+$/, '');
+    let bits = 0;
+    let value = 0;
+    const bytes = [];
+    for (let i = 0; i < clean.length; i++) {
+        const idx = alphabet.indexOf(clean[i]);
+        if (idx === -1)
+            continue;
+        value = (value << 5) | idx;
+        bits += 5;
+        if (bits >= 8) {
+            bytes.push((value >>> (bits - 8)) & 0xff);
+            bits -= 8;
+        }
+    }
+    return Buffer.from(bytes);
 }
 function verificarCodigoTotp(secretCifrado, codigo) {
     if (!codigo || !/^\d{6}$/.test(codigo)) {
@@ -79,13 +108,15 @@ function verificarCodigoTotp(secretCifrado, codigo) {
     }
     return false;
 }
-function generarHmacTotp(secret, counter) {
+function generarHmacTotp(secretBase32, counter) {
+    const key = base32Decode(secretBase32);
     const buffer = Buffer.alloc(8);
+    let tmp = counter;
     for (let i = 7; i >= 0; i--) {
-        buffer[i] = counter & 0xff;
-        counter = counter >> 8;
+        buffer[i] = tmp & 0xff;
+        tmp = tmp >> 8;
     }
-    const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'utf8'));
+    const hmac = crypto.createHmac('sha1', key);
     const hmacResult = hmac.update(buffer).digest();
     const offset = hmacResult[hmacResult.length - 1] & 0xf;
     const code = ((hmacResult[offset] & 0x7f) << 24) |

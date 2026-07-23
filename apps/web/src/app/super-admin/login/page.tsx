@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { ShieldCheck, Lock, Mail, KeyRound, AlertTriangle, ArrowRight, CheckCircle2 } from 'lucide-react';
@@ -10,13 +10,27 @@ export default function SuperAdminLoginPage() {
 
   // Estado del flujo 2-Pasos
   const [step, setStep] = useState<1 | 2>(1);
-  const [email, setEmail] = useState('superadmin@barberos.app');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [tempToken, setTempToken] = useState('');
   const [codigoTotp, setCodigoTotp] = useState('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    async function checkSetup() {
+      try {
+        const res = await fetchApi<{ necesitaSetup: boolean }>('/super-admin/setup/status');
+        if (res.necesitaSetup) {
+          router.push('/super-admin/setup');
+        }
+      } catch (err) {
+        console.error('Error verificando status de setup:', err);
+      }
+    }
+    checkSetup();
+  }, [router]);
 
   // Paso 1: Email + Contraseña
   const handlePaso1 = async (e: React.FormEvent) => {
@@ -52,10 +66,14 @@ export default function SuperAdminLoginPage() {
     setError('');
 
     try {
-      await fetchApi('/super-admin/login/verificar-totp', {
+      const res = await fetchApi<{ accessToken: string }>('/super-admin/login/verificar-totp', {
         method: 'POST',
         body: JSON.stringify({ tempToken, codigoTotp }),
       });
+
+      if (res?.accessToken) {
+        localStorage.setItem('super_jwt', res.accessToken);
+      }
 
       // Éxito: Redirigir a la Consola Super Admin
       router.push('/super-admin');

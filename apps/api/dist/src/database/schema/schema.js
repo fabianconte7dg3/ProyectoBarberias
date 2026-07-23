@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.plataformaAdmins = exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.alertasSeguridadRelations = exports.alertasSeguridad = exports.plataformaAdmins = exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.planes = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
 exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
@@ -9,7 +9,7 @@ exports.rolUsuarioEnum = (0, pg_core_1.pgEnum)('rol_usuario', ['superadmin', 'ad
 exports.diaSemanaEnum = (0, pg_core_1.pgEnum)('dia_semana', [
     'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
-exports.origenCitaEnum = (0, pg_core_1.pgEnum)('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin']);
+exports.origenCitaEnum = (0, pg_core_1.pgEnum)('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin', 'web_publica']);
 exports.estadoCitaEnum = (0, pg_core_1.pgEnum)('estado_cita', [
     'programada', 'en_curso', 'completada', 'ausente_strike', 'cancelada', 'revision_manual',
 ]);
@@ -22,6 +22,7 @@ exports.origenBloqueoEnum = (0, pg_core_1.pgEnum)('origen_bloqueo', ['sistema', 
 exports.accionAuditEnum = (0, pg_core_1.pgEnum)('accion_audit', [
     'login', 'logout', 'cobro', 'update_intento', 'delete_intento',
     'kill_switch', 'cambio_comision', 'cierre_emergencia', 'conciliacion_yappy',
+    'crear_tenant', 'cambiar_estado_tenant', 'cambiar_plan_tenant', 'kill_switch_plataforma',
 ]);
 exports.estadoWhatsappEnum = (0, pg_core_1.pgEnum)('estado_whatsapp', [
     'conectado', 'desconectado', 'pendiente_qr', 'suspendido',
@@ -37,12 +38,21 @@ exports.estadoTrabajoImportacionEnum = (0, pg_core_1.pgEnum)('estado_trabajo_imp
     'procesando', 'completado', 'completado_con_errores', 'fallido',
 ]);
 exports.tipoItemEnum = (0, pg_core_1.pgEnum)('tipo_item', ['servicio', 'producto']);
+exports.planes = (0, pg_core_1.pgTable)('planes', {
+    id: (0, pg_core_1.varchar)('id', { length: 50 }).primaryKey(),
+    nombre: (0, pg_core_1.varchar)('nombre', { length: 255 }).notNull(),
+    precioMensual: (0, pg_core_1.decimal)('precio_mensual', { precision: 10, scale: 2 }).notNull(),
+    limiteBarberos: (0, pg_core_1.integer)('limite_barberos').notNull().default(3),
+    activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     nombreComercial: (0, pg_core_1.varchar)('nombre_comercial', { length: 255 }).notNull(),
     ruc: (0, pg_core_1.varchar)('ruc', { length: 50 }),
     telefonoNegocio: (0, pg_core_1.varchar)('telefono_negocio', { length: 30 }),
     planSuscripcion: (0, exports.planSuscripcionEnum)('plan_suscripcion').notNull().default('basico'),
+    planId: (0, pg_core_1.varchar)('plan_id', { length: 50 }).references(() => exports.planes.id).default('basico'),
     estado: (0, exports.estadoBarberiaEnum)('estado').notNull().default('activo'),
     slug: (0, pg_core_1.varchar)('slug', { length: 255 }).notNull().unique(),
     killSwitchActivo: (0, pg_core_1.boolean)('kill_switch_activo').notNull().default(false),
@@ -306,4 +316,17 @@ exports.plataformaAdmins = (0, pg_core_1.pgTable)('plataforma_admins', {
     activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+exports.alertasSeguridad = (0, pg_core_1.pgTable)('alertas_seguridad', {
+    id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
+    tenantId: (0, pg_core_1.uuid)('tenant_id').references(() => exports.barberias.id, { onDelete: 'cascade' }),
+    tipo: (0, pg_core_1.varchar)('tipo', { length: 50 }).notNull(),
+    nivel: (0, pg_core_1.varchar)('nivel', { length: 20 }).notNull().default('info'),
+    mensaje: (0, pg_core_1.text)('mensaje').notNull(),
+    metadatos: (0, pg_core_1.jsonb)('metadatos').default({}),
+    atendida: (0, pg_core_1.boolean)('atendida').notNull().default(false),
+    createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+exports.alertasSeguridadRelations = (0, drizzle_orm_1.relations)(exports.alertasSeguridad, ({ one }) => ({
+    barberia: one(exports.barberias, { fields: [exports.alertasSeguridad.tenantId], references: [exports.barberias.id] }),
+}));
 //# sourceMappingURL=schema.js.map

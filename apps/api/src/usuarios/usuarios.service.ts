@@ -23,6 +23,37 @@ export class UsuariosService {
     expiresAt.setHours(expiresAt.getHours() + 48); // 48 horas de vigencia
 
     const txDb = TenantContext.getDb();
+
+    // 1. Obtener plan actual y su límite de barberos
+    const [barberia] = await txDb
+      .select({ planId: schema.barberias.planId })
+      .from(schema.barberias)
+      .where(eq(schema.barberias.id, tenantId))
+      .limit(1);
+
+    const planId = barberia?.planId || 'basico';
+    const [plan] = await this.db
+      .select({ limiteBarberos: schema.planes.limiteBarberos })
+      .from(schema.planes)
+      .where(eq(schema.planes.id, planId))
+      .limit(1);
+
+    const limiteMaximo = plan?.limiteBarberos || 3;
+
+    // 2. Contar barberos de este tenant
+    const resultCount = await txDb
+      .select({ count: sql<number>`count(*)` })
+      .from(schema.usuarios)
+      .where(and(eq(schema.usuarios.tenantId, tenantId), eq(schema.usuarios.rol, 'barbero')));
+
+    const totalActual = Number(resultCount[0]?.count || 0);
+
+    if (totalActual >= limiteMaximo) {
+      throw new BadRequestException(
+        `Has alcanzado el límite de ${limiteMaximo} barberos de tu plan actual (${planId.toUpperCase()}). Actualiza tu plan para agregar más personal.`
+      );
+    }
+
     const [nuevoUsuario] = await txDb.insert(schema.usuarios).values({
       tenantId,
       nombreCompleto: dto.nombreCompleto,

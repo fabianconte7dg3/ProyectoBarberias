@@ -18,10 +18,35 @@ const clientes_service_1 = require("./clientes.service");
 const create_cliente_dto_1 = require("./dto/create-cliente.dto");
 const update_cliente_dto_1 = require("./dto/update-cliente.dto");
 const roles_decorator_1 = require("../common/decorators/roles.decorator");
+const public_decorator_1 = require("../common/decorators/public.decorator");
+const drizzle_orm_1 = require("drizzle-orm");
+const database_constants_1 = require("../database/tenant/database.constants");
+const tenant_utils_1 = require("../database/tenant/tenant.utils");
 let ClientesController = class ClientesController {
     clientesService;
-    constructor(clientesService) {
+    db;
+    constructor(clientesService, db) {
         this.clientesService = clientesService;
+        this.db = db;
+    }
+    async createPublico(dto, tenantSlug) {
+        const slug = tenantSlug || 'barberia-demo';
+        const tenantResult = await this.db.execute((0, drizzle_orm_1.sql) `SELECT id FROM auth_get_tenant_by_slug(${slug})`);
+        const tenantId = tenantResult.rows[0]?.id;
+        if (!tenantId)
+            throw new common_1.NotFoundException('Barbería no encontrada');
+        return (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async () => {
+            try {
+                return await this.clientesService.create(dto);
+            }
+            catch (err) {
+                const clientes = await this.clientesService.findAll(dto.telefonoWhatsapp);
+                if (clientes && clientes.length > 0) {
+                    return clientes[0];
+                }
+                throw err;
+            }
+        });
     }
     create(dto) {
         return this.clientesService.create(dto);
@@ -37,6 +62,15 @@ let ClientesController = class ClientesController {
     }
 };
 exports.ClientesController = ClientesController;
+__decorate([
+    (0, public_decorator_1.Public)(),
+    (0, common_1.Post)('publico'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Headers)('x-tenant-slug')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [create_cliente_dto_1.CreateClienteDto, String]),
+    __metadata("design:returntype", Promise)
+], ClientesController.prototype, "createPublico", null);
 __decorate([
     (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
     (0, common_1.Post)(),
@@ -72,6 +106,7 @@ __decorate([
 ], ClientesController.prototype, "update", null);
 exports.ClientesController = ClientesController = __decorate([
     (0, common_1.Controller)('clientes'),
-    __metadata("design:paramtypes", [clientes_service_1.ClientesService])
+    __param(1, (0, common_1.Inject)(database_constants_1.DRIZZLE_POOL_DB)),
+    __metadata("design:paramtypes", [clientes_service_1.ClientesService, Function])
 ], ClientesController);
 //# sourceMappingURL=clientes.controller.js.map

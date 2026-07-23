@@ -1,12 +1,33 @@
-import { SuperAdminService } from './super-admin.service';
-import type { Response } from 'express';
+import { SuperAdminService, CreateTenantDto, ActivateAdminDto } from './super-admin.service';
+import type { Response, Request } from 'express';
 export declare class SuperAdminController {
     private readonly superAdminService;
     constructor(superAdminService: SuperAdminService);
+    checkSetupStatus(): Promise<{
+        necesitaSetup: boolean;
+    }>;
+    iniciarSetup(): Promise<{
+        totpSecret: string;
+        otpauthUrl: string;
+    }>;
+    completarSetup(body: {
+        email: string;
+        password: string;
+        totpSecret: string;
+        codigoTotp: string;
+    }, res: Response): Promise<{
+        message: string;
+        usuario: {
+            id: any;
+            email: any;
+            rol: string;
+        };
+        accessToken: string;
+    }>;
     loginPaso1(body: {
         email: string;
         password: string;
-    }): Promise<{
+    }, req: Request): Promise<{
         message: string;
         mfaRequired: boolean;
         tempToken: string;
@@ -14,7 +35,7 @@ export declare class SuperAdminController {
     loginPaso2(body: {
         tempToken: string;
         codigoTotp: string;
-    }, res: Response): Promise<{
+    }, req: Request, res: Response): Promise<{
         message: string;
         usuario: {
             id: any;
@@ -46,46 +67,57 @@ export declare class SuperAdminController {
         totalCitasMes: number;
         totalFacturadoMes: number;
     }[]>;
-    cambiarEstado(id: string, estado: 'activo' | 'suspendido_pago' | 'cancelado'): Promise<{
-        id: string;
-        nombreComercial: string;
-        ruc: string | null;
-        telefonoNegocio: string | null;
-        planSuscripcion: "basico" | "premium";
-        estado: "activo" | "suspendido_pago" | "cancelado";
+    crearTenant(body: CreateTenantDto): Promise<{
+        message: string;
+        tenantId: `${string}-${string}-${string}-${string}-${string}`;
         slug: string;
-        killSwitchActivo: boolean;
-        bloqueadoPorPlataforma: boolean;
-        colorPrimario: string | null;
-        logoUrl: string | null;
-        createdAt: Date;
+        activationToken: string;
+        activationUrl: string;
     }>;
-    cambiarPlan(id: string, plan: 'basico' | 'premium'): Promise<{
-        id: string;
-        nombreComercial: string;
-        ruc: string | null;
-        telefonoNegocio: string | null;
-        planSuscripcion: "basico" | "premium";
-        estado: "activo" | "suspendido_pago" | "cancelado";
-        slug: string;
-        killSwitchActivo: boolean;
-        bloqueadoPorPlataforma: boolean;
-        colorPrimario: string | null;
-        logoUrl: string | null;
-        createdAt: Date;
+    getTenantDetalle(id: string): Promise<{
+        barberia: any;
+        staff: any;
+        whatsappConfig: any;
+        metricas: {
+            totalCitas: number;
+            citasCompletadas: number;
+            citasCanceladas: number;
+            totalFacturado: number;
+        };
+        auditLogs: any;
     }>;
-    toggleKillSwitch(id: string, bloqueado: boolean): Promise<{
+    activarAdmin(body: ActivateAdminDto): Promise<{
+        message: string;
+    }>;
+    cambiarEstado(id: string, estado: 'activo' | 'suspendido_pago' | 'cancelado'): Promise<any>;
+    cambiarPlan(id: string, plan: 'basico' | 'premium'): Promise<any>;
+    toggleKillSwitch(id: string, bloqueado: boolean): Promise<any>;
+    getBusinessMetrics(): Promise<{
+        nuevasMes: number;
+        nuevasSemana: number;
+        canceladasMes: number;
+        barberiasBasico: number;
+        barberiasPremium: number;
+        barberiasEnRiesgo: any;
+    } | null>;
+    getSecurityAlerts(atendidaStr?: string): Promise<{
         id: string;
-        nombreComercial: string;
-        ruc: string | null;
-        telefonoNegocio: string | null;
-        planSuscripcion: "basico" | "premium";
-        estado: "activo" | "suspendido_pago" | "cancelado";
-        slug: string;
-        killSwitchActivo: boolean;
-        bloqueadoPorPlataforma: boolean;
-        colorPrimario: string | null;
-        logoUrl: string | null;
+        tenantId: string | null;
+        tipo: string;
+        nivel: string;
+        mensaje: string;
+        metadatos: unknown;
+        atendida: boolean;
+        createdAt: Date;
+    }[]>;
+    marcarAlertaAtendida(id: string): Promise<{
+        id: string;
+        tenantId: string | null;
+        tipo: string;
+        nivel: string;
+        mensaje: string;
+        metadatos: unknown;
+        atendida: boolean;
         createdAt: Date;
     }>;
 }

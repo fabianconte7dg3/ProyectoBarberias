@@ -49,11 +49,14 @@ function ConfirmarContent() {
     setErrorMessage('');
 
     try {
-      // 1. Obtener o crear Cliente por número de WhatsApp en la API
+      // 1. Obtener o crear Cliente por número de WhatsApp en la API Pública
       let clienteId = '';
       try {
-        const nuevoCliente = await fetchApi<{ id: string }>('/clientes', {
+        const nuevoCliente = await fetchApi<{ id: string }>('/clientes/publico', {
           method: 'POST',
+          headers: {
+            'x-tenant-slug': tenantSlug,
+          },
           body: JSON.stringify({
             nombreCompleto: nombre.trim(),
             telefonoWhatsapp: telefono.trim(),
@@ -61,13 +64,8 @@ function ConfirmarContent() {
         });
         clienteId = nuevoCliente.id;
       } catch (err: any) {
-        // Si el cliente ya existe, lo buscamos en la base de datos
-        const clientesExistentes = await fetchApi<Array<{ id: string; telefonoWhatsapp: string }>>(`/clientes?q=${encodeURIComponent(telefono.trim())}`);
-        if (clientesExistentes && clientesExistentes.length > 0) {
-          clienteId = clientesExistentes[0].id;
-        } else {
-          throw new Error('No se pudo asociar la ficha del cliente.');
-        }
+        console.error('Error asociando cliente en reserva pública:', err);
+        throw new Error(err.message || 'No se pudo asociar la ficha del cliente.');
       }
 
       // 2. Crear Cita Real en Backend (`POST /citas/publica`)

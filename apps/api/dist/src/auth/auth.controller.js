@@ -38,6 +38,7 @@ let AuthController = class AuthController {
         });
         return {
             message: 'Login exitoso',
+            accessToken: result.accessToken,
             usuario: result.usuario
         };
     }

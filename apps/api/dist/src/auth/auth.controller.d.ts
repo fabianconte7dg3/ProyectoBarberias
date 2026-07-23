@@ -12,6 +12,7 @@ export declare class AuthController {
     }>;
     loginAdmin(dto: LoginAdminDto, res: Response): Promise<{
         message: string;
+        accessToken: string;
         usuario: {
             id: any;
             nombreCompleto: any;

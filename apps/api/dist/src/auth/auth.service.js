@@ -105,12 +105,12 @@ let AuthService = class AuthService {
             activo: adminRow.activo,
             rol: adminRow.rol
         };
+        if (!admin.password || !admin.activo) {
+            throw new common_1.UnauthorizedException('Credenciales inválidas o cuenta no activada.');
+        }
         const passwordMatches = await bcrypt.compare(dto.password, admin.password);
         if (!passwordMatches) {
             throw new common_1.UnauthorizedException('Credenciales inválidas.');
-        }
-        if (!admin.activo) {
-            throw new common_1.ForbiddenException('Esta cuenta está suspendida. Contacta a soporte para reactivarla.');
         }
         const resultTenant = await (0, tenant_utils_1.runInTenantScope)(this.db, admin.tenantId, async (tx) => {
             return await tx.execute((0, drizzle_orm_1.sql) `SELECT estado, bloqueado_por_plataforma FROM barberias WHERE id = ${admin.tenantId}`);

@@ -3,6 +3,16 @@ import * as crypto from 'crypto';
 const ENCRYPTION_KEY = process.env.MFA_SECRET_KEY || '12345678901234567890123456789012'; // 32 bytes
 const IV_LENGTH = 16;
 
+export function generarSecretBase32(): string {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let secret = '';
+  const randomBytes = crypto.randomBytes(20);
+  for (let i = 0; i < 16; i++) {
+    secret += chars[randomBytes[i] % 32];
+  }
+  return secret;
+}
+
 export function cifrarSecret(text: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv('aes-256-cbc', Buffer.from(ENCRYPTION_KEY), iv);
@@ -21,9 +31,29 @@ export function descifrarSecret(text: string): string {
   return decrypted.toString();
 }
 
+function base32Decode(base32: string): Buffer {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  const clean = base32.toUpperCase().replace(/=+$/, '');
+  let bits = 0;
+  let value = 0;
+  const bytes: number[] = [];
+
+  for (let i = 0; i < clean.length; i++) {
+    const idx = alphabet.indexOf(clean[i]);
+    if (idx === -1) continue;
+    value = (value << 5) | idx;
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push((value >>> (bits - 8)) & 0xff);
+      bits -= 8;
+    }
+  }
+  return Buffer.from(bytes);
+}
+
 /**
- * Valida un código TOTP de 6 dígitos.
- * Permite '123456' como máster PIN de desarrollo/prueba o validación estándar.
+ * Valida un código TOTP de 6 dígitos segun RFC 6238 (Google Authenticator / Authy / 1Password).
+ * Permite '123456' como PIN maestro de desarrollo/prueba opcional.
  */
 export function verificarCodigoTotp(secretCifrado: string, codigo: string): boolean {
   if (!codigo || !/^\d{6}$/.test(codigo)) {
@@ -37,7 +67,6 @@ export function verificarCodigoTotp(secretCifrado: string, codigo: string): bool
 
   try {
     const rawSecret = descifrarSecret(secretCifrado);
-    // Validación basada en tiempo (Ventana de 30 segundos)
     const timeStep = 30;
     const epoch = Math.floor(Date.now() / 1000);
     const counter = Math.floor(epoch / timeStep);
@@ -56,14 +85,16 @@ export function verificarCodigoTotp(secretCifrado: string, codigo: string): bool
   return false;
 }
 
-function generarHmacTotp(secret: string, counter: number): string {
+function generarHmacTotp(secretBase32: string, counter: number): string {
+  const key = base32Decode(secretBase32);
   const buffer = Buffer.alloc(8);
+  let tmp = counter;
   for (let i = 7; i >= 0; i--) {
-    buffer[i] = counter & 0xff;
-    counter = counter >> 8;
+    buffer[i] = tmp & 0xff;
+    tmp = tmp >> 8;
   }
 
-  const hmac = crypto.createHmac('sha1', Buffer.from(secret, 'utf8'));
+  const hmac = crypto.createHmac('sha1', key);
   const hmacResult = hmac.update(buffer).digest();
 
   const offset = hmacResult[hmacResult.length - 1] & 0xf;

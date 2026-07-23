@@ -41,7 +41,6 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
       });
 
       setActivationToken(res.activationToken);
-      onSuccess();
     } catch (err: any) {
       console.error('Error invitando staff:', err);
       setError(err.message || 'Error al invitar al integrante del equipo.');
@@ -51,7 +50,7 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
   };
 
   const activationUrl = activationToken 
-    ? `${window.location.origin}/${tenantSlug}/admin/login?token=${activationToken}`
+    ? `${window.location.origin}/${tenantSlug}/activar?token=${activationToken}`
     : '';
 
   const handleCopyLink = () => {
@@ -190,10 +189,10 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
               </button>
 
               <button
-                onClick={onClose}
+                onClick={() => { onSuccess(); onClose(); }}
                 className="w-full py-2 bg-secondary text-foreground text-xs font-semibold rounded-xl"
               >
-                Cerrar
+                Cerrar y Actualizar Lista
               </button>
             </div>
           )}
