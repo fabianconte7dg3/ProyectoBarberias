@@ -12,6 +12,7 @@ import { CitaAgenda } from '@/components/admin/CitaCard';
 import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
 import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
 import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
+import { VentaMostradorModal } from '@/components/admin/VentaMostradorModal';
 import { User, Users, Filter, LayoutGrid, List } from 'lucide-react';
 
 interface Barbero {
@@ -35,6 +36,7 @@ export default function AdminAgendaPage() {
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
   const [citaParaCobrar, setCitaParaCobrar] = useState<CitaAgenda | null>(null);
   const [isMiDesempenoOpen, setIsMiDesempenoOpen] = useState(false);
+  const [isVentaMostradorOpen, setIsVentaMostradorOpen] = useState(false);
 
   // Filtros de visualización para la agenda
   const [soloMisCitas, setSoloMisCitas] = useState(false);
@@ -171,6 +173,7 @@ export default function AdminAgendaPage() {
         onLogout={handleLogout}
         onNewCitaClick={() => setIsWalkInOpen(true)}
         onMiDesempenoClick={() => setIsMiDesempenoOpen(true)}
+        onVentaMostradorClick={() => setIsVentaMostradorOpen(true)}
       />
 
       {/* Sub-header de Filtros y Alternador de Vista */}
@@ -287,6 +290,13 @@ export default function AdminAgendaPage() {
       <MiDesempenoModal
         isOpen={isMiDesempenoOpen}
         onClose={() => setIsMiDesempenoOpen(false)}
+      />
+
+      {/* Modal de Venta Mostrador (POS Productos) */}
+      <VentaMostradorModal
+        isOpen={isVentaMostradorOpen}
+        onClose={() => setIsVentaMostradorOpen(false)}
+        onSuccess={loadCitas}
       />
     </div>
   );

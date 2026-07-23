@@ -16,6 +16,7 @@ interface AdminHeaderProps {
   onLogout: () => void;
   onNewCitaClick: () => void;
   onMiDesempenoClick?: () => void;
+  onVentaMostradorClick?: () => void;
 }
 
 export function AdminHeader({
@@ -27,6 +28,7 @@ export function AdminHeader({
   onLogout,
   onNewCitaClick,
   onMiDesempenoClick,
+  onVentaMostradorClick,
 }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -141,6 +143,18 @@ export function AdminHeader({
             >
               <Award size={16} />
               <span>Mi Desempeño</span>
+            </button>
+          )}
+
+          {/* Botón Venta Mostrador (Productos POS) */}
+          {onVentaMostradorClick && (
+            <button
+              onClick={onVentaMostradorClick}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+              title="Venta rápida de productos de mostrador"
+            >
+              <ShoppingBag size={16} />
+              <span>Venta Mostrador</span>
             </button>
           )}
 
