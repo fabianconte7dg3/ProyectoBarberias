@@ -321,7 +321,7 @@ FECHA: ${new Date().toISOString()}
       tenantId,
       slug: dto.slug,
       activationToken,
-      activationUrl: `http://localhost:3001/${dto.slug}/activar-admin?token=${activationToken}`,
+      activationUrl: `${process.env.WEB_URL || 'http://localhost:3000'}/${dto.slug}/activar-admin?token=${activationToken}`,
     };
   }
 

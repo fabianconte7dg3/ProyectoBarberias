@@ -138,7 +138,7 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
 
         <div className="flex items-center gap-2">
           <a
-            href={`http://localhost:3001/${barberia.slug}/admin`}
+            href={`/${barberia.slug}/admin`}
             target="_blank"
             rel="noreferrer"
             className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5"
