@@ -1,7 +1,7 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { citas, transacciones, usuarios, clientes, servicios, productos, detallesTransaccion } from '../database/schema';
-import { and, eq, gte, lte, desc, sql } from 'drizzle-orm';
+import { and, eq, gte, lte, desc, sql, inArray } from 'drizzle-orm';
 import { startOfMonth, endOfDay, differenceInDays, subDays, format } from 'date-fns';
 
 @Injectable()
@@ -123,7 +123,7 @@ export class ReportesService {
     const staffBarberos = await db.query.usuarios.findMany({
       where: and(
         eq(usuarios.tenantId, tenantId),
-        eq(usuarios.rol, 'barbero')
+        inArray(usuarios.rol, ['barbero', 'admin'])
       )
     });
 

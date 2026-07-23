@@ -129,7 +129,7 @@ export class AuthService {
       return await tx.query.usuarios.findMany({
         where: and(
           eq(schema.usuarios.tenantId, barberia.id),
-          inArray(schema.usuarios.rol, ['barbero', 'recepcion']),
+          inArray(schema.usuarios.rol, ['barbero', 'recepcion', 'admin']),
           eq(schema.usuarios.activo, true)
         ),
         columns: {
