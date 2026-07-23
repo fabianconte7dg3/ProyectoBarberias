@@ -30,6 +30,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 12 * 60 * 60 * 1000, // 12 horas
     });
 
@@ -54,6 +55,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
     });
     return { message: 'Logout exitoso' };
   }
@@ -71,6 +73,7 @@ export class AuthController {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
+      path: '/',
       maxAge: 12 * 60 * 60 * 1000, // 12 horas
     });
 

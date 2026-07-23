@@ -34,6 +34,7 @@ let SuperAdminController = class SuperAdminController {
             httpOnly: true,
             secure: process.env?.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: '/',
             maxAge: 12 * 60 * 60 * 1000,
         });
         return result;
@@ -51,6 +52,7 @@ let SuperAdminController = class SuperAdminController {
             httpOnly: true,
             secure: process.env?.NODE_ENV === 'production',
             sameSite: 'lax',
+            path: '/',
             maxAge: 12 * 60 * 60 * 1000,
         });
         return {
