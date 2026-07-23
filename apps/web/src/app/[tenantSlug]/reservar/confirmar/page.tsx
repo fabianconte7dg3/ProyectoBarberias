@@ -70,18 +70,23 @@ function ConfirmarContent() {
 
       // 2. Crear Cita Real en Backend (`POST /citas/publica`)
       const inicioEstimado = `${fecha}T${hora}:00`;
+      const citaPayload: Record<string, unknown> = {
+        servicioId,
+        clienteId,
+        inicioEstimado,
+        origen: 'web_publica',
+      };
+      // Solo incluir barberoId si es un UUID válido.
+      // Para Solo-preneur el backend auto-asigna al único barbero activo.
+      if (barberoId && barberoId.trim().length > 0) {
+        citaPayload.barberoId = barberoId;
+      }
       await fetchPublic('/citas/publica', {
         method: 'POST',
         headers: {
           'x-tenant-slug': tenantSlug,
         },
-        body: JSON.stringify({
-          servicioId,
-          barberoId: barberoId || undefined,
-          clienteId,
-          inicioEstimado,
-          origen: 'web_publica',
-        })
+        body: JSON.stringify(citaPayload)
       });
 
       // 3. Limpiar estado de reserva global

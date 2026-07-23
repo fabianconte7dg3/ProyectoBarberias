@@ -7,7 +7,8 @@ export class CreateCitaDto {
   clienteId?: string; // Nullable for walk-ins where we don't have their details yet
 
   @IsUUID()
-  barberoId: string;
+  @IsOptional()
+  barberoId?: string;
 
   @IsUUID()
   servicioId: string;

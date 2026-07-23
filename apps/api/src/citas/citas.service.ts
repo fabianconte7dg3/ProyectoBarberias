@@ -33,6 +33,28 @@ export class CitasService {
 
     if (!servicio) throw new NotFoundException('Servicio no encontrado');
 
+    // Auto-resolver barberoId si no viene en el request (caso Solo-preneur).
+    // Se busca el único barbero activo del tenant; si hay más de uno y no se
+    // especificó, se lanza un error descriptivo para que el frontend lo maneje.
+    let resolvedBarberoId = data.barberoId;
+    if (!resolvedBarberoId) {
+      const staff = await db
+        .select({ id: usuarios.id })
+        .from(usuarios)
+        .where(and(
+          eq(usuarios.activo, true),
+        ))
+        .limit(2);
+
+      if (staff.length === 1) {
+        resolvedBarberoId = staff[0].id;
+      } else if (staff.length > 1) {
+        throw new NotFoundException('Debes seleccionar un barbero para continuar con la reserva.');
+      } else {
+        throw new NotFoundException('No hay barberos disponibles en esta barbería.');
+      }
+    }
+
     const inicio = new Date(data.inicioEstimado);
     const fin = new Date(inicio.getTime() + servicio.duracionMinutos * 60000);
 
@@ -49,7 +71,7 @@ export class CitasService {
         .values({
           tenantId,
           clienteId: data.clienteId,
-          barberoId: data.barberoId,
+          barberoId: resolvedBarberoId,
           servicioId: data.servicioId,
           inicioEstimado: inicio,
           finEstimado: fin,
