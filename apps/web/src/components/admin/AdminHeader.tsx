@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, 
-  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database, Link2, Check, Share2
 } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
@@ -34,6 +34,14 @@ export function AdminHeader({
   const pathname = usePathname();
   const isSelectedToday = isToday(selectedDate);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  const handleCopyLink = () => {
+    const publicUrl = `${window.location.origin}/${tenantSlug}/reservar`;
+    navigator.clipboard.writeText(publicUrl);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2500);
+  };
 
   const isAdmin = userRole === 'admin';
 
@@ -134,6 +142,20 @@ export function AdminHeader({
             })}
           </nav>
 
+          {/* Botón Copiar Link de Reservas */}
+          <button
+            onClick={handleCopyLink}
+            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-extrabold rounded-xl border transition-all shadow-xs ${
+              copiedLink
+                ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40'
+                : 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
+            }`}
+            title="Copiar link público de reservas para compartir en redes"
+          >
+            {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
+            <span>{copiedLink ? '¡Link Copiado!' : 'Copiar Link'}</span>
+          </button>
+
           {/* Botón Mi Desempeño (Para Barbero / Recepción) */}
           {onMiDesempenoClick && (
             <button
@@ -218,6 +240,17 @@ export function AdminHeader({
               {userRole}
             </span>
           </div>
+
+          <button
+            onClick={() => {
+              handleCopyLink();
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center justify-center gap-2 p-3 bg-blue-500/10 border border-blue-500/30 text-blue-600 dark:text-blue-400 font-extrabold text-xs rounded-xl"
+          >
+            {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
+            <span>{copiedLink ? '¡Enlace Copiado al Portapapeles!' : 'Copiar Link Público de Reservas'}</span>
+          </button>
 
           {onMiDesempenoClick && (
             <button
