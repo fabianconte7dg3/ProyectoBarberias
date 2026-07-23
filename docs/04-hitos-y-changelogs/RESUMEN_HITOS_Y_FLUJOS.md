@@ -61,6 +61,13 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **Métricas Avanzadas de Negocio & Detección de Barberías en Riesgo**: Función `get_platform_business_metrics()` calcula tendencias de altas, churn y detecta barberías en riesgo (inactivas `> 7 días` o WhatsApp desconectado).
 * **Consola UI SuperAdmin**: Badge en tiempo real **`[🟢 Canario RLS: Íntegro]`**, panel de Alertas de Seguridad con acción *Marcar Atendida* y tarjetas de Barberías en Riesgo de Churn en `/super-admin`.
 
+### Hito 10: Asistente de Instalación Autónoma desde Cero (Setup SuperAdmin, TOTP RFC 6238 & Aislamiento de Sesiones)
+* **Instalación Inicial Autónoma (`/super-admin/setup`)**: Detección automática en backend (`GET /super-admin/setup/status`) y redirección cuando la base de datos está virgen (`0` registros en `plataforma_admins`).
+* **2FA TOTP con Estándar RFC 6238 Real**: Generación y verificación de secretos mediante codificación Base32 oficial, totalmente compatible con aplicaciones autenticadoras estándar (Google Authenticator, Authy, 1Password, etc.).
+* **Código QR Integrado**: Generación dinámica de QR a partir de la URI `otpauth://totp/BarberOS%20SaaS:SuperAdmin?secret=...` para vinculación directa desde cámara móvil.
+* **Aislamiento de Sesiones & Endpoint `/usuarios/activar`**: Desacoplamiento del cliente `fetch` en el onboarding de staff (`/activar`), eliminando la transmisión inadvertida del JWT de administrador para permitir la activación simultánea o en la misma ventana sin colisión de estado.
+* **Permisos DB Explícitos de Plataforma**: Concesión explícita de privilegios `GRANT ALL PRIVILEGES` al rol de aplicación PostgreSQL (`app_user`) sobre tablas maestras globales de plataforma fuera de RLS (`plataforma_admins` y `alertas_seguridad`).
+
 ---
 
 ## Flujos Principales de Negocio
