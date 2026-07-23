@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ServiceSelection } from '@/components/booking/ServiceSelection';
 import { BarberSelection } from '@/components/booking/BarberSelection';
+import { BarberProfileCard } from '@/components/booking/BarberProfileCard';
 import { BottomAction } from '@/components/ui/BottomAction';
 import { Servicio, Barbero, reservaSeleccionSchema } from '@/lib/types';
 import { ArrowRight, RefreshCw } from 'lucide-react';
@@ -43,7 +44,7 @@ export default function ReservarPage() {
 
         setServiciosList(serviciosData || []);
 
-        // Filtrar solo los integrantes con rol 'barbero' o 'admin' activos
+        // Filtrar solo los integrantes activos con rol 'barbero' o 'admin'
         const barberosMapped: Barbero[] = (staffData || [])
           .filter(s => s.rol === 'barbero' || s.rol === 'admin')
           .map(s => ({
@@ -53,6 +54,11 @@ export default function ReservarPage() {
           }));
 
         setBarberosList(barberosMapped);
+
+        // Si es Solo-preneur (1 solo profesional activo), se selecciona automáticamente
+        if (barberosMapped.length === 1) {
+          setBarberoId(barberosMapped[0].id);
+        }
       } catch (err) {
         console.error('Error cargando catálogo público de la barbería:', err);
       } finally {
@@ -67,9 +73,18 @@ export default function ReservarPage() {
   useEffect(() => {
     if (isHydrated) {
       setServicioId(servicioIdStore);
-      setBarberoId(barberoIdStore);
+      if (barberosList.length > 1) {
+        setBarberoId(barberoIdStore);
+      }
     }
-  }, [isHydrated, servicioIdStore, barberoIdStore]);
+  }, [isHydrated, servicioIdStore, barberoIdStore, barberosList.length]);
+
+  // Si pasa a tener 1 solo barbero, asegurar selección
+  useEffect(() => {
+    if (barberosList.length === 1) {
+      setBarberoId(barberosList[0].id);
+    }
+  }, [barberosList]);
   
   // Zod Validation (Estado derivado sincrónico)
   const isValid = reservaSeleccionSchema.safeParse({ servicioId, barberoId }).success;
@@ -94,6 +109,8 @@ export default function ReservarPage() {
     );
   }
 
+  const isSoloPreneur = barberosList.length === 1;
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       
@@ -104,13 +121,17 @@ export default function ReservarPage() {
         onSelect={setServicioId} 
       />
 
-      {/* Paso 2: Selección de Barbero (Visible opacado si no hay servicio seleccionado) */}
+      {/* Paso 2: Tarjeta de Perfil para Solo-preneur vs Selector Multibarbero */}
       <div className={`transition-opacity duration-500 ${servicioId ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-        <BarberSelection 
-          barberos={barberosList} 
-          selectedId={barberoId} 
-          onSelect={setBarberoId} 
-        />
+        {isSoloPreneur && barberosList[0] ? (
+          <BarberProfileCard barbero={barberosList[0]} />
+        ) : (
+          <BarberSelection 
+            barberos={barberosList} 
+            selectedId={barberoId} 
+            onSelect={setBarberoId} 
+          />
+        )}
       </div>
 
       {/* Acción Flotante */}

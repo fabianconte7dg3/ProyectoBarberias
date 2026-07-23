@@ -13,7 +13,7 @@ import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
 import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
 import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
 import { VentaMostradorModal } from '@/components/admin/VentaMostradorModal';
-import { User, Users, Filter, LayoutGrid, List } from 'lucide-react';
+import { User, Users, Filter, LayoutGrid, List, Plus } from 'lucide-react';
 
 interface Barbero {
   id: string;
@@ -42,6 +42,10 @@ export default function AdminAgendaPage() {
   const [soloMisCitas, setSoloMisCitas] = useState(false);
   const [tipoVistaGrid, setTipoVistaGrid] = useState<'parrilla' | 'lista'>('parrilla');
 
+  // Detección de Solo-preneur (1 solo profesional activo con rol admin/barbero)
+  const activeBarbers = barberos.filter((b) => b.rol === 'barbero' || b.rol === 'admin');
+  const isSoloPreneur = activeBarbers.length === 1;
+
   // 1. Verificar sesión activa contra el backend
   useEffect(() => {
     if (!currentUser) {
@@ -61,7 +65,13 @@ export default function AdminAgendaPage() {
     async function loadBarberos() {
       try {
         const data = await fetchApi<Barbero[]>(`/auth/staff/${tenantSlug}`);
-        setBarberos(data);
+        setBarberos(data || []);
+        
+        // Si es solo-preneur, iniciar por defecto en la vista limpia de Lista de Turnos
+        const staffBarbers = (data || []).filter((b) => b.rol === 'barbero' || b.rol === 'admin');
+        if (staffBarbers.length === 1) {
+          setTipoVistaGrid('lista');
+        }
       } catch (err) {
         console.error('Error cargando barberos:', err);
       }
@@ -161,6 +171,14 @@ export default function AdminAgendaPage() {
     ? citas.filter((c) => c.barberoId === currentUser.id)
     : citas;
 
+  // Encontrar próxima cita pendiente/en curso del día
+  const proximaCita = [...citasFiltradas]
+    .filter((c) => c.estado === 'programada' || c.estado === 'en_curso')
+    .sort((a, b) => new Date(a.inicioEstimado).getTime() - new Date(b.inicioEstimado).getTime())[0];
+
+  const primerNombre = currentUser.nombreCompleto.split(' ')[0];
+  const horaProximaFormateada = proximaCita ? format(new Date(proximaCita.inicioEstimado), 'hh:mm a') : '';
+
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
       {/* Header con Controles */}
@@ -176,11 +194,49 @@ export default function AdminAgendaPage() {
         onVentaMostradorClick={() => setIsVentaMostradorOpen(true)}
       />
 
+      {/* Banner de Bienvenida Personalizado (Solo-preneur / Personalizado) */}
+      <div className="bg-gradient-to-r from-primary/10 via-card to-background border-b border-border px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground font-extrabold text-base flex items-center justify-center shadow-xs border border-primary-foreground/20 shrink-0">
+            {primerNombre.charAt(0)}
+          </div>
+          <div>
+            <h2 className="text-sm sm:text-base font-extrabold text-foreground flex items-center gap-1.5">
+              <span>¡Buen día, {primerNombre}!</span>
+              <span className="text-base">👋</span>
+            </h2>
+            <p className="text-xs text-muted-foreground font-medium">
+              {citasFiltradas.length === 0 ? (
+                <span>No tienes citas agendadas para esta fecha.</span>
+              ) : (
+                <>
+                  Tienes <strong className="text-primary font-bold">{citasFiltradas.length} {citasFiltradas.length === 1 ? 'cita' : 'citas'}</strong> agendadas.
+                  {proximaCita && (
+                    <span className="ml-1 hidden sm:inline text-foreground font-semibold">
+                      • Próxima: <strong className="text-primary">{horaProximaFormateada}</strong> ({proximaCita.clienteNombre})
+                    </span>
+                  )}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Acceso rápido a nueva cita */}
+        <button
+          onClick={() => setIsWalkInOpen(true)}
+          className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground shadow-xs hover:opacity-90 transition-opacity self-end sm:self-auto flex items-center gap-1.5 shrink-0"
+        >
+          <Plus size={14} />
+          <span>Nueva Cita</span>
+        </button>
+      </div>
+
       {/* Sub-header de Filtros y Alternador de Vista */}
       <div className="bg-card/40 border-b border-border px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         
-        {/* Filtro Equipo (Barbero) */}
-        {currentUser.rol === 'barbero' ? (
+        {/* Filtro Equipo (Solo se muestra si hay MÁS de 1 profesional en el local) */}
+        {!isSoloPreneur && currentUser.rol === 'barbero' ? (
           <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border">
             <button
               onClick={() => setSoloMisCitas(true)}
@@ -208,7 +264,7 @@ export default function AdminAgendaPage() {
         ) : (
           <div className="flex items-center gap-2 text-muted-foreground font-semibold">
             <Filter size={14} className="text-primary" />
-            <span>Vista Operativa de Citas</span>
+            <span>{isSoloPreneur ? 'Mi Agenda Personal' : 'Vista Operativa de Citas'}</span>
           </div>
         )}
 
