@@ -68,6 +68,7 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **Aislamiento Estricto de Tokens SuperAdmin vs Tenant (`api.ts`)**: Restricción explícita de `Authorization: Bearer` al prefijo `/super-admin/*`. Eliminación total de lectura de `super_jwt` o `jwt` desde `localStorage` en rutas de tenant. Las rutas de barbería dependen 100% de la cookie `httpOnly` `jwt`.
 * **Limpieza Automática de Contexto en Login**: Al autenticarse exitosamente en `/auth/login/staff` o `/auth/login/admin`, el cliente borra automáticamente cualquier `super_jwt` residual para evitar contaminación de contexto.
 * **Flujo End-to-End de Reserva Pública Validado**: Creación pública de citas desde la web (`/[tenantSlug]/reservar`), asignación de servicio/barbero y verificación de sincronización instantánea en la Agenda Operativa del Barbero y del Administrador.
+* **Ventas POS Mostrador & Auditoría Financiera Validada**: Integración del TPV de mostrador (`VentaMostradorModal`), deducción de inventario, arqueo diario de caja (`/admin/caja`) y visualización del historial inmutable de auditoría en `/admin/configuracion`.
 * **Permisos DB Explícitos de Plataforma**: Concesión explícita de privilegios `GRANT ALL PRIVILEGES` al rol de aplicación PostgreSQL (`app_user`) sobre tablas maestras globales de plataforma fuera de RLS (`plataforma_admins` y `alertas_seguridad`).
 
 ---
