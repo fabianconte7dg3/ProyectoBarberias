@@ -12,6 +12,7 @@ import {
   date,
   time,
   unique,
+  index,
 } from 'drizzle-orm/pg-core';
 import { relations, sql } from 'drizzle-orm';
 
@@ -133,7 +134,9 @@ export const productos = pgTable('productos', {
   stockMinimo: integer('stock_minimo').notNull().default(2),
   activo: boolean('activo').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  idxProductosTenantStock: index('idx_productos_tenant_stock').on(table.tenantId, table.stockActual),
+}));
 
 // ============================================================================
 // TABLA 4: clientes
@@ -178,7 +181,9 @@ export const citas = pgTable('citas', {
   tokenCliente: varchar('token_cliente', { length: 255 }),
   tokenExpiraEn: timestamp('token_expira_en', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  idxCitasTenantBarberoInicio: index('idx_citas_tenant_barbero_inicio').on(table.tenantId, table.barberoId, table.inicioEstimado),
+}));
 
 // ============================================================================
 // TABLA 6: transacciones (append-only — finanzas + DGI)
@@ -204,7 +209,9 @@ export const transacciones = pgTable('transacciones', {
   yappyWebhookPayload: jsonb('yappy_webhook_payload'),
   confirmadoPorId: uuid('confirmado_por_id').references(() => usuarios.id),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+  idxTransaccionesTenantCreated: index('idx_transacciones_tenant_created').on(table.tenantId, table.createdAt),
+}));
 
 // ============================================================================
 // TABLA 6.5: detalles_transaccion (líneas de venta itemizadas)
