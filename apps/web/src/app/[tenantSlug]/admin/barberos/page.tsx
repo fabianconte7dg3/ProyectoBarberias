@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   Users, UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2, ArrowLeft 
 } from 'lucide-react';
@@ -43,19 +44,14 @@ export default function AdminBarberosPage() {
   const [comisionProductoInput, setComisionProductoInput] = useState<string>('0');
   const [savingComision, setSavingComision] = useState(false);
 
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+  // Cargar datos al montar (sepärado del guard de auth para evitar hoisting issues)
   useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-
     loadStaff();
-  }, [currentUser, tenantSlug, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadStaff = async () => {
     setLoading(true);

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   ArrowLeft, DollarSign, Lock, AlertTriangle, CheckCircle2, 
   HelpCircle, Receipt, ShieldAlert, Sparkles, RefreshCw
@@ -32,20 +33,14 @@ export default function AdminCajaPage() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // 1. Verificar autenticación y rol de Admin (Cierre exclusivo de Admin)
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+  // Cargar datos al montar
   useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-
     fetchBalance();
-  }, [currentUser, tenantSlug, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const fetchBalance = async () => {
     setLoading(true);

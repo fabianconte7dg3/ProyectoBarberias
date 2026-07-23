@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { 
   ArrowLeft, Search, Plus, UserCheck, ShieldCheck, AlertTriangle, 
@@ -30,13 +31,13 @@ export default function AdminClientesPage() {
   const tenantSlug = params.tenantSlug as string;
 
   const currentUser = useAdminStore((state) => state.user);
-  const loginStore = useAdminStore((state) => state.login);
   const logoutStore = useAdminStore((state) => state.logout);
+
 
   const [clientesList, setClientesList] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   const [error, setError] = useState('');
+
 
   // Filtros
   const [searchTerm, setSearchTerm] = useState('');
@@ -53,26 +54,17 @@ export default function AdminClientesPage() {
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // 1. Verificación de sesión e hidratación
+  // 1. Guard de autenticación — usa hook centralizado para evitar cierre de
+  //    sesión causado por storage events de otras pestañas (ej. página de reservas)
+  useAdminAuth({ tenantSlug });
+
+
+  // Cargar datos al montar
   useEffect(() => {
-    async function initAuth() {
-      try {
-        const me = await fetchApi<{ id: string; nombreCompleto: string; rol: string }>('/auth/me');
-        loginStore({ id: me.id, nombreCompleto: me.nombreCompleto, rol: me.rol as any }, tenantSlug);
-        if (me.rol !== 'admin' && me.rol !== 'recepcion') {
-          router.push(`/${tenantSlug}/admin/agenda`);
-          return;
-        }
-        loadClientes();
-      } catch (err) {
-        logoutStore();
-        router.push(`/${tenantSlug}/admin/login`);
-      } finally {
-        setCheckingAuth(false);
-      }
-    }
-    initAuth();
-  }, [tenantSlug, router, loginStore, logoutStore]);
+    loadClientes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadClientes = async () => {
     setLoading(true);
@@ -201,16 +193,8 @@ export default function AdminClientesPage() {
   const clientesFielesCount = clientesList.filter((c) => Number(c.totalGastado || 0) >= 50).length;
   const clientesStrikesCount = clientesList.filter((c) => c.ausenciasStrikes > 0).length;
 
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <RefreshCw className="animate-spin text-primary" size={24} />
-          <span className="font-semibold text-sm">Verificando sesión CRM...</span>
-        </div>
-      </div>
-    );
-  }
+
+
 
   return (
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">

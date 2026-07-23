@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
   CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar
@@ -84,19 +85,14 @@ export default function AdminConfiguracionPage() {
   const [comisionProductoInput, setComisionProductoInput] = useState<string>('0');
   const [horariosModalBarbero, setHorariosModalBarbero] = useState<{ id: string; nombre: string } | null>(null);
 
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+  // Cargar datos al montar
   useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-
     loadData();
-  }, [currentUser, tenantSlug, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadData = async () => {
     setLoading(true);

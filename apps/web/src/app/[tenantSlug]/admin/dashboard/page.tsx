@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
   AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3, Layers
@@ -151,19 +152,14 @@ export default function AdminDashboardPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+  // Cargar datos al montar
   useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-
     loadDashboard(fechaDesde, fechaHasta);
-  }, [currentUser, tenantSlug, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadDashboard = async (desde: string, hasta: string) => {
     setLoading(true);

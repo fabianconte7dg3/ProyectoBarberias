@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   ArrowLeft, ShoppingBag, Plus, RefreshCw, AlertTriangle, Edit, Check, X, Package
 } from 'lucide-react';
@@ -40,19 +41,14 @@ export default function AdminProductosPage() {
   const [formStockMinimo, setFormStockMinimo] = useState('2');
   const [submitting, setSubmitting] = useState(false);
 
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+  // Cargar datos al montar
   useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-
     loadProductos();
-  }, [currentUser, tenantSlug, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   const loadProductos = async () => {
     setLoading(true);

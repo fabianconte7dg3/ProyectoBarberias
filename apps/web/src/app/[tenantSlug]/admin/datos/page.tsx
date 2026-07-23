@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { 
   ArrowLeft, Download, Upload, ShieldCheck, AlertTriangle, FileSpreadsheet, 
   Users, Package, DollarSign, CheckCircle2, RefreshCw, Info, Lock
@@ -35,16 +36,9 @@ export default function AdminDatosPage() {
   // Estados de Exportación
   const [exporting, setExporting] = useState(false);
 
-  useEffect(() => {
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-    if (currentUser.rol !== 'admin') {
-      router.push(`/${tenantSlug}/admin/agenda`);
-      return;
-    }
-  }, [currentUser, tenantSlug, router]);
+  useAdminAuth({ tenantSlug, requiredRole: 'admin' });
+
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
