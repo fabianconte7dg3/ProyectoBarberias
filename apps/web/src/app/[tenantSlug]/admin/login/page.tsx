@@ -131,40 +131,38 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex flex-col justify-center items-center p-4 bg-background transition-all duration-300">
       
-      {/* Estado 0: Ya hay una sesión activa */}
+      {/* Banner de sesión activa — informativo, no bloqueante */}
       {currentUser && (
-        <div className="animate-in fade-in zoom-in-95 duration-500 w-full max-w-sm mx-auto text-center">
-          <h2 className="text-2xl font-semibold mb-2">Sesión activa</h2>
-          <p className="text-muted-foreground text-sm mb-6">
-            Estás logueado como <strong className="text-foreground font-bold">{currentUser.nombreCompleto}</strong> ({currentUser.rol})
-          </p>
-          <div className="flex flex-col gap-3">
-            <button 
-              onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-              className="w-full bg-primary text-primary-foreground py-3 rounded-xl font-semibold text-sm shadow-md"
-            >
-              Ir a la Agenda Operativa
-            </button>
-            {currentUser.rol === 'admin' && (
-              <button 
-                onClick={() => router.push(`/${tenantSlug}/admin/dashboard`)}
-                className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold text-sm shadow-md"
+        <div className="w-full max-w-sm mx-auto mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs font-bold text-emerald-700 dark:text-emerald-400 truncate">
+                Sesión activa: {currentUser.nombreCompleto}
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                También puedes entrar con tu PIN de staff abajo.
+              </p>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              <button
+                onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
+                className="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 transition-colors"
               >
-                Ir a Métricas Ejecutivas
+                Mi Agenda
               </button>
-            )}
-            <button 
-              onClick={handleLogout}
-              className="w-full bg-secondary text-secondary-foreground py-3 rounded-xl font-semibold text-sm hover:bg-destructive hover:text-destructive-foreground transition-colors"
-            >
-              Cerrar Sesión
-            </button>
+              <button
+                onClick={handleLogout}
+                className="px-3 py-1.5 bg-secondary text-muted-foreground text-[11px] font-semibold rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
+              >
+                Salir
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Estado 1: Modo Login de Administrador (Email / Password) */}
-      {!currentUser && isAdminMode && (
+      {isAdminMode && (
         <div className="animate-in fade-in zoom-in-95 duration-300 w-full max-w-md mx-auto bg-card border border-border p-6 rounded-2xl shadow-xl space-y-6">
           <div className="flex items-center justify-between border-b border-border pb-4">
             <div className="flex items-center gap-2 font-bold text-lg">
@@ -230,7 +228,7 @@ export default function AdminLoginPage() {
       )}
 
       {/* Estado 2: Seleccionar Perfil (Staff PIN) */}
-      {!currentUser && !selectedUser && !isAdminMode && (
+      {!selectedUser && !isAdminMode && (
         <div className="animate-in fade-in zoom-in-95 duration-500 w-full flex flex-col items-center gap-6">
           <ProfileSelector 
             staff={staffList} 
@@ -248,7 +246,7 @@ export default function AdminLoginPage() {
       )}
 
       {/* Estado 3: Ingresar PIN (Staff) */}
-      {!currentUser && selectedUser && !isAdminMode && (
+      {selectedUser && !isAdminMode && (
         <div className="animate-in fade-in slide-in-from-right-4 duration-300 w-full">
           <NumpadLogin
             userName={selectedUser.nombreCompleto}
