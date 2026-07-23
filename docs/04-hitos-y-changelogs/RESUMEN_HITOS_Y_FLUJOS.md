@@ -65,7 +65,8 @@ Este documento resume el progreso técnico y los flujos de negocio implementados
 * **Instalación Inicial Autónoma (`/super-admin/setup`)**: Detección automática en backend (`GET /super-admin/setup/status`) y redirección cuando la base de datos está virgen (`0` registros en `plataforma_admins`).
 * **2FA TOTP con Estándar RFC 6238 Real**: Generación y verificación de secretos mediante codificación Base32 oficial, totalmente compatible con aplicaciones autenticadoras estándar (Google Authenticator, Authy, 1Password, etc.).
 * **Código QR Integrado**: Generación dinámica de QR a partir de la URI `otpauth://totp/BarberOS%20SaaS:SuperAdmin?secret=...` para vinculación directa desde cámara móvil.
-* **Aislamiento de Sesiones & Endpoint `/usuarios/activar`**: Desacoplamiento del cliente `fetch` en el onboarding de staff (`/activar`), eliminando la transmisión inadvertida del JWT de administrador para permitir la activación simultánea o en la misma ventana sin colisión de estado.
+* **Aislamiento Estricto de Tokens SuperAdmin vs Tenant (`api.ts`)**: Restricción explícita de `Authorization: Bearer` al prefijo `/super-admin/*`. Eliminación total de lectura de `super_jwt` o `jwt` desde `localStorage` en rutas de tenant. Las rutas de barbería dependen 100% de la cookie `httpOnly` `jwt`.
+* **Limpieza Automática de Contexto en Login**: Al autenticarse exitosamente en `/auth/login/staff` o `/auth/login/admin`, el cliente borra automáticamente cualquier `super_jwt` residual para evitar contaminación de contexto.
 * **Permisos DB Explícitos de Plataforma**: Concesión explícita de privilegios `GRANT ALL PRIVILEGES` al rol de aplicación PostgreSQL (`app_user`) sobre tablas maestras globales de plataforma fuera de RLS (`plataforma_admins` y `alertas_seguridad`).
 
 ---
