@@ -28,6 +28,7 @@ docs/
 - [Roadmap Backend](./01-vision-y-plan/Roadmap_Backend.md) — Roadmap de arquitectura backend.
 - [Roadmap Frontend](./01-vision-y-plan/Roadmap_Frontend.md) — Roadmap de desarrollo frontend.
 - [Visión Multi-Industria](./01-vision-y-plan/Vision_Multi_Industria.md) — Estrategia de expansión.
+- [Ideas Futuras: Expansión & Barbero Solo-preneur](./01-vision-y-plan/IDEAS_FUTURAS_EXPANSION_Y_SOLO_PRENEUR.md) — Adaptación a barbero independiente y nuevas verticales.
 - [Estrategia de Precios](./01-vision-y-plan/Estrategia_Precios.md) — Planes (Básico vs Premium).
 - [SaaS Barberías Panamá](./01-vision-y-plan/SaaS_Barberias_Panama.md) — Especificaciones para el mercado local.
 
