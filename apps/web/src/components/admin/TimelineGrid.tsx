@@ -119,7 +119,7 @@ export function TimelineGrid({
           
           {/* Columna Lateral con las Horas */}
           <div className="w-16 sm:w-20 shrink-0 border-r border-border divide-y divide-border bg-secondary/10">
-            {hoursArray.map((hour) => (
+            {hoursArray.slice(0, TOTAL_HOURS).map((hour) => (
               <div
                 key={hour}
                 className="h-28 text-[11px] font-mono font-semibold text-muted-foreground p-2 flex items-start justify-center"
@@ -134,7 +134,7 @@ export function TimelineGrid({
             
             {/* Fondo de líneas horizontales para las horas */}
             <div className="absolute inset-0 flex flex-col pointer-events-none divide-y divide-border/50">
-              {hoursArray.map((hour) => (
+              {hoursArray.slice(0, TOTAL_HOURS).map((hour) => (
                 <div key={hour} className="h-28 w-full" />
               ))}
             </div>
@@ -155,18 +155,38 @@ export function TimelineGrid({
               const citasBarbero = citas.filter((c) => c.barberoId === barbero.id);
               const esMiCita = barbero.id === currentUserId;
               const canEdit = currentUserRole === 'admin' || currentUserRole === 'recepcion' || esMiCita;
+              const HOUR_HEIGHT = 112; // 112px por cada bloque de 1 hora (h-28)
 
               return (
-                <div key={barbero.id} className="relative h-[1440px] p-1.5">
-                  {citasBarbero.map((cita) => (
-                    <CitaCard
-                      key={cita.id}
-                      cita={cita}
-                      onStatusChange={onStatusChange}
-                      onCobrarClick={onCobrarClick}
-                      canEdit={canEdit}
-                    />
-                  ))}
+                <div key={barbero.id} className="relative h-[1344px] p-1">
+                  {citasBarbero.map((cita) => {
+                    const inicioDate = new Date(cita.inicioEstimado);
+                    const finDate = new Date(cita.finEstimado);
+
+                    const inicioHoras = inicioDate.getHours() + inicioDate.getMinutes() / 60;
+                    const finHoras = finDate.getHours() + finDate.getMinutes() / 60;
+
+                    const topPx = Math.max(0, (inicioHoras - START_HOUR) * HOUR_HEIGHT);
+                    const heightPx = Math.max(65, (finHoras - inicioHoras) * HOUR_HEIGHT);
+
+                    return (
+                      <div
+                        key={cita.id}
+                        className="absolute left-1 right-1 z-10"
+                        style={{
+                          top: `${topPx}px`,
+                          height: `${heightPx}px`,
+                        }}
+                      >
+                        <CitaCard
+                          cita={cita}
+                          onStatusChange={onStatusChange}
+                          onCobrarClick={onCobrarClick}
+                          canEdit={canEdit}
+                        />
+                      </div>
+                    );
+                  })}
                 </div>
               );
             })}

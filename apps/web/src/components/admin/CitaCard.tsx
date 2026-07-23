@@ -70,7 +70,7 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
 
   return (
     <div
-      className={`relative w-full rounded-xl border p-3 shadow-xs transition-all duration-200 hover:shadow-md ${config.bg} flex flex-col justify-between`}
+      className={`relative w-full h-full rounded-xl border p-2.5 shadow-xs transition-all duration-200 hover:shadow-md ${config.bg} flex flex-col justify-between overflow-hidden`}
     >
       {/* Top row: Hora + Status Badge */}
       <div className="flex items-center justify-between gap-2 mb-2">
