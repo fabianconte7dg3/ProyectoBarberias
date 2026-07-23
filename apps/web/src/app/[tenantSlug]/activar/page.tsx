@@ -42,7 +42,7 @@ function ActivarContent() {
       const res = await fetch(`${API_URL}/usuarios/activar`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, pinAcceso }),
+        body: JSON.stringify({ token, pin: pinAcceso }),
       });
 
       if (!res.ok) {
