@@ -10,7 +10,7 @@ import { SuccessView } from '@/components/booking/SuccessView';
 import { BottomAction } from '@/components/ui/BottomAction';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { reservaClienteSchema } from '@/lib/types';
-import { fetchApi } from '@/lib/api';
+import { fetchPublic } from '@/lib/api';
 
 type FormStatus = 'idle' | 'loading' | 'error' | 'success';
 
@@ -52,7 +52,7 @@ function ConfirmarContent() {
       // 1. Obtener o crear Cliente por número de WhatsApp en la API Pública
       let clienteId = '';
       try {
-        const nuevoCliente = await fetchApi<{ id: string }>('/clientes/publico', {
+        const nuevoCliente = await fetchPublic<{ id: string }>('/clientes/publico', {
           method: 'POST',
           headers: {
             'x-tenant-slug': tenantSlug,
@@ -70,7 +70,7 @@ function ConfirmarContent() {
 
       // 2. Crear Cita Real en Backend (`POST /citas/publica`)
       const inicioEstimado = `${fecha}T${hora}:00`;
-      await fetchApi('/citas/publica', {
+      await fetchPublic('/citas/publica', {
         method: 'POST',
         headers: {
           'x-tenant-slug': tenantSlug,

@@ -9,7 +9,7 @@ import { ArrowRight, RefreshCw } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
 import { useHydration } from '@/hooks/useHydration';
-import { fetchApi } from '@/lib/api';
+import { fetchPublic } from '@/lib/api';
 
 export default function ReservarPage() {
   const router = useRouter();
@@ -37,8 +37,8 @@ export default function ReservarPage() {
       setLoadingData(true);
       try {
         const [serviciosData, staffData] = await Promise.all([
-          fetchApi<Servicio[]>(`/servicios/publico/${tenantSlug}`),
-          fetchApi<Array<{ id: string; nombreCompleto: string; rol: string }>>(`/auth/staff/${tenantSlug}`)
+          fetchPublic<Servicio[]>(`/servicios/publico/${tenantSlug}`),
+          fetchPublic<Array<{ id: string; nombreCompleto: string; rol: string }>>(`/auth/staff/${tenantSlug}`)
         ]);
 
         setServiciosList(serviciosData || []);
