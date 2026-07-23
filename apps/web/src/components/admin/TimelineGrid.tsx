@@ -167,7 +167,7 @@ export function TimelineGrid({
                     const finHoras = finDate.getHours() + finDate.getMinutes() / 60;
 
                     const topPx = Math.max(0, (inicioHoras - START_HOUR) * HOUR_HEIGHT);
-                    const heightPx = Math.max(65, (finHoras - inicioHoras) * HOUR_HEIGHT);
+                    const heightPx = Math.max(78, (finHoras - inicioHoras) * HOUR_HEIGHT);
 
                     return (
                       <div

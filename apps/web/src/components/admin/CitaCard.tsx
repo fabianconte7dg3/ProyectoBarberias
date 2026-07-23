@@ -70,10 +70,10 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
 
   return (
     <div
-      className={`relative w-full h-full rounded-xl border p-2.5 shadow-xs transition-all duration-200 hover:shadow-md ${config.bg} flex flex-col justify-between overflow-hidden`}
+      className={`relative w-full h-full rounded-xl border p-2.5 shadow-xs transition-all duration-200 hover:shadow-md ${config.bg} flex flex-col justify-between`}
     >
       {/* Top row: Hora + Status Badge */}
-      <div className="flex items-center justify-between gap-2 mb-2">
+      <div className="flex items-center justify-between gap-2 mb-1">
         <div className="flex items-center gap-1.5 font-mono text-xs font-bold">
           <Clock size={12} className="opacity-70" />
           <span>
@@ -83,12 +83,16 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
 
         <div className="flex items-center gap-1">
           <span className={`w-2 h-2 rounded-full ${config.dot}`} />
-          <span className="text-[11px] font-semibold uppercase tracking-wider">{config.label}</span>
+          <span className="text-[10px] font-bold uppercase tracking-wider">{config.label}</span>
           
           {canEdit && cita.estado !== 'completada' && cita.estado !== 'cancelada' && (
             <button
-              onClick={() => setShowPopover(!showPopover)}
-              className="ml-1 p-1 hover:bg-background/50 rounded-md text-foreground transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowPopover(!showPopover);
+              }}
+              className="ml-1 p-1 hover:bg-background/60 rounded-md text-foreground transition-colors relative z-20"
+              title="Opciones"
             >
               <MoreVertical size={14} />
             </button>
@@ -97,10 +101,10 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
       </div>
 
       {/* Main Content: Cliente y Servicio */}
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-1.5 font-semibold text-sm text-foreground truncate">
-            <User size={14} className="opacity-70 shrink-0" />
+          <div className="flex items-center gap-1.5 font-bold text-xs text-foreground truncate">
+            <User size={13} className="opacity-70 shrink-0" />
             <span className="truncate">{cita.clienteNombre}</span>
           </div>
 
@@ -115,62 +119,77 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
           )}
         </div>
 
-        <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
           <div className="flex items-center gap-1 truncate">
-            <Scissors size={12} className="opacity-70 shrink-0" />
+            <Scissors size={11} className="opacity-70 shrink-0" />
             <span className="truncate">{cita.servicioNombre}</span>
           </div>
-          <span className="font-semibold text-foreground shrink-0">${cita.servicioPrecio}</span>
+          <span className="font-extrabold text-foreground shrink-0 ml-1">${cita.servicioPrecio}</span>
         </div>
       </div>
 
-      {/* Popover de Cambio Rápido de Estado */}
+      {/* Popover de Cambio Rápido de Estado con Backdrop Flotante */}
       {showPopover && (
-        <div className="absolute right-2 top-10 z-40 bg-popover text-popover-foreground border border-border rounded-xl shadow-xl p-1.5 w-48 animate-in fade-in zoom-in-95">
-          <div className="text-[10px] uppercase font-bold text-muted-foreground px-2 py-1 border-b border-border mb-1">
-            Cambiar estado
+        <>
+          {/* Overlay transparente para cerrar el popover al hacer clic fuera */}
+          <div
+            className="fixed inset-0 z-40 bg-black/5"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowPopover(false);
+            }}
+          />
+
+          {/* Menú Popover sobrepuesto */}
+          <div
+            className="absolute right-2 top-7 z-50 bg-popover text-popover-foreground border border-border rounded-xl shadow-2xl p-1.5 w-52 animate-in fade-in zoom-in-95"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="text-[10px] uppercase font-extrabold text-muted-foreground px-2 py-1 border-b border-border mb-1">
+              Cambiar estado
+            </div>
+            
+            {cita.estado !== 'en_curso' && (
+              <button
+                onClick={() => { onStatusChange(cita.id, 'en_curso'); setShowPopover(false); }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg text-emerald-600 hover:bg-emerald-500/10 transition-colors"
+              >
+                <Play size={14} />
+                <span>Pasar a Sillón</span>
+              </button>
+            )}
+
+            {onCobrarClick && cita.estado !== 'completada' && cita.estado !== 'cancelada' && (
+              <button
+                onClick={() => { onCobrarClick(cita); setShowPopover(false); }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-extrabold rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
+              >
+                <DollarSign size={14} />
+                <span>Cobrar Cita</span>
+              </button>
+            )}
+
+            {cita.estado !== 'ausente_strike' && (
+              <button
+                onClick={() => { onStatusChange(cita.id, 'ausente_strike'); setShowPopover(false); }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
+              >
+                <AlertTriangle size={14} />
+                <span>Marcar Ausente (Strike)</span>
+              </button>
+            )}
+
+            {cita.estado !== 'cancelada' && (
+              <button
+                onClick={() => { onStatusChange(cita.id, 'cancelada'); setShowPopover(false); }}
+                className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg text-zinc-500 hover:bg-zinc-500/10 transition-colors"
+              >
+                <XCircle size={14} />
+                <span>Cancelar Cita</span>
+              </button>
+            )}
           </div>
-          
-          {cita.estado !== 'en_curso' && (
-            <button
-              onClick={() => { onStatusChange(cita.id, 'en_curso'); setShowPopover(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium rounded-lg text-emerald-600 hover:bg-emerald-500/10 transition-colors"
-            >
-              <Play size={14} />
-              <span>Pasar a Sillón</span>
-            </button>
-          )}
-
-          {onCobrarClick && cita.estado !== 'completada' && cita.estado !== 'cancelada' && (
-            <button
-              onClick={() => { onCobrarClick(cita); setShowPopover(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors"
-            >
-              <DollarSign size={14} />
-              <span>Cobrar Cita</span>
-            </button>
-          )}
-
-          {cita.estado !== 'ausente_strike' && (
-            <button
-              onClick={() => { onStatusChange(cita.id, 'ausente_strike'); setShowPopover(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium rounded-lg text-rose-600 hover:bg-rose-500/10 transition-colors"
-            >
-              <AlertTriangle size={14} />
-              <span>Marcar Ausente (Strike)</span>
-            </button>
-          )}
-
-          {cita.estado !== 'cancelada' && (
-            <button
-              onClick={() => { onStatusChange(cita.id, 'cancelada'); setShowPopover(false); }}
-              className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-medium rounded-lg text-zinc-500 hover:bg-zinc-500/10 transition-colors"
-            >
-              <XCircle size={14} />
-              <span>Cancelar Cita</span>
-            </button>
-          )}
-        </div>
+        </>
       )}
     </div>
   );
