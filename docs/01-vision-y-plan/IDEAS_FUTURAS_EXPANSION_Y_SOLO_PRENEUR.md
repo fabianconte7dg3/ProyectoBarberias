@@ -18,6 +18,7 @@ La arquitectura Multi-tenant basada en PostgreSQL RLS y Next.js dinámico soport
 
 - **Plan Individual ($6.00 USD/mes):** Registrado en la base de datos PostgreSQL, enum `plan_suscripcion` ('independiente') y en los selectores del SuperAdmin con límite estricto de 1 barbero activo.
 - **Reserva Pública Express (`/[tenantSlug]/reservar`):** Detección automática de 1 barbero activo ➔ Muestra la card personalizada `BarberProfileCard` ("Tu Especialista de Hoy") y auto-selecciona al barbero sin selector redundante.
+- **Auto-Resolución de `barberoId` en Backend:** Manejo resiliente en `POST /citas/publica` donde `barberoId` es opcional en DTO y se auto-asigna al único barbero activo si no viene especificado en la reserva pública.
 - **Agenda Admin Adaptativa:** Saludo personalizado *"¡Buen día, [Nombre]! 👋"*, ocultamiento dinámico de toggles de equipo cuando se detecta 1 solo barbero y vista limpia por defecto de *Lista de Turnos*.
 - **Modal Mi Desempeño:** Adaptado para mostrar `"100% Ingresos Directos"` y `"Ganancia Total"` sin tarjetas de comisiones de empleados ni filas vacías en $0.00.
 - **Reversión Dinámica:** Si el negocio contrata un 2do barbero, la interfaz revierte de forma transparente al *Modo Equipo* con selector multi-barbero.
