@@ -14,24 +14,13 @@ Un **Barbero Independiente** opera sin equipo ni personal a su cargo. Necesita u
 ### Análisis Técnico: "Tenant de 1 Solo Miembro"
 La arquitectura Multi-tenant basada en PostgreSQL RLS y Next.js dinámico soporta este caso de uso sin alterar la base de datos ni escribir un backend paralelo.
 
-- **Definición:** El negocio es un `tenant` donde existe un único usuario activo que posee los roles de `ADMIN` y `BARBERO`.
-- **Esfuerzo Estimado:** 🟢 **Bajo (1 a 2 días de trabajo)**.
+### Estado de Implementación: 🚀 COMPLETADO & EN PRODUCCIÓN
 
-### Ajustes Necesarios
-
-#### A. Reserva Pública Express (`/[tenantSlug]/reservar`)
-- **Comportamiento Automático:** Si el API detecta que el tenant solo posee 1 barbero activo (`count(barberos) == 1`), la interfaz **omite automáticamente el paso 2 ("Seleccionar Profesional")**.
-- **Flujo:** Elección de Servicio ➔ Fecha / Hora disponible ➔ Datos del Cliente y Confirmación Yappy.
-
-#### B. Panel Administrativo Simplificado
-- **Ocultamiento Dinámico de Menús:** Ocultar secciones innecesarias como "Gestión de Equipo", "Barberos", y "Liquidación de Comisiones Multi-Barbero".
-- **Agenda Directa:** Mostrar el calendario personal a pantalla completa sin selector de columnas por profesional.
-- **Login Express:** Inicio de sesión directo sin pantalla de selección de personal.
-
-#### C. Onboarding y Estrategia Comercial (Freemium / Plan Starter)
-- **Wizard de Registro:** Pregunta inicial: *"¿Operas solo o tienes un equipo de trabajo?"*.
-- **Plan Solo-preneur:** Precio reducido o Freemium (ej. $9.99/mes o comisión por reserva exitosa).
-- **Upsell Orgánico:** Cuando el barbero contrata a su primer empleado, un botón de *"Upgrade a Plan Equipo"* habilita instantáneamente las vistas multi-barbero, roles y comisiones ya desarrolladas.
+- **Plan Individual ($6.00 USD/mes):** Registrado en la base de datos PostgreSQL, enum `plan_suscripcion` ('independiente') y en los selectores del SuperAdmin con límite estricto de 1 barbero activo.
+- **Reserva Pública Express (`/[tenantSlug]/reservar`):** Detección automática de 1 barbero activo ➔ Muestra la card personalizada `BarberProfileCard` ("Tu Especialista de Hoy") y auto-selecciona al barbero sin selector redundante.
+- **Agenda Admin Adaptativa:** Saludo personalizado *"¡Buen día, [Nombre]! 👋"*, ocultamiento dinámico de toggles de equipo cuando se detecta 1 solo barbero y vista limpia por defecto de *Lista de Turnos*.
+- **Modal Mi Desempeño:** Adaptado para mostrar `"100% Ingresos Directos"` y `"Ganancia Total"` sin tarjetas de comisiones de empleados ni filas vacías en $0.00.
+- **Reversión Dinámica:** Si el negocio contrata un 2do barbero, la interfaz revierte de forma transparente al *Modo Equipo* con selector multi-barbero.
 
 ---
 
