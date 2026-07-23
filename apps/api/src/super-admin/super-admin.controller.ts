@@ -140,7 +140,7 @@ export class SuperAdminController {
   @Patch('tenants/:id/plan')
   async cambiarPlan(
     @Param('id') id: string,
-    @Body('plan') plan: 'basico' | 'premium'
+    @Body('plan') plan: 'independiente' | 'basico' | 'premium'
   ) {
     return this.superAdminService.cambiarPlanTenant(id, plan);
   }

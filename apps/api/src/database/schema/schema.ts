@@ -19,7 +19,7 @@ import { relations, sql } from 'drizzle-orm';
 // ENUMS
 // ============================================================================
 
-export const planSuscripcionEnum = pgEnum('plan_suscripcion', ['basico', 'premium']);
+export const planSuscripcionEnum = pgEnum('plan_suscripcion', ['independiente', 'basico', 'premium']);
 export const estadoBarberiaEnum = pgEnum('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
 export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'barbero', 'recepcion']);
 export const diaSemanaEnum = pgEnum('dia_semana', [

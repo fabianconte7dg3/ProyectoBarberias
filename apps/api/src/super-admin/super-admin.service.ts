@@ -464,8 +464,8 @@ FECHA: ${new Date().toISOString()}
   /**
    * Cambiar Plan de Suscripción con Audit Log
    */
-  async cambiarPlanTenant(tenantId: string, plan: 'basico' | 'premium') {
-    if (!['basico', 'premium'].includes(plan)) {
+  async cambiarPlanTenant(tenantId: string, plan: 'independiente' | 'basico' | 'premium') {
+    if (!['independiente', 'basico', 'premium'].includes(plan)) {
       throw new BadRequestException('Plan de suscripción inválido.');
     }
 

@@ -14,6 +14,6 @@ export class CreateTenantDto {
   adminNombre!: string;
 
   @IsOptional()
-  @IsEnum(['basico', 'premium'])
-  planId?: 'basico' | 'premium';
+  @IsEnum(['independiente', 'basico', 'premium'])
+  planId?: 'independiente' | 'basico' | 'premium';
 }

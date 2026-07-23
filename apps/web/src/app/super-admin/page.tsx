@@ -36,7 +36,7 @@ interface TenantSummary {
   id: string;
   nombreComercial: string;
   slug: string;
-  planSuscripcion: 'basico' | 'premium';
+  planSuscripcion: 'independiente' | 'basico' | 'premium';
   estadoBarberia: 'activo' | 'suspendido_pago' | 'cancelado';
   bloqueadoPorPlataforma: boolean;
   adminEmail: string;
@@ -100,7 +100,7 @@ export default function SuperAdminDashboard() {
     }
   };
 
-  const handleCambiarPlan = async (tenantId: string, nuevoPlan: 'basico' | 'premium') => {
+  const handleCambiarPlan = async (tenantId: string, nuevoPlan: 'independiente' | 'basico' | 'premium') => {
     setActionLoading(tenantId);
     try {
       await fetchApi(`/super-admin/tenants/${tenantId}/plan`, {
@@ -387,6 +387,7 @@ export default function SuperAdminDashboard() {
                           onChange={(e) => handleCambiarPlan(t.id, e.target.value as any)}
                           className="bg-slate-950 border border-slate-800 rounded-lg text-xs px-2.5 py-1 font-bold text-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
                         >
+                          <option value="independiente">Individual ($6/mo)</option>
                           <option value="basico">Básico ($29/mo)</option>
                           <option value="premium">Premium ($79/mo)</option>
                         </select>
@@ -444,7 +445,7 @@ export default function SuperAdminDashboard() {
 
                         {/* Enlace de Inspección Rápida */}
                         <a
-                          href={`http://localhost:3001/${t.slug}/admin`}
+                          href={`/${t.slug}/admin`}
                           target="_blank"
                           rel="noreferrer"
                           className="p-2 inline-flex bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl transition-colors"

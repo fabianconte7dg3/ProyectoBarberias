@@ -15,7 +15,7 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
   const [slug, setSlug] = useState('');
   const [adminNombre, setAdminNombre] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
-  const [planId, setPlanId] = useState<'basico' | 'premium'>('basico');
+  const [planId, setPlanId] = useState<'independiente' | 'basico' | 'premium'>('independiente');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -213,6 +213,7 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
                 onChange={(e) => setPlanId(e.target.value as any)}
                 className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value="independiente">Plan Individual ($6/mo - Barbero Solo-preneur)</option>
                 <option value="basico">Plan Básico ($29/mo - Hasta 3 Barberos)</option>
                 <option value="premium">Plan Premium ($79/mo - Hasta 10 Barberos)</option>
               </select>
