@@ -2,7 +2,6 @@
 
 import React, { useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
-import { fetchApi } from '@/lib/api';
 import { KeyRound, ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight, Scissors } from 'lucide-react';
 
 function ActivarContent() {
@@ -37,13 +36,19 @@ function ActivarContent() {
     setError('');
 
     try {
-      await fetchApi('/usuarios/activar', {
+      // Usamos fetch directo SIN token de sesión para que este endpoint público
+      // no sea afectado por ninguna sesión de admin activa en el mismo navegador
+      const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const res = await fetch(`${API_URL}/usuarios/activar`, {
         method: 'POST',
-        body: JSON.stringify({
-          token,
-          pinAcceso,
-        }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, pinAcceso }),
       });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'El enlace de activación ha expirado o es inválido.');
+      }
 
       setActivated(true);
     } catch (err: any) {
