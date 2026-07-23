@@ -119,8 +119,8 @@ export function AdminHeader({
           )}
         </div>
 
-        {/* 3. Menú Navegación Desktop & Acciones */}
-        <div className="hidden md:flex items-center gap-2">
+        {/* 3. Menú Navegación Desktop & Acciones (Solo en pantallas xl 1280px+) */}
+        <div className="hidden xl:flex items-center gap-1.5 shrink-0">
           <nav className="flex items-center gap-1 bg-secondary/50 p-1 rounded-xl border border-border">
             {navLinks.map((link) => {
               const Icon = link.icon;
@@ -129,11 +129,12 @@ export function AdminHeader({
                 <button
                   key={link.href}
                   onClick={() => router.push(link.href)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     isActive
                       ? 'bg-card text-foreground font-bold shadow-xs'
                       : 'text-muted-foreground hover:text-foreground hover:bg-card/50'
                   }`}
+                  title={link.label}
                 >
                   <Icon size={15} />
                   <span>{link.label}</span>
@@ -145,25 +146,25 @@ export function AdminHeader({
           {/* Botón Copiar Link de Reservas */}
           <button
             onClick={handleCopyLink}
-            className={`flex items-center gap-1.5 px-3 py-2 text-xs font-extrabold rounded-xl border transition-all shadow-xs ${
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-extrabold rounded-xl border transition-all shadow-xs ${
               copiedLink
                 ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40'
                 : 'bg-blue-500/10 border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/20'
             }`}
             title="Copiar link público de reservas para compartir en redes"
           >
-            {copiedLink ? <Check size={16} /> : <Link2 size={16} />}
-            <span>{copiedLink ? '¡Link Copiado!' : 'Copiar Link'}</span>
+            {copiedLink ? <Check size={15} /> : <Link2 size={15} />}
+            <span>{copiedLink ? '¡Copiado!' : 'Copiar Link'}</span>
           </button>
 
           {/* Botón Mi Desempeño (Para Barbero / Recepción) */}
           {onMiDesempenoClick && (
             <button
               onClick={onMiDesempenoClick}
-              className="flex items-center gap-1.5 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-extrabold rounded-xl transition-colors shadow-xs"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-extrabold rounded-xl transition-colors shadow-xs"
               title="Ver mis comisiones e ingresos"
             >
-              <Award size={16} />
+              <Award size={15} />
               <span>Mi Desempeño</span>
             </button>
           )}
@@ -172,33 +173,33 @@ export function AdminHeader({
           {onVentaMostradorClick && (
             <button
               onClick={onVentaMostradorClick}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors shrink-0"
               title="Venta rápida de productos de mostrador"
             >
-              <ShoppingBag size={16} />
+              <ShoppingBag size={15} />
               <span>Venta Mostrador</span>
             </button>
           )}
 
           <button
             onClick={onNewCitaClick}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-xs hover:opacity-90 transition-opacity"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-xs hover:opacity-90 transition-opacity shrink-0"
           >
-            <Plus size={16} />
+            <Plus size={15} />
             <span>Cita</span>
           </button>
 
           <button
             onClick={onLogout}
-            className="p-2 text-muted-foreground hover:text-destructive hover:bg-secondary rounded-xl transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-secondary rounded-xl transition-colors shrink-0"
             title="Cerrar Sesión"
           >
-            <LogOut size={18} />
+            <LogOut size={16} />
           </button>
         </div>
 
-        {/* 4. Botón Menú Móvil */}
-        <div className="flex md:hidden items-center gap-2">
+        {/* 4. Botón Menú Móvil / Tablet / Laptops medianas (por debajo de xl) */}
+        <div className="flex xl:hidden items-center gap-1.5 shrink-0">
           {onMiDesempenoClick && (
             <button
               onClick={onMiDesempenoClick}
@@ -206,6 +207,16 @@ export function AdminHeader({
               title="Mi Desempeño"
             >
               <Award size={18} />
+            </button>
+          )}
+
+          {onVentaMostradorClick && (
+            <button
+              onClick={onVentaMostradorClick}
+              className="p-2 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs"
+              title="Venta Mostrador POS"
+            >
+              <ShoppingBag size={18} />
             </button>
           )}
 
@@ -220,6 +231,7 @@ export function AdminHeader({
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 text-muted-foreground hover:text-foreground bg-secondary rounded-xl border border-border"
+            title="Abrir menú de navegación"
           >
             {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
@@ -227,9 +239,9 @@ export function AdminHeader({
 
       </div>
 
-      {/* Menú Desplegable en Móviles */}
+      {/* Menú Desplegable en Móviles y Pantallas Medias (< xl) */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-card p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
+        <div className="xl:hidden border-t border-border bg-card p-4 space-y-3 animate-in fade-in slide-in-from-top-2">
           
           <div className="flex items-center justify-between p-2.5 bg-secondary/50 rounded-xl border border-border">
             <div className="flex items-center gap-2">
