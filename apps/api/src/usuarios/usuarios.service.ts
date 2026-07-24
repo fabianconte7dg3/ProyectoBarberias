@@ -24,7 +24,7 @@ export class UsuariosService {
 
     const txDb = TenantContext.getDb();
 
-    // 1. Obtener plan actual y su límite de barberos
+    // 1. Obtener plan actual y su límite de empleados
     const [barberia] = await txDb
       .select({ planId: schema.barberias.planId })
       .from(schema.barberias)
@@ -33,24 +33,24 @@ export class UsuariosService {
 
     const planId = barberia?.planId || 'basico';
     const [plan] = await this.db
-      .select({ limiteBarberos: schema.planes.limiteBarberos })
+      .select({ limiteEmpleados: schema.planes.limiteEmpleados })
       .from(schema.planes)
       .where(eq(schema.planes.id, planId))
       .limit(1);
 
-    const limiteMaximo = plan?.limiteBarberos || 3;
+    const limiteMaximo = plan?.limiteEmpleados || 3;
 
-    // 2. Contar barberos de este tenant
+    // 2. Contar empleados de este tenant
     const resultCount = await txDb
       .select({ count: sql<number>`count(*)` })
       .from(schema.usuarios)
-      .where(and(eq(schema.usuarios.tenantId, tenantId), eq(schema.usuarios.rol, 'barbero')));
+      .where(and(eq(schema.usuarios.tenantId, tenantId), eq(schema.usuarios.rol, 'empleado')));
 
     const totalActual = Number(resultCount[0]?.count || 0);
 
     if (totalActual >= limiteMaximo) {
       throw new BadRequestException(
-        `Has alcanzado el límite de ${limiteMaximo} barberos de tu plan actual (${planId.toUpperCase()}). Actualiza tu plan para agregar más personal.`
+        `Has alcanzado el límite de ${limiteMaximo} empleados de tu plan actual (${planId.toUpperCase()}). Actualiza tu plan para agregar más personal.`
       );
     }
 

@@ -21,7 +21,7 @@ export class ReportesController {
   }
 
   @Get('mi-desempeno')
-  @Roles('barbero', 'admin', 'recepcion')
+  @Roles('empleado', 'admin', 'recepcion')
   async getMiDesempeno(
     @Request() req: any,
     @Query('desde') desde?: string,

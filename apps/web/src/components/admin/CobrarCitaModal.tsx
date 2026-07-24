@@ -158,15 +158,15 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
             </div>
           )}
 
-          {/* Resumen del Servicio & Barbero */}
+          {/* Resumen del Servicio & Empleado */}
           <div className="bg-secondary/40 p-4 rounded-xl border border-border space-y-2">
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground font-medium">Cliente:</span>
               <span className="font-semibold text-foreground">{cita.clienteNombre}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">Barbero:</span>
-              <span className="font-semibold text-foreground">{cita.barberoNombre}</span>
+              <span className="text-muted-foreground font-medium">Empleado:</span>
+              <span className="font-semibold text-foreground">{cita.empleadoNombre}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground font-medium">Servicio:</span>
@@ -318,11 +318,11 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
             </div>
           )}
 
-          {/* Propina al Barbero */}
+          {/* Propina al Empleado */}
           <div>
             <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-1">
               <HeartHandshake size={14} className="text-rose-500" />
-              <span>Propina para {cita.barberoNombre} ($)</span>
+              <span>Propina para {cita.empleadoNombre} ($)</span>
             </label>
             <input
               type="number"

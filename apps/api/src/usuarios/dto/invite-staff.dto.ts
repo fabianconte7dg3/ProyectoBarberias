@@ -5,8 +5,8 @@ export class InviteStaffDto {
   @IsNotEmpty()
   nombreCompleto: string;
 
-  @IsEnum(['barbero', 'recepcion'])
-  rol: 'barbero' | 'recepcion';
+  @IsEnum(['empleado', 'recepcion'])
+  rol: 'empleado' | 'recepcion';
 
   @IsOptional()
   @IsNumber()

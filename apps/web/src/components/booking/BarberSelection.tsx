@@ -1,19 +1,19 @@
 'use client';
-import { Barbero } from '@/lib/types';
+import { Empleado } from '@/lib/types';
 import { Check, UserCircle2 } from 'lucide-react';
 
 interface Props {
-  barberos: Barbero[];
+  empleados: Empleado[];
   selectedId?: string | null; // null significa "Cualquiera"
   onSelect: (id: string | null) => void;
 }
 
-export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
+export function BarberSelection({ empleados, selectedId, onSelect }: Props) {
   return (
     <div className="space-y-4 mt-8">
-      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">2. Elige a tu barbero</h2>
+      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">2. Elige a tu empleado</h2>
       
-      {/* Grilla Responsiva para Barberos (Desktop y Mobile Grid) */}
+      {/* Grilla Responsiva para Empleados (Desktop y Mobile Grid) */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
         
         {/* Opción especial: Cualquiera */}
@@ -37,8 +37,8 @@ export function BarberSelection({ barberos, selectedId, onSelect }: Props) {
           <span className="text-xs sm:text-sm font-semibold text-center leading-tight text-foreground">Cualquiera</span>
         </button>
 
-        {/* Mapeo de barberos reales */}
-        {barberos.map((b) => {
+        {/* Mapeo de empleados reales */}
+        {empleados.map((b) => {
           const isSelected = selectedId === b.id;
           return (
             <button

@@ -17,7 +17,7 @@ export class UpdateClienteDto {
 
   @IsOptional()
   @IsUUID()
-  barberoFrecuenteId?: string;
+  empleadoFrecuenteId?: string;
 
   @IsOptional()
   @IsBoolean()

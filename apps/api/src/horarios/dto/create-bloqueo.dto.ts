@@ -3,7 +3,7 @@ import { IsString, IsNotEmpty, IsEnum, IsOptional, IsUUID, IsDateString } from '
 export class CreateBloqueoDto {
   @IsUUID()
   @IsNotEmpty()
-  barberoId: string;
+  empleadoId: string;
 
   @IsDateString()
   @IsNotEmpty()

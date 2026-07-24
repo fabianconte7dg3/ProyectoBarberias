@@ -248,7 +248,7 @@ FECHA: ${new Date().toISOString()}
       adminEmail: row.admin_email || 'Sin admin',
       adminNombre: row.admin_nombre || 'Sin nombre',
       createdAt: row.created_at,
-      totalBarberos: Number(row.total_barberos || 0),
+      totalEmpleados: Number(row.total_empleados || 0),
       totalCitasMes: Number(row.total_citas_mes || 0),
       totalFacturadoMes: Number(row.total_facturado_mes || 0),
     }));
@@ -294,6 +294,10 @@ FECHA: ${new Date().toISOString()}
         slug: dto.slug,
         planSuscripcion: planElegido,
         planId: planElegido,
+        ...(dto.industria && { industria: dto.industria }),
+        ...(dto.terminologiaEmpleado && { terminologiaEmpleado: dto.terminologiaEmpleado }),
+        ...(dto.terminologiaServicio && { terminologiaServicio: dto.terminologiaServicio }),
+        ...(dto.terminologiaCliente && { terminologiaCliente: dto.terminologiaCliente }),
       });
 
       await tx.insert(schema.usuarios).values({

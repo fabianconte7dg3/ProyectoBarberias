@@ -3,7 +3,7 @@ import { X, UserPlus, Phone, Calendar, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
 
-interface Barbero {
+interface Empleado {
   id: string;
   nombreCompleto: string;
 }
@@ -20,7 +20,7 @@ interface QuickWalkInModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
-  barberos: Barbero[];
+  empleados: Empleado[];
   initialDate?: Date;
 }
 
@@ -29,13 +29,13 @@ export function QuickWalkInModal({
   isOpen,
   onClose,
   onSuccess,
-  barberos,
+  empleados,
   initialDate,
 }: QuickWalkInModalProps) {
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState('');
   const [servicioId, setServicioId] = useState('');
-  const [barberoId, setBarberoId] = useState(barberos[0]?.id || '');
+  const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || '');
   
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [inicioHora, setInicioHora] = useState('12:00');
@@ -69,7 +69,7 @@ export function QuickWalkInModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nombreCompleto || !telefonoWhatsapp || !servicioId || !barberoId || !fecha || !inicioHora) {
+    if (!nombreCompleto || !telefonoWhatsapp || !servicioId || !empleadoId || !fecha || !inicioHora) {
       setError('Por favor completa todos los campos requeridos');
       return;
     }
@@ -106,7 +106,7 @@ export function QuickWalkInModal({
         method: 'POST',
         body: JSON.stringify({
           clienteId,
-          barberoId,
+          empleadoId,
           servicioId,
           inicioEstimado: inicioEstimado.toISOString(),
           origen: 'walk_in',
@@ -179,17 +179,17 @@ export function QuickWalkInModal({
             </div>
           </div>
 
-          {/* Selección Barbero */}
+          {/* Selección Empleado */}
           <div>
             <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
-              Barbero Asignado
+              Empleado Asignado
             </label>
             <select
-              value={barberoId}
-              onChange={(e) => setBarberoId(e.target.value)}
+              value={empleadoId}
+              onChange={(e) => setEmpleadoId(e.target.value)}
               className="w-full px-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
             >
-              {barberos.map((b) => (
+              {empleados.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.nombreCompleto}
                 </option>

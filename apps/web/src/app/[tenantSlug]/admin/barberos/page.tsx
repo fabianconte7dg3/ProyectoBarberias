@@ -9,13 +9,13 @@ import {
   Users, UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2, ArrowLeft 
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
-import { InviteBarberoModal } from '@/components/admin/InviteBarberoModal';
+import { InviteEmpleadoModal } from '@/components/admin/InviteEmpleadoModal';
 
 interface UsuarioStaff {
   id: string;
   nombreCompleto: string;
   email?: string;
-  rol: 'admin' | 'barbero' | 'recepcion';
+  rol: 'admin' | 'empleado' | 'recepcion';
   porcentajeComision?: string;
   porcentajeComisionProducto?: string;
   activo: boolean;
@@ -36,7 +36,7 @@ export default function AdminBarberosPage() {
 
   // Modales
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [horariosModalBarbero, setHorariosModalBarbero] = useState<{ id: string; nombre: string } | null>(null);
+  const [horariosModalEmpleado, setHorariosModalEmpleado] = useState<{ id: string; nombre: string } | null>(null);
 
   // Edición rápida de comisión
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -109,7 +109,7 @@ export default function AdminBarberosPage() {
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-muted-foreground">
           <RefreshCw className="animate-spin" size={24} />
-          <span className="font-semibold text-sm">Cargando equipo de barberos y staff...</span>
+          <span className="font-semibold text-sm">Cargando equipo de empleados y staff...</span>
         </div>
       </div>
     );
@@ -130,7 +130,7 @@ export default function AdminBarberosPage() {
           <div>
             <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
               <Users size={20} className="text-primary" />
-              <span>Gestión de Barberos & Equipo de Staff</span>
+              <span>Gestión de Empleados & Equipo de Staff</span>
             </h1>
             <p className="text-xs text-muted-foreground">
               Administra el equipo de tu barbería, comisiones por venta y horarios laborales.
@@ -144,7 +144,7 @@ export default function AdminBarberosPage() {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
           >
             <UserPlus size={16} />
-            <span>+ Invitar Nuevo Barbero</span>
+            <span>+ Invitar Nuevo Empleado</span>
           </button>
 
           <button
@@ -174,7 +174,7 @@ export default function AdminBarberosPage() {
           </div>
         )}
 
-        {/* Tarjetas de Barberos */}
+        {/* Tarjetas de Empleados */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {staff.map((u) => {
             const isEditingThis = editingUserId === u.id;
@@ -215,7 +215,7 @@ export default function AdminBarberosPage() {
                     )}
                   </div>
 
-                  {u.rol === 'barbero' && (
+                  {u.rol === 'empleado' && (
                     <div className="bg-secondary/30 p-3 rounded-xl border border-border space-y-2">
                       <div className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
                         Esquema de Comisiones
@@ -304,10 +304,10 @@ export default function AdminBarberosPage() {
                 </div>
 
                 {/* Acciones Rápidas en Footer */}
-                {u.rol === 'barbero' && (
+                {u.rol === 'empleado' && (
                   <div className="pt-2 border-t border-border flex items-center gap-2">
                     <button
-                      onClick={() => setHorariosModalBarbero({ id: u.id, nombre: u.nombreCompleto })}
+                      onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
                       className="w-full py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
                     >
                       <Clock size={15} className="text-primary" />
@@ -322,21 +322,21 @@ export default function AdminBarberosPage() {
 
       </main>
 
-      {/* Modal Invitar Barbero */}
-      <InviteBarberoModal
+      {/* Modal Invitar Empleado */}
+      <InviteEmpleadoModal
         isOpen={isInviteModalOpen}
         tenantSlug={tenantSlug}
         onClose={() => setIsInviteModalOpen(false)}
         onSuccess={loadStaff}
       />
 
-      {/* Modal Configuración Horario Barbero */}
-      {horariosModalBarbero && (
+      {/* Modal Configuración Horario Empleado */}
+      {horariosModalEmpleado && (
         <HorariosModal
-          isOpen={!!horariosModalBarbero}
-          barberoId={horariosModalBarbero.id}
-          barberoNombre={horariosModalBarbero.nombre}
-          onClose={() => setHorariosModalBarbero(null)}
+          isOpen={!!horariosModalEmpleado}
+          empleadoId={horariosModalEmpleado.id}
+          empleadoNombre={horariosModalEmpleado.nombre}
+          onClose={() => setHorariosModalEmpleado(null)}
         />
       )}
     </div>

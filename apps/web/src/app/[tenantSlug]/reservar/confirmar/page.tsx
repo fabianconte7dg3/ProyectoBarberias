@@ -23,7 +23,7 @@ function ConfirmarContent() {
   const isHydrated = useHydration();
 
   // Global State
-  const { servicioId, barberoId, fecha, hora, reset } = useBookingStore();
+  const { servicioId, empleadoId, fecha, hora, reset } = useBookingStore();
 
   // Local State
   const [nombre, setNombre] = useState('');
@@ -76,10 +76,10 @@ function ConfirmarContent() {
         inicioEstimado,
         origen: 'web_publica',
       };
-      // Solo incluir barberoId si es un UUID válido.
-      // Para Solo-preneur el backend auto-asigna al único barbero activo.
-      if (barberoId && barberoId.trim().length > 0) {
-        citaPayload.barberoId = barberoId;
+      // Solo incluir empleadoId si es un UUID válido.
+      // Para Solo-preneur el backend auto-asigna al único empleado activo.
+      if (empleadoId && empleadoId.trim().length > 0) {
+        citaPayload.empleadoId = empleadoId;
       }
       await fetchPublic('/citas/publica', {
         method: 'POST',
@@ -148,7 +148,7 @@ function ConfirmarContent() {
         {/* Resumen de Servicio y Fecha */}
         <BookingSummary
           servicioNombre="Servicio Seleccionado"
-          barberoNombre="Barbero Asignado"
+          empleadoNombre="Empleado Asignado"
           fecha={fecha || '2026-07-21'}
           hora={hora || '12:00'}
           precio="15.00"

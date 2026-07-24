@@ -42,5 +42,5 @@ export class CobrarCitaDto {
 
   @IsOptional()
   @IsString()
-  barberoId?: string;
+  empleadoId?: string;
 }

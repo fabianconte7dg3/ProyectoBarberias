@@ -93,12 +93,12 @@ export class ImportacionesService {
         metodoPago: schema.transacciones.metodoPago,
         totalFacturado: schema.transacciones.totalFacturado,
         comisionBarbero: schema.transacciones.comisionBarbero,
-        barberoNombre: schema.usuarios.nombreCompleto,
+        empleadoNombre: schema.usuarios.nombreCompleto,
         clienteNombre: schema.clientes.nombreCompleto,
       })
       .from(schema.transacciones)
       .leftJoin(schema.citas, eq(schema.transacciones.citaId, schema.citas.id))
-      .leftJoin(schema.usuarios, eq(schema.citas.barberoId, schema.usuarios.id))
+      .leftJoin(schema.usuarios, eq(schema.citas.empleadoId, schema.usuarios.id))
       .leftJoin(schema.clientes, eq(schema.citas.clienteId, schema.clientes.id))
       .where(and(
         gte(schema.transacciones.createdAt, desde),
@@ -111,7 +111,7 @@ export class ImportacionesService {
     sheet.columns = [
       { header: 'Fecha', key: 'fecha', width: 20 },
       { header: 'Cliente', key: 'cliente', width: 25 },
-      { header: 'Barbero', key: 'barbero', width: 25 },
+      { header: 'Empleado', key: 'empleado', width: 25 },
       { header: 'Método de Pago', key: 'metodoPago', width: 18 },
       { header: 'Total Facturado ($)', key: 'total', width: 20 },
       { header: 'Comisión ($)', key: 'comision', width: 18 },
@@ -121,7 +121,7 @@ export class ImportacionesService {
       sheet.addRow({
         fecha: t.createdAt.toISOString().substring(0, 19).replace('T', ' '),
         cliente: sanitizarCeldaExport(t.clienteNombre || 'Cliente Mostrador'),
-        barbero: sanitizarCeldaExport(t.barberoNombre || 'Sin asignar'),
+        empleado: sanitizarCeldaExport(t.empleadoNombre || 'Sin asignar'),
         metodoPago: sanitizarCeldaExport(t.metodoPago),
         total: Number(t.totalFacturado || 0),
         comision: Number(t.comisionBarbero || 0),
@@ -143,8 +143,8 @@ export class ImportacionesService {
     // Sumar detalles_transaccion.comisionAplicada (el valor congelado al momento del cobro)
     const detalles = await db
       .select({
-        barberoId: schema.citas.barberoId,
-        barberoNombre: schema.usuarios.nombreCompleto,
+        empleadoId: schema.citas.empleadoId,
+        empleadoNombre: schema.usuarios.nombreCompleto,
         comisionAplicada: schema.detallesTransaccion.comisionAplicada,
         subtotal: schema.detallesTransaccion.subtotal,
         propina: schema.transacciones.propinaBarbero,
@@ -153,18 +153,18 @@ export class ImportacionesService {
       .from(schema.detallesTransaccion)
       .innerJoin(schema.transacciones, eq(schema.detallesTransaccion.transaccionId, schema.transacciones.id))
       .leftJoin(schema.citas, eq(schema.transacciones.citaId, schema.citas.id))
-      .leftJoin(schema.usuarios, eq(schema.citas.barberoId, schema.usuarios.id))
+      .leftJoin(schema.usuarios, eq(schema.citas.empleadoId, schema.usuarios.id))
       .where(and(
         gte(schema.transacciones.createdAt, desde),
         lte(schema.transacciones.createdAt, hasta)
       ));
 
-    // Agrupar por barbero
-    const resumenNomina = new Map<string, { barberoNombre: string; totalComision: number; totalVentas: number }>();
+    // Agrupar por empleado
+    const resumenNomina = new Map<string, { empleadoNombre: string; totalComision: number; totalVentas: number }>();
 
     for (const d of detalles) {
-      const nombre = d.barberoNombre || 'Sin Asignar';
-      const prev = resumenNomina.get(nombre) || { barberoNombre: nombre, totalComision: 0, totalVentas: 0 };
+      const nombre = d.empleadoNombre || 'Sin Asignar';
+      const prev = resumenNomina.get(nombre) || { empleadoNombre: nombre, totalComision: 0, totalVentas: 0 };
       
       prev.totalComision += Number(d.comisionAplicada || 0);
       prev.totalVentas += Number(d.subtotal || 0);
@@ -175,14 +175,14 @@ export class ImportacionesService {
     const sheet = workbook.addWorksheet('Reporte de Nómina');
 
     sheet.columns = [
-      { header: 'Barbero / Staff', key: 'barbero', width: 30 },
+      { header: 'Empleado / Staff', key: 'empleado', width: 30 },
       { header: 'Total Ventas Generadas ($)', key: 'ventas', width: 25 },
       { header: 'Comisión Congelada a Pagar ($)', key: 'comision', width: 30 },
     ];
 
     for (const [, item] of resumenNomina) {
       sheet.addRow({
-        barbero: sanitizarCeldaExport(item.barberoNombre),
+        empleado: sanitizarCeldaExport(item.empleadoNombre),
         ventas: Number(item.totalVentas.toFixed(2)),
         comision: Number(item.totalComision.toFixed(2)),
       });

@@ -10,12 +10,37 @@ interface CrearBarberiaModalProps {
   onSuccess: () => void;
 }
 
+type Industria = 'barberia' | 'salon_belleza' | 'spa_masajes' | 'veterinaria' | 'clinica_medica' | 'taller_mecanico' | 'espacio_alquiler' | 'otro';
+
+const TERMINOLOGIA_POR_INDUSTRIA: Record<Industria, { empleado: string; servicio: string; cliente: string; label: string }> = {
+  barberia: { empleado: 'Barbero', servicio: 'Servicio', cliente: 'Cliente', label: 'Barbería' },
+  salon_belleza: { empleado: 'Estilista', servicio: 'Servicio', cliente: 'Cliente', label: 'Salón de Belleza' },
+  spa_masajes: { empleado: 'Masajista', servicio: 'Tratamiento', cliente: 'Cliente', label: 'Spa / Masajes' },
+  veterinaria: { empleado: 'Veterinario', servicio: 'Consulta', cliente: 'Dueño de mascota', label: 'Veterinaria' },
+  clinica_medica: { empleado: 'Doctor', servicio: 'Consulta', cliente: 'Paciente', label: 'Clínica Médica' },
+  taller_mecanico: { empleado: 'Mecánico', servicio: 'Servicio', cliente: 'Cliente', label: 'Taller Mecánico' },
+  espacio_alquiler: { empleado: 'Recurso', servicio: 'Alquiler', cliente: 'Cliente', label: 'Alquiler de Espacios' },
+  otro: { empleado: 'Empleado', servicio: 'Servicio', cliente: 'Cliente', label: 'Otro' },
+};
+
 export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: CrearBarberiaModalProps) {
   const [nombreComercial, setNombreComercial] = useState('');
   const [slug, setSlug] = useState('');
   const [adminNombre, setAdminNombre] = useState('');
   const [adminEmail, setAdminEmail] = useState('');
   const [planId, setPlanId] = useState<'independiente' | 'basico' | 'premium'>('independiente');
+  const [industria, setIndustria] = useState<Industria>('barberia');
+  const [terminologiaEmpleado, setTerminologiaEmpleado] = useState(TERMINOLOGIA_POR_INDUSTRIA.barberia.empleado);
+  const [terminologiaServicio, setTerminologiaServicio] = useState(TERMINOLOGIA_POR_INDUSTRIA.barberia.servicio);
+  const [terminologiaCliente, setTerminologiaCliente] = useState(TERMINOLOGIA_POR_INDUSTRIA.barberia.cliente);
+
+  const handleIndustriaChange = (val: Industria) => {
+    setIndustria(val);
+    const defaults = TERMINOLOGIA_POR_INDUSTRIA[val];
+    setTerminologiaEmpleado(defaults.empleado);
+    setTerminologiaServicio(defaults.servicio);
+    setTerminologiaCliente(defaults.cliente);
+  };
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -47,6 +72,10 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
           adminNombre,
           adminEmail,
           planId,
+          industria,
+          terminologiaEmpleado,
+          terminologiaServicio,
+          terminologiaCliente,
         }),
       });
 
@@ -206,6 +235,60 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
 
             <div>
               <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                Industria del Negocio
+              </label>
+              <select
+                value={industria}
+                onChange={(e) => handleIndustriaChange(e.target.value as Industria)}
+                className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {Object.entries(TERMINOLOGIA_POR_INDUSTRIA).map(([value, { label }]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Término: Empleado
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={terminologiaEmpleado}
+                  onChange={(e) => setTerminologiaEmpleado(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Término: Servicio
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={terminologiaServicio}
+                  onChange={(e) => setTerminologiaServicio(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                  Término: Cliente
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={terminologiaCliente}
+                  onChange={(e) => setTerminologiaCliente(e.target.value)}
+                  className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
                 Plan Inicial
               </label>
               <select
@@ -213,9 +296,9 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
                 onChange={(e) => setPlanId(e.target.value as any)}
                 className="w-full px-3 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="independiente">Plan Individual ($6/mo - Barbero Solo-preneur)</option>
-                <option value="basico">Plan Básico ($29/mo - Hasta 3 Barberos)</option>
-                <option value="premium">Plan Premium ($79/mo - Hasta 10 Barberos)</option>
+                <option value="independiente">Plan Individual ($6/mo - Empleado Solo-preneur)</option>
+                <option value="basico">Plan Básico ($29/mo - Hasta 3 Empleados)</option>
+                <option value="premium">Plan Premium ($79/mo - Hasta 10 Empleados)</option>
               </select>
             </div>
 

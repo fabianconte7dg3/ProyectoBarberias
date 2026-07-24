@@ -42,7 +42,7 @@ interface TenantSummary {
   adminEmail: string;
   adminNombre: string;
   createdAt: string;
-  totalBarberos: number;
+  totalEmpleados: number;
   totalCitasMes: number;
   totalFacturadoMes: number;
 }
@@ -424,7 +424,7 @@ export default function SuperAdminDashboard() {
                       {/* Columna 5: Métricas Mes */}
                       <td className="py-4 px-4 space-y-0.5">
                         <div className="font-bold text-white">${t.totalFacturadoMes.toFixed(2)}</div>
-                        <div className="text-[11px] text-slate-400">{t.totalCitasMes} citas · {t.totalBarberos} barberos</div>
+                        <div className="text-[11px] text-slate-400">{t.totalCitasMes} citas · {t.totalEmpleados} empleados</div>
                       </td>
 
                       {/* Columna 6: Acciones de Plataforma */}

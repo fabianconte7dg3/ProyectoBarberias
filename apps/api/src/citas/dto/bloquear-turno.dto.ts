@@ -2,7 +2,7 @@ import { IsUUID, IsDateString, IsString, IsOptional } from 'class-validator';
 
 export class BloquearTurnoDto {
   @IsUUID()
-  barberoId: string;
+  empleadoId: string;
 
   @IsDateString()
   inicio: string;

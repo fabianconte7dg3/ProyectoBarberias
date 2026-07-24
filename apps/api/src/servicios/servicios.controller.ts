@@ -21,13 +21,13 @@ export class ServiciosController {
     return this.serviciosService.create(dto);
   }
 
-  @Roles('admin', 'barbero', 'recepcion')
+  @Roles('admin', 'empleado', 'recepcion')
   @Get()
   findAll() {
     return this.serviciosService.findAll();
   }
 
-  @Roles('admin', 'barbero', 'recepcion')
+  @Roles('admin', 'empleado', 'recepcion')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.serviciosService.findOne(id);

@@ -42,7 +42,7 @@ interface UseAdminAuthOptions {
   /** El slug del tenant (para la redirección al login correcto). */
   tenantSlug: string;
   /** Rol requerido para acceder a la página. Si no coincide, redirige a /agenda. */
-  requiredRole?: 'admin' | 'barbero' | 'recepcion';
+  requiredRole?: 'admin' | 'empleado' | 'recepcion';
 }
 
 /**
@@ -80,7 +80,7 @@ export function useAdminAuth({
 
     // Validar que la cookie sigue siendo válida en el servidor.
     // Solo cerramos sesión en 401 explícito; ignoramos errores de red/CORS/500
-    // para no desconectar al barbero por problemas temporales o actividad en
+    // para no desconectar al empleado por problemas temporales o actividad en
     // otras pestañas del navegador.
     fetchApi('/auth/me')
       .catch((err: Error) => {

@@ -3,10 +3,10 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 
 export interface BookingState {
   servicioId?: string;
-  barberoId?: string | null;
+  empleadoId?: string | null;
   fecha?: string; // YYYY-MM-DD
   hora?: string; // HH:mm
-  setServicioYBarbero: (servicioId: string, barberoId: string | null) => void;
+  setServicioYEmpleado: (servicioId: string, empleadoId: string | null) => void;
   setFechaYHora: (fecha: string, hora: string) => void;
   reset: () => void;
 }
@@ -15,13 +15,13 @@ export const useBookingStore = create<BookingState>()(
   persist(
     (set) => ({
       servicioId: undefined,
-      barberoId: undefined,
+      empleadoId: undefined,
       fecha: undefined,
       hora: undefined,
       
-      setServicioYBarbero: (servicioId, barberoId) => set({ servicioId, barberoId }),
+      setServicioYEmpleado: (servicioId, empleadoId) => set({ servicioId, empleadoId }),
       setFechaYHora: (fecha, hora) => set({ fecha, hora }),
-      reset: () => set({ servicioId: undefined, barberoId: undefined, fecha: undefined, hora: undefined })
+      reset: () => set({ servicioId: undefined, empleadoId: undefined, fecha: undefined, hora: undefined })
     }),
     {
       name: 'booking-storage',

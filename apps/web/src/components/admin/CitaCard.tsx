@@ -8,8 +8,8 @@ export interface CitaAgenda {
   finEstimado: string;
   estado: 'programada' | 'en_curso' | 'completada' | 'cancelada' | 'ausente_strike';
   origen: 'web_cliente' | 'recepcion_walkin' | 'manual';
-  barberoId: string;
-  barberoNombre: string;
+  empleadoId: string;
+  empleadoNombre: string;
   clienteId: string;
   clienteNombre: string;
   clienteTelefono: string;

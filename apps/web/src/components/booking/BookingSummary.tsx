@@ -4,13 +4,13 @@ import { es } from 'date-fns/locale';
 
 interface Props {
   servicioNombre: string;
-  barberoNombre: string;
+  empleadoNombre: string;
   fecha: string; // 'yyyy-MM-dd'
   hora: string; // 'HH:mm'
   precio: string;
 }
 
-export function BookingSummary({ servicioNombre, barberoNombre, fecha, hora, precio }: Props) {
+export function BookingSummary({ servicioNombre, empleadoNombre, fecha, hora, precio }: Props) {
   const dateObj = parse(fecha, 'yyyy-MM-dd', new Date());
   const formattedDate = format(dateObj, "EEEE d 'de' MMMM", { locale: es });
   const timeObj = parse(hora, 'HH:mm', new Date());
@@ -51,8 +51,8 @@ export function BookingSummary({ servicioNombre, barberoNombre, fecha, hora, pre
         <div className="flex items-start gap-3 text-gray-600">
           <User className="w-5 h-5 mt-0.5 text-primary" />
           <div>
-            <p className="font-medium text-gray-900">{barberoNombre}</p>
-            <p className="text-sm text-gray-500">Barbero</p>
+            <p className="font-medium text-gray-900">{empleadoNombre}</p>
+            <p className="text-sm text-gray-500">Empleado</p>
           </div>
         </div>
       </div>

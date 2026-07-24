@@ -11,7 +11,7 @@ export interface Servicio {
   precioBase: string; 
 }
 
-export interface Barbero {
+export interface Empleado {
   id: string;
   nombre: string;
   fotoUrl?: string | null;
@@ -21,10 +21,10 @@ export interface Barbero {
 // Este schema asegura que no se pueda continuar sin datos válidos
 export const reservaSeleccionSchema = z.object({
   servicioId: z.string().uuid("Por favor selecciona un servicio."),
-  // barberoId puede ser null para la opción "Cualquier Barbero",
+  // empleadoId puede ser null para la opción "Cualquier Empleado",
   // lo que indica al backend que asigne según disponibilidad.
-  barberoId: z.string().uuid().nullable().refine(val => val !== undefined, {
-    message: "Por favor selecciona un barbero.",
+  empleadoId: z.string().uuid().nullable().refine(val => val !== undefined, {
+    message: "Por favor selecciona un empleado.",
   }),
 });
 

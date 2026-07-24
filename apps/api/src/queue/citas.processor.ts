@@ -48,7 +48,7 @@ export class CitasProcessor extends WorkerHost {
         where: eq(schema.citas.id, citaId),
         with: {
           cliente: true,
-          barbero: true,
+          empleado: true,
           servicio: true,
         },
       });
@@ -61,7 +61,7 @@ export class CitasProcessor extends WorkerHost {
 
     const fecha = new Date(result.inicioEstimado);
     const strHora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-    const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.barbero.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
+    const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.empleado.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
     
     if (result.cliente?.telefonoWhatsapp) {
       // Regla Antispam: Verificar que el cliente haya interactuado en las últimas 24h

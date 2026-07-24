@@ -8,7 +8,7 @@ export class CreateCitaDto {
 
   @IsUUID()
   @IsOptional()
-  barberoId?: string;
+  empleadoId?: string;
 
   @IsUUID()
   servicioId: string;

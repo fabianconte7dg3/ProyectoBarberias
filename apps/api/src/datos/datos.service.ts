@@ -224,7 +224,7 @@ export class DatosService {
       with: {
         cita: {
           with: {
-            barbero: true,
+            empleado: true,
             cliente: true,
             servicio: true,
           }
@@ -232,7 +232,7 @@ export class DatosService {
       }
     });
 
-    const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Barbero', 'Propina_Barbero', 'Barbero', 'Cliente_Tel'];
+    const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Barbero', 'Propina_Barbero', 'Empleado', 'Cliente_Tel'];
     const rows = [headers.join(',')];
 
     for (const tx of txs) {
@@ -243,7 +243,7 @@ export class DatosService {
         sanitizeCsvCell(tx.totalFacturado),
         sanitizeCsvCell(tx.comisionBarbero),
         sanitizeCsvCell(tx.propinaBarbero),
-        sanitizeCsvCell(tx.cita?.barbero?.nombreCompleto || 'Staff'),
+        sanitizeCsvCell(tx.cita?.empleado?.nombreCompleto || 'Staff'),
         sanitizeCsvCell(tx.cita?.cliente?.telefonoWhatsapp || 'Sin Teléfono'),
       ];
       rows.push(fila.join(','));
@@ -303,19 +303,19 @@ export class DatosService {
       with: {
         cita: {
           with: {
-            barbero: true,
+            empleado: true,
           }
         },
         detalles: true
       }
     });
 
-    // Agrupar por barbero usando la comisión congelada en detallesTransaccion
+    // Agrupar por empleado usando la comisión congelada en detallesTransaccion
     const nominaMap = new Map<string, { nombre: string; totalServicios: number; totalProductos: number; comisionAcumulada: number; propinas: number }>();
 
     for (const tx of txs) {
-      const bId = tx.cita?.barbero?.id;
-      const bNombre = tx.cita?.barbero?.nombreCompleto || 'Staff General';
+      const bId = tx.cita?.empleado?.id;
+      const bNombre = tx.cita?.empleado?.nombreCompleto || 'Staff General';
       if (!bId) continue;
 
       let entry = nominaMap.get(bId) || { nombre: bNombre, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
@@ -338,7 +338,7 @@ export class DatosService {
       nominaMap.set(bId, entry);
     }
 
-    const headers = ['Barbero', 'Facturado_Servicios', 'Facturado_Productos', 'Comision_Neto_Congelada', 'Propinas', 'Total_Pagar'];
+    const headers = ['Empleado', 'Facturado_Servicios', 'Facturado_Productos', 'Comision_Neto_Congelada', 'Propinas', 'Total_Pagar'];
     const rows = [headers.join(',')];
 
     for (const [_, data] of nominaMap.entries()) {

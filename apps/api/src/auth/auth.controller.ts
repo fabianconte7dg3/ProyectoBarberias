@@ -83,7 +83,7 @@ export class AuthController {
     };
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Get('me')
   getMe(@Req() req: Request) {
     return req.user;

@@ -33,11 +33,11 @@ export class CitasService {
 
     if (!servicio) throw new NotFoundException('Servicio no encontrado');
 
-    // Auto-resolver barberoId si no viene en el request (caso Solo-preneur).
-    // Se busca el único barbero activo del tenant; si hay más de uno y no se
+    // Auto-resolver empleadoId si no viene en el request (caso Solo-preneur).
+    // Se busca el único empleado activo del tenant; si hay más de uno y no se
     // especificó, se lanza un error descriptivo para que el frontend lo maneje.
-    let resolvedBarberoId = data.barberoId;
-    if (!resolvedBarberoId) {
+    let resolvedEmpleadoId = data.empleadoId;
+    if (!resolvedEmpleadoId) {
       const staff = await db
         .select({ id: usuarios.id })
         .from(usuarios)
@@ -47,11 +47,11 @@ export class CitasService {
         .limit(2);
 
       if (staff.length === 1) {
-        resolvedBarberoId = staff[0].id;
+        resolvedEmpleadoId = staff[0].id;
       } else if (staff.length > 1) {
-        throw new NotFoundException('Debes seleccionar un barbero para continuar con la reserva.');
+        throw new NotFoundException('Debes seleccionar un empleado para continuar con la reserva.');
       } else {
-        throw new NotFoundException('No hay barberos disponibles en esta barbería.');
+        throw new NotFoundException('No hay empleados disponibles en esta barbería.');
       }
     }
 
@@ -71,7 +71,7 @@ export class CitasService {
         .values({
           tenantId,
           clienteId: data.clienteId,
-          barberoId: resolvedBarberoId,
+          empleadoId: resolvedEmpleadoId,
           servicioId: data.servicioId,
           inicioEstimado: inicio,
           finEstimado: fin,
@@ -127,10 +127,10 @@ export class CitasService {
    * Bloqueo optimista (3 minutos).
    */
   async bloquearTurno(data: BloquearTurnoDto) {
-    // Es public, usamos SECURITY DEFINER para buscar el tenant del barbero
-    const result = await this.db.execute(sql`SELECT get_tenant_for_usuario(${data.barberoId}) as tenant_id`);
+    // Es public, usamos SECURITY DEFINER para buscar el tenant del empleado
+    const result = await this.db.execute(sql`SELECT get_tenant_for_usuario(${data.empleadoId}) as tenant_id`);
     const tenantId = result.rows[0]?.tenant_id as string | undefined;
-    if (!tenantId) throw new NotFoundException('Barbero no encontrado o inactivo');
+    if (!tenantId) throw new NotFoundException('Empleado no encontrado o inactivo');
 
     const expiraEn = new Date(Date.now() + 3 * 60000); // +3 minutos
 
@@ -147,7 +147,7 @@ export class CitasService {
           .insert(bloqueosTemporales)
           .values({
             tenantId: tenantId,
-            barberoId: data.barberoId,
+            empleadoId: data.empleadoId,
             inicio: new Date(data.inicio),
             fin: new Date(data.fin),
             tipo: 'lock_reserva',
@@ -171,7 +171,7 @@ export class CitasService {
   /**
    * Obtiene las citas de la agenda para una fecha dada, aplicando filtrado por rol y RLS.
    */
-  async obtenerCitasAgenda({ user, fechaStr, barberoId }: { user: any; fechaStr?: string; barberoId?: string }) {
+  async obtenerCitasAgenda({ user, fechaStr, empleadoId }: { user: any; fechaStr?: string; empleadoId?: string }) {
     const db = TenantContext.getDb();
 
     // Normalizar fecha (por defecto hoy)
@@ -184,11 +184,11 @@ export class CitasService {
       lte(citas.inicioEstimado, finDia),
     ];
 
-    // Regla de Autorización: Si es barbero, filtrar ESTRICTAMENTE por su id
-    if (user.rol === 'barbero') {
-      conditions.push(eq(citas.barberoId, user.userId));
-    } else if (barberoId) {
-      conditions.push(eq(citas.barberoId, barberoId));
+    // Regla de Autorización: Si es empleado, filtrar ESTRICTAMENTE por su id
+    if (user.rol === 'empleado') {
+      conditions.push(eq(citas.empleadoId, user.userId));
+    } else if (empleadoId) {
+      conditions.push(eq(citas.empleadoId, empleadoId));
     }
 
     const listaCitas = await db
@@ -198,8 +198,8 @@ export class CitasService {
         finEstimado: citas.finEstimado,
         estado: citas.estado,
         origen: citas.origen,
-        barberoId: citas.barberoId,
-        barberoNombre: usuarios.nombreCompleto,
+        empleadoId: citas.empleadoId,
+        empleadoNombre: usuarios.nombreCompleto,
         clienteId: citas.clienteId,
         clienteNombre: clientes.nombreCompleto,
         clienteTelefono: clientes.telefonoWhatsapp,
@@ -209,7 +209,7 @@ export class CitasService {
         servicioDuracion: servicios.duracionMinutos,
       })
       .from(citas)
-      .leftJoin(usuarios, eq(citas.barberoId, usuarios.id))
+      .leftJoin(usuarios, eq(citas.empleadoId, usuarios.id))
       .leftJoin(clientes, eq(citas.clienteId, clientes.id))
       .leftJoin(servicios, eq(citas.servicioId, servicios.id))
       .where(and(...conditions))
@@ -224,12 +224,12 @@ export class CitasService {
   async cambiarEstado(citaId: string, nuevoEstado: typeof citas.$inferInsert.estado, user?: any) {
     const db = TenantContext.getDb();
 
-    // 1. Validar propiedad si es un barbero
-    if (user && user.rol === 'barbero') {
-      const [existente] = await db.select({ barberoId: citas.barberoId }).from(citas).where(eq(citas.id, citaId));
+    // 1. Validar propiedad si es un empleado
+    if (user && user.rol === 'empleado') {
+      const [existente] = await db.select({ empleadoId: citas.empleadoId }).from(citas).where(eq(citas.id, citaId));
       if (!existente) throw new NotFoundException('Cita no encontrada');
-      if (existente.barberoId !== user.userId) {
-        throw new ForbiddenException('No tienes permisos para modificar las citas de otro barbero.');
+      if (existente.empleadoId !== user.userId) {
+        throw new ForbiddenException('No tienes permisos para modificar las citas de otro empleado.');
       }
     }
 

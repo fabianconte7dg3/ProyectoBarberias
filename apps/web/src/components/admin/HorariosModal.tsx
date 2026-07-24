@@ -4,8 +4,8 @@ import { fetchApi } from '@/lib/api';
 
 interface HorariosModalProps {
   isOpen: boolean;
-  barberoId: string;
-  barberoNombre: string;
+  empleadoId: string;
+  empleadoNombre: string;
   onClose: () => void;
 }
 
@@ -38,7 +38,7 @@ interface BloqueoItem {
   notas?: string;
 }
 
-export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: HorariosModalProps) {
+export function HorariosModal({ isOpen, empleadoId, empleadoNombre, onClose }: HorariosModalProps) {
   const [activeTab, setActiveTab] = useState<'semanal' | 'bloqueos'>('semanal');
   const [dias, setDias] = useState<Record<DiaSemana, DiaState>>({
     lunes: { diaSemana: 'lunes', activo: true, horaInicio: '09:00', horaFin: '19:00', horaAlmuerzoInicio: '13:00', horaAlmuerzoFin: '14:00' },
@@ -63,10 +63,10 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
   const [bloqueoNotas, setBloqueoNotas] = useState('');
 
   useEffect(() => {
-    if (isOpen && barberoId) {
+    if (isOpen && empleadoId) {
       loadHorarioAndBloqueos();
     }
-  }, [isOpen, barberoId]);
+  }, [isOpen, empleadoId]);
 
   const loadHorarioAndBloqueos = async () => {
     setLoading(true);
@@ -74,8 +74,8 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
     setSuccessMsg('');
     try {
       const [resHorarios, resBloqueos] = await Promise.all([
-        fetchApi<any[]>(`/horarios/barbero/${barberoId}`),
-        fetchApi<any[]>(`/horarios/bloqueos/${barberoId}`),
+        fetchApi<any[]>(`/horarios/empleado/${empleadoId}`),
+        fetchApi<any[]>(`/horarios/bloqueos/${empleadoId}`),
       ]);
 
       if (resHorarios && resHorarios.length > 0) {
@@ -105,7 +105,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
 
       setBloqueos(resBloqueos || []);
     } catch (err: any) {
-      console.error('Error cargando horario de barbero:', err);
+      console.error('Error cargando horario de empleado:', err);
       setError(err.message || 'Error al cargar horario.');
     } finally {
       setLoading(false);
@@ -145,7 +145,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
           horaAlmuerzoFin: d.horaAlmuerzoFin || undefined,
         }));
 
-      await fetchApi(`/horarios/barbero/${barberoId}`, {
+      await fetchApi(`/horarios/empleado/${empleadoId}`, {
         method: 'POST',
         body: JSON.stringify({ dias: diasActivos }),
       });
@@ -174,7 +174,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
       await fetchApi('/horarios/bloqueos', {
         method: 'POST',
         body: JSON.stringify({
-          barberoId,
+          empleadoId,
           inicio: new Date(bloqueoInicio).toISOString(),
           fin: new Date(bloqueoFin).toISOString(),
           tipo: bloqueoTipo,
@@ -203,7 +203,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
           <div className="flex items-center gap-2 font-bold text-base">
             <Clock size={20} className="text-primary" />
-            <span>Configuración de Horario: <strong>{barberoNombre}</strong></span>
+            <span>Configuración de Horario: <strong>{empleadoNombre}</strong></span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
             <X size={20} />
@@ -258,7 +258,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
           {activeTab === 'semanal' && (
             <form onSubmit={handleSaveHorarioSemanal} className="space-y-4">
               <p className="text-xs text-muted-foreground">
-                Define los días laborables, el rango de horas de atención y el receso de almuerzo para {barberoNombre}.
+                Define los días laborables, el rango de horas de atención y el receso de almuerzo para {empleadoNombre}.
               </p>
 
               <div className="space-y-2.5">
@@ -444,7 +444,7 @@ export function HorariosModal({ isOpen, barberoId, barberoNombre, onClose }: Hor
 
                   {bloqueos.length === 0 && (
                     <p className="text-xs text-muted-foreground italic py-3 text-center">
-                      No hay bloqueos temporales vigentes para este barbero.
+                      No hay bloqueos temporales vigentes para este empleado.
                     </p>
                   )}
                 </div>

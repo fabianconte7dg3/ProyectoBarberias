@@ -41,6 +41,8 @@ docs/
 - [Infraestructura Híbrida](./02-arquitectura-y-db/Infraestructura_Hibrida.md) — Despliegue en VPS y contenedores.
 - [Stack Web](./02-arquitectura-y-db/Stack_Web.md) — Tecnologías clave (NestJS, Next.js, BullMQ, Tailwind).
 - [Escalabilidad y Crecimiento](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md) — Estrategia de escalado.
+- [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`.
+- [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend + SuperAdmin conectado a industria/terminología.
 
 ### 📍 [03. Integraciones Externas](./03-integraciones/)
 - [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC.

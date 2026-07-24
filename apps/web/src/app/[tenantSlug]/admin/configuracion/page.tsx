@@ -23,7 +23,7 @@ interface UsuarioStaff {
   id: string;
   nombreCompleto: string;
   email?: string;
-  rol: 'admin' | 'barbero' | 'recepcion';
+  rol: 'admin' | 'empleado' | 'recepcion';
   porcentajeComision?: string;
   porcentajeComisionProducto?: string;
   activo: boolean;
@@ -49,7 +49,7 @@ interface BloqueoHistorial {
   inicio: string;
   fin: string;
   notas?: string;
-  barbero?: {
+  empleado?: {
     nombreCompleto: string;
     rol: string;
   };
@@ -83,7 +83,7 @@ export default function AdminConfiguracionPage() {
   const [editingComisionUserId, setEditingComisionUserId] = useState<string | null>(null);
   const [comisionInput, setComisionInput] = useState<string>('');
   const [comisionProductoInput, setComisionProductoInput] = useState<string>('0');
-  const [horariosModalBarbero, setHorariosModalBarbero] = useState<{ id: string; nombre: string } | null>(null);
+  const [horariosModalEmpleado, setHorariosModalEmpleado] = useState<{ id: string; nombre: string } | null>(null);
 
   useAdminAuth({ tenantSlug, requiredRole: 'admin' });
 
@@ -159,7 +159,7 @@ export default function AdminConfiguracionPage() {
     }
   };
 
-  // 3. Actualizar comisiones (Servicios & Productos) de un barbero
+  // 3. Actualizar comisiones (Servicios & Productos) de un empleado
   const handleSaveComision = async (usuarioId: string) => {
     const valServicio = parseFloat(comisionInput);
     const valProducto = parseFloat(comisionProductoInput || '0');
@@ -432,7 +432,7 @@ export default function AdminConfiguracionPage() {
               <div>
                 <h2 className="text-base font-bold">Equipo de Staff & Configuración de Comisiones</h2>
                 <p className="text-xs text-muted-foreground">
-                  Configura comisiones independientes para servicios de corte y venta de productos por barbero.
+                  Configura comisiones independientes para servicios de corte y venta de productos por empleado.
                 </p>
               </div>
             </div>
@@ -455,7 +455,7 @@ export default function AdminConfiguracionPage() {
                   </div>
                 </div>
 
-                {u.rol === 'barbero' && (
+                {u.rol === 'empleado' && (
                   <div className="flex items-center gap-3">
                     {editingComisionUserId === u.id ? (
                       <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 bg-secondary/40 p-2.5 rounded-xl border border-border">
@@ -532,7 +532,7 @@ export default function AdminConfiguracionPage() {
                         </button>
 
                         <button
-                          onClick={() => setHorariosModalBarbero({ id: u.id, nombre: u.nombreCompleto })}
+                          onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
                           className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-secondary hover:bg-secondary/80 border border-border text-foreground rounded-lg transition-colors"
                           title="Configurar Horarios y Vacaciones"
                         >
@@ -574,7 +574,7 @@ export default function AdminConfiguracionPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border uppercase text-muted-foreground font-semibold">
-                  <th className="py-2.5 px-3">Barbero</th>
+                  <th className="py-2.5 px-3">Empleado</th>
                   <th className="py-2.5 px-3">Tipo Permiso</th>
                   <th className="py-2.5 px-3">Período Otorgado</th>
                   <th className="py-2.5 px-3 text-center">Estado</th>
@@ -596,7 +596,7 @@ export default function AdminConfiguracionPage() {
                   return (
                     <tr key={b.id} className="hover:bg-secondary/40 transition-colors">
                       <td className="py-3 px-3 font-bold text-foreground">
-                        {b.barbero?.nombreCompleto || 'Barbero Staff'}
+                        {b.empleado?.nombreCompleto || 'Empleado Staff'}
                       </td>
                       <td className="py-3 px-3 uppercase font-mono font-bold text-[11px] text-primary">
                         {b.tipo}
@@ -705,13 +705,13 @@ export default function AdminConfiguracionPage() {
 
       </main>
 
-      {/* Modal Configuración Horario Barbero */}
-      {horariosModalBarbero && (
+      {/* Modal Configuración Horario Empleado */}
+      {horariosModalEmpleado && (
         <HorariosModal
-          isOpen={!!horariosModalBarbero}
-          barberoId={horariosModalBarbero.id}
-          barberoNombre={horariosModalBarbero.nombre}
-          onClose={() => setHorariosModalBarbero(null)}
+          isOpen={!!horariosModalEmpleado}
+          empleadoId={horariosModalEmpleado.id}
+          empleadoNombre={horariosModalEmpleado.nombre}
+          onClose={() => setHorariosModalEmpleado(null)}
         />
       )}
     </div>

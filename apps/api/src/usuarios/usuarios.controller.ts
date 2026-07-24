@@ -46,13 +46,13 @@ export class UsuariosController {
     return this.usuariosService.updateComision(id, dto.porcentajeComision, dto.porcentajeComisionProducto, req.user.userId, ip, userAgent);
   }
 
-  @Roles('admin', 'barbero', 'recepcion')
+  @Roles('admin', 'empleado', 'recepcion')
   @Get()
   findAll() {
     return this.usuariosService.findAll();
   }
 
-  @Roles('admin', 'barbero', 'recepcion')
+  @Roles('admin', 'empleado', 'recepcion')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.usuariosService.findOne(id);

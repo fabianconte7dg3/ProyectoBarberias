@@ -48,7 +48,7 @@ export function AdminHeader({
   const navLinks = [
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isAdmin ? [
-      { label: 'Barberos', href: `/${tenantSlug}/admin/barberos`, icon: Users },
+      { label: 'Empleados', href: `/${tenantSlug}/admin/empleados`, icon: Users },
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },
@@ -157,7 +157,7 @@ export function AdminHeader({
             <span>{copiedLink ? '¡Copiado!' : 'Copiar Link'}</span>
           </button>
 
-          {/* Botón Mi Desempeño (Para Barbero / Recepción) */}
+          {/* Botón Mi Desempeño (Para Empleado / Recepción) */}
           {onMiDesempenoClick && (
             <button
               onClick={onMiDesempenoClick}

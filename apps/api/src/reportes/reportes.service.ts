@@ -27,7 +27,7 @@ export class ReportesService {
       with: {
         cita: {
           with: {
-            barbero: true,
+            empleado: true,
             servicio: true,
             cliente: true,
           }
@@ -119,16 +119,16 @@ export class ReportesService {
       }
     }
 
-    // 2. Rendimiento y Comisiones por Barbero
-    const staffBarberos = await db.query.usuarios.findMany({
+    // 2. Rendimiento y Comisiones por Empleado
+    const staffEmpleados = await db.query.usuarios.findMany({
       where: and(
         eq(usuarios.tenantId, tenantId),
-        inArray(usuarios.rol, ['barbero', 'admin'])
+        inArray(usuarios.rol, ['empleado', 'admin'])
       )
     });
 
-    const rendimientoBarberosMap = new Map<string, {
-      barberoId: string;
+    const rendimientoEmpleadosMap = new Map<string, {
+      empleadoId: string;
       nombreCompleto: string;
       porcentajeComision: number;
       porcentajeComisionProducto: number;
@@ -140,9 +140,9 @@ export class ReportesService {
       propinaTotal: number;
     }>();
 
-    for (const b of staffBarberos) {
-      rendimientoBarberosMap.set(b.id, {
-        barberoId: b.id,
+    for (const b of staffEmpleados) {
+      rendimientoEmpleadosMap.set(b.id, {
+        empleadoId: b.id,
         nombreCompleto: b.nombreCompleto,
         porcentajeComision: Number(b.porcentajeComision || 0),
         porcentajeComisionProducto: Number(b.porcentajeComisionProducto || 0),
@@ -156,15 +156,15 @@ export class ReportesService {
     }
 
     for (const tx of txsPeriodo) {
-      const bId = tx.cita?.barbero?.id;
+      const bId = tx.cita?.empleado?.id;
       if (bId) {
-        let stats = rendimientoBarberosMap.get(bId);
-        if (!stats && tx.cita?.barbero) {
+        let stats = rendimientoEmpleadosMap.get(bId);
+        if (!stats && tx.cita?.empleado) {
           stats = {
-            barberoId: bId,
-            nombreCompleto: tx.cita.barbero.nombreCompleto,
-            porcentajeComision: Number(tx.cita.barbero.porcentajeComision || 0),
-            porcentajeComisionProducto: Number(tx.cita.barbero.porcentajeComisionProducto || 0),
+            empleadoId: bId,
+            nombreCompleto: tx.cita.empleado.nombreCompleto,
+            porcentajeComision: Number(tx.cita.empleado.porcentajeComision || 0),
+            porcentajeComisionProducto: Number(tx.cita.empleado.porcentajeComisionProducto || 0),
             totalCitas: 0,
             facturadoServicios: 0,
             facturadoProductos: 0,
@@ -172,7 +172,7 @@ export class ReportesService {
             comisionTotal: 0,
             propinaTotal: 0,
           };
-          rendimientoBarberosMap.set(bId, stats);
+          rendimientoEmpleadosMap.set(bId, stats);
         }
 
         if (stats) {
@@ -252,7 +252,7 @@ export class ReportesService {
         stockActual: p.stockActual,
         stockMinimo: p.stockMinimo,
       })),
-      rendimientoBarberos: Array.from(rendimientoBarberosMap.values()),
+      rendimientoEmpleados: Array.from(rendimientoEmpleadosMap.values()),
       clientesStrikes: clientesStrikes.map((c: any) => ({
         id: c.id,
         nombreCompleto: c.nombreCompleto,
@@ -262,23 +262,23 @@ export class ReportesService {
     };
   }
 
-  async getMiDesempeno(barberoId: string, desdeStr?: string, hastaStr?: string) {
+  async getMiDesempeno(empleadoId: string, desdeStr?: string, hastaStr?: string) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
     let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : subDays(new Date(), 30);
     let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : endOfDay(new Date());
 
-    const [barbero] = await db.query.usuarios.findMany({
+    const [empleado] = await db.query.usuarios.findMany({
       where: and(
         eq(usuarios.tenantId, tenantId),
-        eq(usuarios.id, barberoId)
+        eq(usuarios.id, empleadoId)
       )
     });
 
-    if (!barbero) {
+    if (!empleado) {
       return {
-        barberoId: barberoId || '',
+        empleadoId: empleadoId || '',
         nombreCompleto: 'Staff',
         porcentajeComision: 0,
         porcentajeComisionProducto: 0,
@@ -293,7 +293,7 @@ export class ReportesService {
       };
     }
 
-    const txsBarbero = await db.query.transacciones.findMany({
+    const txsEmpleado = await db.query.transacciones.findMany({
       where: and(
         eq(transacciones.tenantId, tenantId),
         gte(transacciones.createdAt, desde),
@@ -302,7 +302,7 @@ export class ReportesService {
       with: {
         cita: {
           with: {
-            barbero: true,
+            empleado: true,
             servicio: true,
             cliente: true,
           }
@@ -316,8 +316,8 @@ export class ReportesService {
       }
     });
 
-    // Filtrar solo transacciones donde el barbero es el asignado
-    const txsFiltradas = txsBarbero.filter((tx: any) => tx.cita?.barberoId === barberoId);
+    // Filtrar solo transacciones donde el empleado es el asignado
+    const txsFiltradas = txsEmpleado.filter((tx: any) => tx.cita?.empleadoId === empleadoId);
 
     let totalCitas = 0;
     let totalFacturado = 0;
@@ -337,7 +337,7 @@ export class ReportesService {
       curr.setDate(curr.getDate() + 1);
     }
 
-    const esSoloPreneurODueno = barbero.rol === 'admin' || Number(barbero.porcentajeComision || 0) === 0;
+    const esSoloPreneurODueno = empleado.rol === 'admin' || Number(empleado.porcentajeComision || 0) === 0;
 
     for (const tx of txsFiltradas) {
       const montoTx = Number(tx.totalFacturado || 0);
@@ -377,10 +377,10 @@ export class ReportesService {
       .sort((a, b) => b.fecha.localeCompare(a.fecha)); // Más reciente primero
 
     return {
-      barberoId: barbero.id,
-      nombreCompleto: barbero.nombreCompleto,
-      porcentajeComision: Number(barbero.porcentajeComision || 0),
-      porcentajeComisionProducto: Number(barbero.porcentajeComisionProducto || 0),
+      empleadoId: empleado.id,
+      nombreCompleto: empleado.nombreCompleto,
+      porcentajeComision: Number(empleado.porcentajeComision || 0),
+      porcentajeComisionProducto: Number(empleado.porcentajeComisionProducto || 0),
       rangoFechas: { desde, hasta },
       totalCitas,
       totalFacturado,

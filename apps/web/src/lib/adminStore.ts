@@ -4,7 +4,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 export interface AdminUser {
   id: string;
   nombreCompleto: string;
-  rol: 'admin' | 'barbero' | 'recepcion';
+  rol: 'admin' | 'empleado' | 'recepcion';
   // El token JWT NO se guarda aquí, vive en la cookie httpOnly
 }
 
@@ -31,7 +31,7 @@ export const useAdminStore = create<AdminState>()(
     {
       name: 'admin-storage',
       // localStorage es seguro para estos datos no sensibles.
-      // Si un XSS lo lee, solo sabe el nombre del barbero, pero no puede suplantarlo
+      // Si un XSS lo lee, solo sabe el nombre del empleado, pero no puede suplantarlo
       // porque no tiene la cookie httpOnly.
       storage: createJSONStorage(() => localStorage),
     }

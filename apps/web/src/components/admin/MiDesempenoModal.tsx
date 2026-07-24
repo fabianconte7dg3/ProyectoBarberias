@@ -3,7 +3,7 @@ import { X, Award, DollarSign, Scissors, ShoppingBag, RefreshCw, Calendar, Check
 import { fetchApi } from '@/lib/api';
 
 interface MiDesempenoData {
-  barberoId: string;
+  empleadoId: string;
   nombreCompleto: string;
   porcentajeComision: number;
   porcentajeComisionProducto: number;

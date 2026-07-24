@@ -41,19 +41,19 @@ export class ClientesController {
     });
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Post()
   create(@Body() dto: CreateClienteDto) {
     return this.clientesService.create(dto);
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Get()
   findAll(@Query('q') q?: string) {
     return this.clientesService.findAll(q);
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.clientesService.findOne(id);

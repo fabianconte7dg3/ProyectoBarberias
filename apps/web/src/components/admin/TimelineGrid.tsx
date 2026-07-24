@@ -3,14 +3,14 @@ import { isSameDay } from 'date-fns';
 import { CitaAgenda, CitaCard } from './CitaCard';
 import { User } from 'lucide-react';
 
-interface BarberoColumn {
+interface EmpleadoColumn {
   id: string;
   nombreCompleto: string;
   rol: string;
 }
 
 interface TimelineGridProps {
-  barberos: BarberoColumn[];
+  empleados: EmpleadoColumn[];
   citas: CitaAgenda[];
   selectedDate: Date;
   currentUserId: string;
@@ -24,7 +24,7 @@ const END_HOUR = 20;  // 08:00 PM
 const TOTAL_HOURS = END_HOUR - START_HOUR;
 
 export function TimelineGrid({
-  barberos,
+  empleados,
   citas,
   selectedDate,
   currentUserId,
@@ -87,24 +87,24 @@ export function TimelineGrid({
 
   return (
     <div ref={scrollContainerRef} className="w-full flex-1 overflow-x-auto overflow-y-auto bg-background p-4">
-      <div className={`${barberos.length === 1 ? 'w-full max-w-3xl mx-auto' : 'min-w-[768px]'} flex flex-col border border-border rounded-2xl bg-card shadow-sm overflow-hidden`}>
+      <div className={`${empleados.length === 1 ? 'w-full max-w-3xl mx-auto' : 'min-w-[768px]'} flex flex-col border border-border rounded-2xl bg-card shadow-sm overflow-hidden`}>
         
-        {/* Header con Nombres de Barberos */}
+        {/* Header con Nombres de Empleados */}
         <div className="flex border-b border-border bg-secondary/40 sticky top-0 z-20">
           {/* Columna de Horas Vacía */}
           <div className="w-16 sm:w-20 shrink-0 border-r border-border p-3 flex items-center justify-center font-semibold text-xs text-muted-foreground">
             Hora
           </div>
 
-          {/* Barberos Columns Headers */}
+          {/* Empleados Columns Headers */}
           <div className="flex-1 grid grid-flow-col auto-cols-fr divide-x divide-border">
-            {barberos.map((barbero) => (
-              <div key={barbero.id} className="p-3 flex items-center gap-2 justify-center">
+            {empleados.map((empleado) => (
+              <div key={empleado.id} className="p-3 flex items-center gap-2 justify-center">
                 <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs">
                   <User size={14} />
                 </div>
-                <span className="font-semibold text-sm truncate">{barbero.nombreCompleto}</span>
-                {barbero.id === currentUserId && (
+                <span className="font-semibold text-sm truncate">{empleado.nombreCompleto}</span>
+                {empleado.id === currentUserId && (
                   <span className="text-[10px] bg-primary text-primary-foreground font-bold px-1.5 py-0.5 rounded-full">
                     Tú
                   </span>
@@ -129,7 +129,7 @@ export function TimelineGrid({
             ))}
           </div>
 
-          {/* Columnas de los Barberos (Donde caen las Citas) */}
+          {/* Columnas de los Empleados (Donde caen las Citas) */}
           <div className="flex-1 grid grid-flow-col auto-cols-fr divide-x divide-border relative">
             
             {/* Fondo de líneas horizontales para las horas */}
@@ -150,16 +150,16 @@ export function TimelineGrid({
               </div>
             )}
 
-            {/* Columnas por Barbero */}
-            {barberos.map((barbero) => {
-              const citasBarbero = citas.filter((c) => c.barberoId === barbero.id);
-              const esMiCita = barbero.id === currentUserId;
+            {/* Columnas por Empleado */}
+            {empleados.map((empleado) => {
+              const citasEmpleado = citas.filter((c) => c.empleadoId === empleado.id);
+              const esMiCita = empleado.id === currentUserId;
               const canEdit = currentUserRole === 'admin' || currentUserRole === 'recepcion' || esMiCita;
               const HOUR_HEIGHT = 112; // 112px por cada bloque de 1 hora (h-28)
 
               return (
-                <div key={barbero.id} className="relative h-[1344px] p-1">
-                  {citasBarbero.map((cita) => {
+                <div key={empleado.id} className="relative h-[1344px] p-1">
+                  {citasEmpleado.map((cita) => {
                     const inicioDate = new Date(cita.inicioEstimado);
                     const finDate = new Date(cita.finEstimado);
 

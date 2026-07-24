@@ -1,13 +1,13 @@
 'use client';
-import { Barbero } from '@/lib/types';
+import { Empleado } from '@/lib/types';
 import { Check, Scissors, Sparkles } from 'lucide-react';
 
 interface Props {
-  barbero: Barbero;
+  empleado: Empleado;
 }
 
-export function BarberProfileCard({ barbero }: Props) {
-  const inicial = barbero.nombre.charAt(0).toUpperCase();
+export function BarberProfileCard({ empleado }: Props) {
+  const inicial = empleado.nombre.charAt(0).toUpperCase();
 
   return (
     <div className="space-y-4 mt-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -26,11 +26,11 @@ export function BarberProfileCard({ barbero }: Props) {
         {/* Glow de fondo discreto */}
         <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-primary/10 rounded-full blur-xl pointer-events-none"></div>
 
-        {/* Avatar del Barbero */}
+        {/* Avatar del Empleado */}
         <div className="relative shrink-0">
           <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground font-extrabold text-2xl sm:text-3xl flex items-center justify-center shadow-md border border-primary-foreground/20">
-            {barbero.fotoUrl ? (
-              <img src={barbero.fotoUrl} alt={barbero.nombre} className="w-full h-full rounded-2xl object-cover" />
+            {empleado.fotoUrl ? (
+              <img src={empleado.fotoUrl} alt={empleado.nombre} className="w-full h-full rounded-2xl object-cover" />
             ) : (
               <span>{inicial}</span>
             )}
@@ -40,13 +40,13 @@ export function BarberProfileCard({ barbero }: Props) {
           </div>
         </div>
 
-        {/* Detalles del Barbero */}
+        {/* Detalles del Empleado */}
         <div className="space-y-1 min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <h3 className="text-base sm:text-lg font-extrabold text-foreground truncate">{barbero.nombre}</h3>
+            <h3 className="text-base sm:text-lg font-extrabold text-foreground truncate">{empleado.nombre}</h3>
             <Sparkles size={14} className="text-amber-500 shrink-0" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">Barbero Profesional & Especialista</p>
+          <p className="text-xs text-muted-foreground font-medium">Empleado Profesional & Especialista</p>
           <div className="pt-1 flex items-center gap-2">
             <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md inline-block">
               ✔ Seleccionado automáticamente

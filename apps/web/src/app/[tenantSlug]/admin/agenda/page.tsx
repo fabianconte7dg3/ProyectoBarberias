@@ -15,7 +15,7 @@ import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
 import { VentaMostradorModal } from '@/components/admin/VentaMostradorModal';
 import { User, Users, Filter, LayoutGrid, List, Plus } from 'lucide-react';
 
-interface Barbero {
+interface Empleado {
   id: string;
   nombreCompleto: string;
   rol: string;
@@ -30,7 +30,7 @@ export default function AdminAgendaPage() {
   const logout = useAdminStore((state) => state.logout);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [barberos, setBarberos] = useState<Barbero[]>([]);
+  const [empleados, setEmpleados] = useState<Empleado[]>([]);
   const [citas, setCitas] = useState<CitaAgenda[]>([]);
   const [loading, setLoading] = useState(true);
   const [isWalkInOpen, setIsWalkInOpen] = useState(false);
@@ -42,8 +42,8 @@ export default function AdminAgendaPage() {
   const [soloMisCitas, setSoloMisCitas] = useState(false);
   const [tipoVistaGrid, setTipoVistaGrid] = useState<'parrilla' | 'lista'>('parrilla');
 
-  // Detección de Solo-preneur (1 solo profesional activo con rol admin/barbero)
-  const activeBarbers = barberos.filter((b) => b.rol === 'barbero' || b.rol === 'admin');
+  // Detección de Solo-preneur (1 solo profesional activo con rol admin/empleado)
+  const activeBarbers = empleados.filter((b) => b.rol === 'empleado' || b.rol === 'admin');
   const isSoloPreneur = activeBarbers.length === 1;
 
   // 1. Verificar sesión activa contra el backend.
@@ -66,7 +66,7 @@ export default function AdminAgendaPage() {
 
     // Validar que la cookie sigue siendo válida. Si el servidor devuelve 401
     // (expiró la sesión real), cerramos sesión. Si hay un error de red/CORS,
-    // lo ignoramos silenciosamente para no desconectar al barbero por problemas
+    // lo ignoramos silenciosamente para no desconectar al empleado por problemas
     // temporales de conectividad o actividad en otras pestañas.
     fetchApi('/auth/me')
       .catch((err: Error) => {
@@ -81,23 +81,23 @@ export default function AdminAgendaPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantSlug]);
 
-  // 2. Cargar lista de barberos
+  // 2. Cargar lista de empleados
   useEffect(() => {
-    async function loadBarberos() {
+    async function loadEmpleados() {
       try {
-        const data = await fetchApi<Barbero[]>(`/auth/staff/${tenantSlug}`);
-        setBarberos(data || []);
+        const data = await fetchApi<Empleado[]>(`/auth/staff/${tenantSlug}`);
+        setEmpleados(data || []);
         
         // Si es solo-preneur, iniciar por defecto en la vista limpia de Lista de Turnos
-        const staffBarbers = (data || []).filter((b) => b.rol === 'barbero' || b.rol === 'admin');
+        const staffBarbers = (data || []).filter((b) => b.rol === 'empleado' || b.rol === 'admin');
         if (staffBarbers.length === 1) {
           setTipoVistaGrid('lista');
         }
       } catch (err) {
-        console.error('Error cargando barberos:', err);
+        console.error('Error cargando empleados:', err);
       }
     }
-    loadBarberos();
+    loadEmpleados();
   }, [tenantSlug]);
 
   // 3. Cargar citas con soporte de Polling de 30s + Page Visibility API
@@ -182,14 +182,14 @@ export default function AdminAgendaPage() {
     );
   }
 
-  // Filtrar columnas de barberos
-  const barberosFiltrados = (currentUser.rol === 'barbero' && soloMisCitas)
-    ? barberos.filter((b) => b.id === currentUser.id)
-    : barberos;
+  // Filtrar columnas de empleados
+  const empleadosFiltrados = (currentUser.rol === 'empleado' && soloMisCitas)
+    ? empleados.filter((b) => b.id === currentUser.id)
+    : empleados;
 
   // Filtrar citas si está en "Solo Mis Citas"
-  const citasFiltradas = (currentUser.rol === 'barbero' && soloMisCitas)
-    ? citas.filter((c) => c.barberoId === currentUser.id)
+  const citasFiltradas = (currentUser.rol === 'empleado' && soloMisCitas)
+    ? citas.filter((c) => c.empleadoId === currentUser.id)
     : citas;
 
   // Encontrar próxima cita pendiente/en curso del día
@@ -257,7 +257,7 @@ export default function AdminAgendaPage() {
       <div className="bg-card/40 border-b border-border px-4 py-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         
         {/* Filtro Equipo (Solo se muestra si hay MÁS de 1 profesional en el local) */}
-        {!isSoloPreneur && currentUser.rol === 'barbero' ? (
+        {!isSoloPreneur && currentUser.rol === 'empleado' ? (
           <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border">
             <button
               onClick={() => setSoloMisCitas(true)}
@@ -324,7 +324,7 @@ export default function AdminAgendaPage() {
       <main className="flex-1 flex flex-col">
         {tipoVistaGrid === 'parrilla' ? (
           <TimelineGrid
-            barberos={barberosFiltrados}
+            empleados={empleadosFiltrados}
             citas={citasFiltradas}
             selectedDate={selectedDate}
             currentUserId={currentUser.id}
@@ -334,7 +334,7 @@ export default function AdminAgendaPage() {
           />
         ) : (
           <ListaTurnosView
-            barberos={barberosFiltrados}
+            empleados={empleadosFiltrados}
             citas={citasFiltradas}
             selectedDate={selectedDate}
             currentUserId={currentUser.id}
@@ -351,7 +351,7 @@ export default function AdminAgendaPage() {
         isOpen={isWalkInOpen}
         onClose={() => setIsWalkInOpen(false)}
         onSuccess={loadCitas}
-        barberos={barberos}
+        empleados={empleados}
         initialDate={selectedDate}
       />
 
@@ -363,7 +363,7 @@ export default function AdminAgendaPage() {
         onSuccess={loadCitas}
       />
 
-      {/* Modal de Desempeño y Comisiones del Barbero */}
+      {/* Modal de Desempeño y Comisiones del Empleado */}
       <MiDesempenoModal
         isOpen={isMiDesempenoOpen}
         onClose={() => setIsMiDesempenoOpen(false)}

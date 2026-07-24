@@ -4,7 +4,7 @@ import { UserCircle2 } from 'lucide-react';
 interface StaffMember {
   id: string;
   nombreCompleto: string;
-  rol: 'admin' | 'barbero' | 'recepcion';
+  rol: 'admin' | 'empleado' | 'recepcion';
 }
 
 interface ProfileSelectorProps {

@@ -42,7 +42,7 @@ export class HorariosService {
     }
   }
 
-  async setHorarioSemanal(barberoId: string, dto: UpsertHorarioSemanalDto) {
+  async setHorarioSemanal(empleadoId: string, dto: UpsertHorarioSemanalDto) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
@@ -55,7 +55,7 @@ export class HorariosService {
       await tx.delete(schema.horarios).where(
         and(
           eq(schema.horarios.tenantId, tenantId),
-          eq(schema.horarios.barberoId, barberoId)
+          eq(schema.horarios.empleadoId, empleadoId)
         )
       );
 
@@ -63,7 +63,7 @@ export class HorariosService {
       if (dto.dias.length > 0) {
         const valores = dto.dias.map(d => ({
           tenantId,
-          barberoId,
+          empleadoId,
           diaSemana: d.diaSemana,
           horaInicio: d.horaInicio,
           horaFin: d.horaFin,
@@ -78,11 +78,11 @@ export class HorariosService {
     });
   }
 
-  async getHorarioSemanal(barberoId: string) {
+  async getHorarioSemanal(empleadoId: string) {
     const db = TenantContext.getDb();
     return db.query.horarios.findMany({
       where: and(
-        eq(schema.horarios.barberoId, barberoId),
+        eq(schema.horarios.empleadoId, empleadoId),
         eq(schema.horarios.activo, true)
       ),
     });
@@ -101,7 +101,7 @@ export class HorariosService {
 
     const [bloqueo] = await db.insert(schema.bloqueosTemporales).values({
       tenantId,
-      barberoId: dto.barberoId,
+      empleadoId: dto.empleadoId,
       inicio,
       fin,
       tipo: dto.tipo,
@@ -113,13 +113,13 @@ export class HorariosService {
     return bloqueo;
   }
 
-  async getBloqueosVigentes(barberoId: string) {
+  async getBloqueosVigentes(empleadoId: string) {
     const db = TenantContext.getDb();
     const ahora = new Date();
 
     return db.query.bloqueosTemporales.findMany({
       where: and(
-        eq(schema.bloqueosTemporales.barberoId, barberoId),
+        eq(schema.bloqueosTemporales.empleadoId, empleadoId),
         or(
           gt(schema.bloqueosTemporales.expiraEn, ahora),
           isNull(schema.bloqueosTemporales.expiraEn)
@@ -138,7 +138,7 @@ export class HorariosService {
       orderBy: [desc(schema.bloqueosTemporales.inicio)],
       limit: 100,
       with: {
-        barbero: {
+        empleado: {
           columns: {
             id: true,
             nombreCompleto: true,
@@ -149,9 +149,9 @@ export class HorariosService {
     });
   }
 
-  async getDisponibilidad(barberoId: string, fechaYYYYMMDD: string) {
-    // Buscar tenant del barbero con SECURITY DEFINER
-    const res = await this.db.execute(sql`SELECT get_tenant_for_usuario(${barberoId}) as tenant_id`);
+  async getDisponibilidad(empleadoId: string, fechaYYYYMMDD: string) {
+    // Buscar tenant del empleado con SECURITY DEFINER
+    const res = await this.db.execute(sql`SELECT get_tenant_for_usuario(${empleadoId}) as tenant_id`);
     const tenantId = res.rows[0]?.tenant_id as string;
     
     if (!tenantId) {
@@ -167,7 +167,7 @@ export class HorariosService {
 
       const [horario] = await db.query.horarios.findMany({
         where: and(
-          eq(schema.horarios.barberoId, barberoId),
+          eq(schema.horarios.empleadoId, empleadoId),
           eq(schema.horarios.diaSemana, diaString),
           eq(schema.horarios.activo, true)
         ),
@@ -184,7 +184,7 @@ export class HorariosService {
 
       const citasHoy = await db.query.citas.findMany({
         where: and(
-          eq(schema.citas.barberoId, barberoId),
+          eq(schema.citas.empleadoId, empleadoId),
           gt(schema.citas.finEstimado, inicioDia),
           lte(schema.citas.inicioEstimado, finDia),
           or(
@@ -198,7 +198,7 @@ export class HorariosService {
 
       const bloqueosHoy = await db.query.bloqueosTemporales.findMany({
         where: and(
-          eq(schema.bloqueosTemporales.barberoId, barberoId),
+          eq(schema.bloqueosTemporales.empleadoId, empleadoId),
           gt(schema.bloqueosTemporales.fin, inicioDia),
           lte(schema.bloqueosTemporales.inicio, finDia),
           or(

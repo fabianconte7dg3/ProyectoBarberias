@@ -2,14 +2,14 @@ import React from 'react';
 import { CitaAgenda, CitaCard } from './CitaCard';
 import { Clock, Scissors, User, Calendar } from 'lucide-react';
 
-interface BarberoColumn {
+interface EmpleadoColumn {
   id: string;
   nombreCompleto: string;
   rol: string;
 }
 
 interface ListaTurnosViewProps {
-  barberos: BarberoColumn[];
+  empleados: EmpleadoColumn[];
   citas: CitaAgenda[];
   selectedDate: Date;
   currentUserId: string;
@@ -19,7 +19,7 @@ interface ListaTurnosViewProps {
 }
 
 export function ListaTurnosView({
-  barberos,
+  empleados,
   citas,
   selectedDate,
   currentUserId,
@@ -61,7 +61,7 @@ export function ListaTurnosView({
       {citasOrdenadas.length > 0 ? (
         <div className="space-y-3">
           {citasOrdenadas.map((cita) => {
-            const esMiCita = cita.barberoId === currentUserId;
+            const esMiCita = cita.empleadoId === currentUserId;
             const canEdit = currentUserRole === 'admin' || currentUserRole === 'recepcion' || esMiCita;
 
             return (

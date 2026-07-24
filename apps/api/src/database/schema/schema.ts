@@ -22,7 +22,7 @@ import { relations, sql } from 'drizzle-orm';
 
 export const planSuscripcionEnum = pgEnum('plan_suscripcion', ['independiente', 'basico', 'premium']);
 export const estadoBarberiaEnum = pgEnum('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
-export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'barbero', 'recepcion']);
+export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'empleado', 'recepcion']);
 export const diaSemanaEnum = pgEnum('dia_semana', [
   'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
@@ -35,7 +35,7 @@ export const estadoDgiEnum = pgEnum('estado_dgi', ['pendiente', 'procesando', 'e
 export const tipoBloqueoEnum = pgEnum('tipo_bloqueo', [
   'almuerzo_dinamico', 'walk_in', 'lock_reserva', 'emergencia', 'extension_turno',
 ]);
-export const origenBloqueoEnum = pgEnum('origen_bloqueo', ['sistema', 'barbero', 'admin']);
+export const origenBloqueoEnum = pgEnum('origen_bloqueo', ['sistema', 'empleado', 'admin']);
 export const accionAuditEnum = pgEnum('accion_audit', [
   'login', 'logout', 'cobro', 'update_intento', 'delete_intento',
   'kill_switch', 'cambio_comision', 'cierre_emergencia', 'conciliacion_yappy',
@@ -55,6 +55,10 @@ export const estadoTrabajoImportacionEnum = pgEnum('estado_trabajo_importacion',
   'procesando', 'completado', 'completado_con_errores', 'fallido',
 ]);
 export const tipoItemEnum = pgEnum('tipo_item', ['servicio', 'producto']);
+export const industriaNegocioEnum = pgEnum('industria_negocio', [
+  'barberia', 'salon_belleza', 'spa_masajes', 'veterinaria',
+  'clinica_medica', 'taller_mecanico', 'espacio_alquiler', 'otro',
+]);
 
 // ============================================================================
 // TABLA 1: barberias (tenant maestro — NO lleva tenant_id, ES el tenant)
@@ -64,7 +68,7 @@ export const planes = pgTable('planes', {
   id: varchar('id', { length: 50 }).primaryKey(),
   nombre: varchar('nombre', { length: 255 }).notNull(),
   precioMensual: decimal('precio_mensual', { precision: 10, scale: 2 }).notNull(),
-  limiteBarberos: integer('limite_barberos').notNull().default(3),
+  limiteEmpleados: integer('limite_empleados').notNull().default(3),
   activo: boolean('activo').notNull().default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -82,11 +86,17 @@ export const barberias = pgTable('barberias', {
   bloqueadoPorPlataforma: boolean('bloqueado_por_plataforma').notNull().default(false),
   colorPrimario: varchar('color_primario', { length: 7 }),
   logoUrl: text('logo_url'),
+  // Multi-industria (Fase 1 — ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Schema.md):
+  // controla la terminología dinámica del frontend sin tocar nombres de columnas existentes.
+  industria: industriaNegocioEnum('industria').notNull().default('barberia'),
+  terminologiaEmpleado: varchar('terminologia_empleado', { length: 100 }).notNull().default('Barbero'),
+  terminologiaServicio: varchar('terminologia_servicio', { length: 100 }).notNull().default('Servicio'),
+  terminologiaCliente: varchar('terminologia_cliente', { length: 100 }).notNull().default('Cliente'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
 // ============================================================================
-// TABLA 2: usuarios (barberos y admins)
+// TABLA 2: usuarios (empleados y admins)
 // ============================================================================
 
 export const usuarios = pgTable('usuarios', {
@@ -147,7 +157,7 @@ export const clientes = pgTable('clientes', {
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
   telefonoWhatsapp: varchar('telefono_whatsapp', { length: 30 }).notNull(),
   nombreCompleto: varchar('nombre_completo', { length: 255 }),
-  barberoFrecuenteId: uuid('barbero_frecuente_id').references(() => usuarios.id),
+  empleadoFrecuenteId: uuid('empleado_frecuente_id').references(() => usuarios.id),
   notasPreferencia: text('notas_preferencia'),
   totalAsistencias: integer('total_asistencias').notNull().default(0),
   ausenciasStrikes: integer('ausencias_strikes').notNull().default(0),
@@ -156,6 +166,9 @@ export const clientes = pgTable('clientes', {
   bloqueado: boolean('bloqueado').notNull().default(false),
   aceptaMarketing: boolean('acepta_marketing').notNull().default(false),
   ultimoMensajeRecibidoAt: timestamp('ultimo_mensaje_recibido_at', { withTimezone: true }),
+  // Multi-industria: campos estructurados específicos del vertical (ej. nombre_mascota/raza
+  // en veterinarias, alergias en clínicas) sin normalizar una tabla nueva por industria.
+  datosAdicionales: jsonb('datos_adicionales').notNull().default({}),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   telefonoPorTenantUnico: unique().on(table.tenantId, table.telefonoWhatsapp),
@@ -169,7 +182,7 @@ export const citas = pgTable('citas', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
   clienteId: uuid('cliente_id').references(() => clientes.id),
-  barberoId: uuid('barbero_id').notNull().references(() => usuarios.id),
+  empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id),
   servicioId: uuid('servicio_id').notNull().references(() => servicios.id),
   inicioEstimado: timestamp('inicio_estimado', { withTimezone: true }).notNull(),
   finEstimado: timestamp('fin_estimado', { withTimezone: true }).notNull(),
@@ -180,9 +193,12 @@ export const citas = pgTable('citas', {
   idempotencyKey: varchar('idempotency_key', { length: 255 }).notNull().unique(),
   tokenCliente: varchar('token_cliente', { length: 255 }),
   tokenExpiraEn: timestamp('token_expira_en', { withTimezone: true }),
+  // Multi-industria: nota por visita (ej. evolución clínica), distinta de
+  // clientes.notasPreferencia que vive a nivel de perfil, no por cita puntual.
+  notas: text('notas'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
-  idxCitasTenantBarberoInicio: index('idx_citas_tenant_barbero_inicio').on(table.tenantId, table.barberoId, table.inicioEstimado),
+  idxCitasTenantEmpleadoInicio: index('idx_citas_tenant_empleado_inicio').on(table.tenantId, table.empleadoId, table.inicioEstimado),
 }));
 
 // ============================================================================
@@ -232,13 +248,13 @@ export const detallesTransaccion = pgTable('detalles_transaccion', {
 });
 
 // ============================================================================
-// TABLA 7: horarios (disponibilidad base por barbero)
+// TABLA 7: horarios (disponibilidad base por empleado)
 // ============================================================================
 
 export const horarios = pgTable('horarios', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
-  barberoId: uuid('barbero_id').notNull().references(() => usuarios.id),
+  empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id),
   diaSemana: diaSemanaEnum('dia_semana').notNull(),
   horaInicio: time('hora_inicio').notNull(),
   horaFin: time('hora_fin').notNull(),
@@ -254,7 +270,7 @@ export const horarios = pgTable('horarios', {
 export const bloqueosTemporales = pgTable('bloqueos_temporales', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
-  barberoId: uuid('barbero_id').notNull().references(() => usuarios.id),
+  empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id),
   inicio: timestamp('inicio', { withTimezone: true }).notNull(),
   fin: timestamp('fin', { withTimezone: true }).notNull(),
   tipo: tipoBloqueoEnum('tipo').notNull(),
@@ -357,7 +373,7 @@ export const barberiasRelations = relations(barberias, ({ many, one }) => ({
 export const usuariosRelations = relations(usuarios, ({ one, many }) => ({
   barberia: one(barberias, { fields: [usuarios.tenantId], references: [barberias.id] }),
   horarios: many(horarios),
-  citasComoBarbero: many(citas),
+  citasComoEmpleado: many(citas),
 }));
 
 export const productosRelations = relations(productos, ({ one, many }) => ({
@@ -367,14 +383,14 @@ export const productosRelations = relations(productos, ({ one, many }) => ({
 
 export const clientesRelations = relations(clientes, ({ one, many }) => ({
   barberia: one(barberias, { fields: [clientes.tenantId], references: [barberias.id] }),
-  barberoFrecuente: one(usuarios, { fields: [clientes.barberoFrecuenteId], references: [usuarios.id] }),
+  empleadoFrecuente: one(usuarios, { fields: [clientes.empleadoFrecuenteId], references: [usuarios.id] }),
   citas: many(citas),
 }));
 
 export const citasRelations = relations(citas, ({ one }) => ({
   barberia: one(barberias, { fields: [citas.tenantId], references: [barberias.id] }),
   cliente: one(clientes, { fields: [citas.clienteId], references: [clientes.id] }),
-  barbero: one(usuarios, { fields: [citas.barberoId], references: [usuarios.id] }),
+  empleado: one(usuarios, { fields: [citas.empleadoId], references: [usuarios.id] }),
   servicio: one(servicios, { fields: [citas.servicioId], references: [servicios.id] }),
   transaccion: one(transacciones, { fields: [citas.id], references: [transacciones.citaId] }),
 }));
@@ -392,7 +408,7 @@ export const auditLogsRelations = relations(auditLogs, ({ one }) => ({
 
 export const bloqueosTemporalesRelations = relations(bloqueosTemporales, ({ one }) => ({
   barberia: one(barberias, { fields: [bloqueosTemporales.tenantId], references: [barberias.id] }),
-  barbero: one(usuarios, { fields: [bloqueosTemporales.barberoId], references: [usuarios.id] }),
+  empleado: one(usuarios, { fields: [bloqueosTemporales.empleadoId], references: [usuarios.id] }),
 }));
 
 export const detallesTransaccionRelations = relations(detallesTransaccion, ({ one }) => ({

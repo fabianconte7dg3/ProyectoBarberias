@@ -14,8 +14,8 @@ import {
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar, CartesianGrid 
 } from 'recharts';
 
-interface RendimientoBarbero {
-  barberoId: string;
+interface RendimientoEmpleado {
+  empleadoId: string;
   nombreCompleto: string;
   porcentajeComision: number;
   porcentajeComisionProducto?: number;
@@ -89,7 +89,7 @@ interface DashboardData {
   comparativaProductosStock?: ComparativaProductoStock[];
   productosStockBajoCount?: number;
   productosStockBajoList?: ProductoStockBajo[];
-  rendimientoBarberos: RendimientoBarbero[];
+  rendimientoEmpleados: RendimientoEmpleado[];
   clientesStrikes: ClienteStrike[];
 }
 
@@ -747,13 +747,13 @@ export default function AdminDashboardPage() {
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
                   <Layers size={18} className="text-blue-500" />
-                  <span>Producción por Barbero: Servicios vs Retail ($)</span>
+                  <span>Producción por Empleado: Servicios vs Retail ($)</span>
                 </h2>
 
                 <div className="h-64 w-full pt-2">
-                  {data?.rendimientoBarberos && data.rendimientoBarberos.length > 0 ? (
+                  {data?.rendimientoEmpleados && data.rendimientoEmpleados.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.rendimientoBarberos} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <BarChart data={data.rendimientoEmpleados} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                         <XAxis dataKey="nombreCompleto" stroke="#888888" fontSize={11} tickLine={false} />
                         <YAxis stroke="#888888" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v}`} />
@@ -771,17 +771,17 @@ export default function AdminDashboardPage() {
                 </div>
               </div>
 
-              {/* Gráfico 2 Staff: Citas Atendidas por Barbero */}
+              {/* Gráfico 2 Staff: Citas Atendidas por Empleado */}
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
                   <Users size={18} className="text-purple-500" />
-                  <span>Citas Atendidas por Barbero</span>
+                  <span>Citas Atendidas por Empleado</span>
                 </h2>
 
                 <div className="h-64 w-full pt-2">
-                  {data?.rendimientoBarberos && data.rendimientoBarberos.length > 0 ? (
+                  {data?.rendimientoEmpleados && data.rendimientoEmpleados.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={data.rendimientoBarberos} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                      <BarChart data={data.rendimientoEmpleados} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                         <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                         <XAxis dataKey="nombreCompleto" stroke="#888888" fontSize={11} tickLine={false} />
                         <YAxis stroke="#888888" fontSize={11} tickLine={false} />
@@ -810,7 +810,7 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
-                      <th className="py-2.5 px-3">Barbero</th>
+                      <th className="py-2.5 px-3">Empleado</th>
                       <th className="py-2.5 px-3 text-center">Citas</th>
                       <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
                       <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
@@ -819,8 +819,8 @@ export default function AdminDashboardPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {(data?.rendimientoBarberos || []).map((b) => (
-                      <tr key={b.barberoId} className="hover:bg-secondary/40 transition-colors">
+                    {(data?.rendimientoEmpleados || []).map((b) => (
+                      <tr key={b.empleadoId} className="hover:bg-secondary/40 transition-colors">
                         <td className="py-3 px-3 font-semibold text-foreground">{b.nombreCompleto}</td>
                         <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
                         <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
@@ -838,7 +838,7 @@ export default function AdminDashboardPage() {
                         </td>
                       </tr>
                     ))}
-                    {(!data?.rendimientoBarberos || data.rendimientoBarberos.length === 0) && (
+                    {(!data?.rendimientoEmpleados || data.rendimientoEmpleados.length === 0) && (
                       <tr>
                         <td colSpan={6} className="py-6 text-center text-xs text-muted-foreground space-y-1">
                           <p className="font-semibold text-sm text-foreground">No hay registros de comisiones en el período seleccionado.</p>

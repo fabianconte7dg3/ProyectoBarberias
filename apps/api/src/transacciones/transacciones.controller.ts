@@ -14,7 +14,7 @@ export class TransaccionesController {
   constructor(private readonly transaccionesService: TransaccionesService) {}
 
   @Post('citas/:id/cobrar')
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   async cobrarCita(
     @Request() req: any,
     @Param('id') id: string,
@@ -29,7 +29,7 @@ export class TransaccionesController {
   }
 
   @Post('transacciones/mostrador')
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   async ventaMostrador(
     @Request() req: any,
     @Body() cobrarCitaDto: CobrarCitaDto,

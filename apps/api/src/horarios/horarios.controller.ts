@@ -11,19 +11,19 @@ export class HorariosController {
 
   // En Hito 3, edición restringida exclusivamente a admin
   @Roles('admin')
-  @Post('barbero/:barberoId')
+  @Post('empleado/:empleadoId')
   setHorarioSemanal(
-    @Param('barberoId') barberoId: string, 
+    @Param('empleadoId') empleadoId: string, 
     @Body() dto: UpsertHorarioSemanalDto
   ) {
-    return this.horariosService.setHorarioSemanal(barberoId, dto);
+    return this.horariosService.setHorarioSemanal(empleadoId, dto);
   }
 
   // Lectura abierta para todo el staff
-  @Roles('admin', 'barbero', 'recepcion')
-  @Get('barbero/:barberoId')
-  getHorarioSemanal(@Param('barberoId') barberoId: string) {
-    return this.horariosService.getHorarioSemanal(barberoId);
+  @Roles('admin', 'empleado', 'recepcion')
+  @Get('empleado/:empleadoId')
+  getHorarioSemanal(@Param('empleadoId') empleadoId: string) {
+    return this.horariosService.getHorarioSemanal(empleadoId);
   }
 
   // En Hito 3, bloqueos administrativos solo por admin
@@ -34,10 +34,10 @@ export class HorariosController {
   }
 
   // Lectura abierta
-  @Roles('admin', 'barbero', 'recepcion')
-  @Get('bloqueos/:barberoId')
-  getBloqueos(@Param('barberoId') barberoId: string) {
-    return this.horariosService.getBloqueosVigentes(barberoId);
+  @Roles('admin', 'empleado', 'recepcion')
+  @Get('bloqueos/:empleadoId')
+  getBloqueos(@Param('empleadoId') empleadoId: string) {
+    return this.horariosService.getBloqueosVigentes(empleadoId);
   }
 
   @Roles('admin', 'recepcion')
@@ -49,9 +49,9 @@ export class HorariosController {
   @Public() // Para que el widget del frontend o WhatsApp consulte libremente
   @Get('disponibilidad')
   getDisponibilidad(
-    @Query('barberoId') barberoId: string,
+    @Query('empleadoId') empleadoId: string,
     @Query('fecha') fecha: string,
   ) {
-    return this.horariosService.getDisponibilidad(barberoId, fecha);
+    return this.horariosService.getDisponibilidad(empleadoId, fecha);
   }
 }

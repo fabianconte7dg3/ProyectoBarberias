@@ -17,14 +17,14 @@ export class ProductosController {
   }
 
   @Get()
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   async findAll(@Request() req: any) {
     const userRole = req.user?.rol;
     return this.productosService.findAll(userRole);
   }
 
   @Get(':id')
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   async findOne(@Param('id') id: string, @Request() req: any) {
     const userRole = req.user?.rol;
     return this.productosService.findOne(id, userRole);

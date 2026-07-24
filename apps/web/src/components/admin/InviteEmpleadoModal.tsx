@@ -2,16 +2,16 @@ import React, { useState } from 'react';
 import { X, UserPlus, CheckCircle2, AlertTriangle, Copy, Check } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 
-interface InviteBarberoModalProps {
+interface InviteEmpleadoModalProps {
   isOpen: boolean;
   tenantSlug: string;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: InviteBarberoModalProps) {
+export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: InviteEmpleadoModalProps) {
   const [nombreCompleto, setNombreCompleto] = useState('');
-  const [rol, setRol] = useState<'barbero' | 'recepcion'>('barbero');
+  const [rol, setRol] = useState<'empleado' | 'recepcion'>('empleado');
   const [porcentajeComision, setPorcentajeComision] = useState('60');
   const [porcentajeComisionProducto, setPorcentajeComisionProducto] = useState('0');
 
@@ -35,8 +35,8 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
         body: JSON.stringify({
           nombreCompleto,
           rol,
-          porcentajeComision: rol === 'barbero' ? parseFloat(porcentajeComision) : undefined,
-          porcentajeComisionProducto: rol === 'barbero' ? parseFloat(porcentajeComisionProducto) : undefined,
+          porcentajeComision: rol === 'empleado' ? parseFloat(porcentajeComision) : undefined,
+          porcentajeComisionProducto: rol === 'empleado' ? parseFloat(porcentajeComisionProducto) : undefined,
         }),
       });
 
@@ -68,7 +68,7 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
           <div className="flex items-center gap-2 font-bold text-base">
             <UserPlus size={20} className="text-primary" />
-            <span>Invitar Nuevo Barbero / Staff</span>
+            <span>Invitar Nuevo Empleado / Staff</span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
             <X size={20} />
@@ -106,15 +106,15 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
                 </label>
                 <select
                   value={rol}
-                  onChange={(e) => setRol(e.target.value as 'barbero' | 'recepcion')}
+                  onChange={(e) => setRol(e.target.value as 'empleado' | 'recepcion')}
                   className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-semibold"
                 >
-                  <option value="barbero">Barbero (Cortes, Servicios & Productos)</option>
+                  <option value="empleado">Empleado (Cortes, Servicios & Productos)</option>
                   <option value="recepcion">Recepción / Caja</option>
                 </select>
               </div>
 
-              {rol === 'barbero' && (
+              {rol === 'empleado' && (
                 <div className="grid grid-cols-2 gap-3 bg-secondary/30 p-3 rounded-xl border border-border">
                   <div>
                     <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
@@ -173,7 +173,7 @@ export function InviteBarberoModal({ isOpen, tenantSlug, onClose, onSuccess }: I
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Envía este enlace de activación al barbero para que ingrese y configure su PIN de acceso de 4 dígitos:
+                Envía este enlace de activación al empleado para que ingrese y configure su PIN de acceso de 4 dígitos:
               </p>
 
               <div className="p-3 bg-secondary border border-border rounded-xl font-mono text-[11px] break-all select-all">

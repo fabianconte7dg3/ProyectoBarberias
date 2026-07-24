@@ -46,7 +46,7 @@ export class CitasController {
     });
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Post()
   async crearCita(
     @Body() data: CreateCitaDto,
@@ -65,18 +65,18 @@ export class CitasController {
     return result.cita;
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Get()
   async getCitas(
     @Req() req: Request,
     @Query('fecha') fechaStr?: string,
-    @Query('barberoId') barberoId?: string,
+    @Query('empleadoId') empleadoId?: string,
   ) {
     const user = (req as any).user;
     return this.citasService.obtenerCitasAgenda({
       user,
       fechaStr,
-      barberoId,
+      empleadoId,
     });
   }
 
@@ -86,7 +86,7 @@ export class CitasController {
     return this.citasService.bloquearTurno(data);
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Patch(':id/estado')
   async cambiarEstado(
     @Param('id') id: string,
@@ -96,7 +96,7 @@ export class CitasController {
     return this.citasService.cambiarEstado(id, dto.estado, (req as any).user);
   }
 
-  @Roles('admin', 'recepcion', 'barbero')
+  @Roles('admin', 'recepcion', 'empleado')
   @Post(':id/cancelar')
   async cancelarCita(@Param('id') id: string) {
     return this.citasService.cancelarPorCliente(id);

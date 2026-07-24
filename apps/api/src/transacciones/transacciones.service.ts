@@ -42,7 +42,7 @@ export class TransaccionesService {
     }
 
     let cita: any = null;
-    let barbero: any = null;
+    let empleado: any = null;
     let subtotalServicio = 0;
     let comisionServicio = 0;
 
@@ -51,7 +51,7 @@ export class TransaccionesService {
       cita = await db.query.citas.findFirst({
         where: eq(citas.id, citaId),
         with: {
-          barbero: true,
+          empleado: true,
           servicio: true,
         },
       });
@@ -60,8 +60,8 @@ export class TransaccionesService {
         throw new NotFoundException('Cita no encontrada');
       }
 
-      if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
-        throw new ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+      if (user && user.rol === 'empleado' && cita.empleadoId !== user.userId) {
+        throw new ForbiddenException('No tienes permisos para cobrar citas asignadas a otro empleado.');
       }
 
       if (cita.estado === 'completada' || cita.estado === 'cancelada') {
@@ -76,14 +76,14 @@ export class TransaccionesService {
         throw new ConflictException('Ya existe un cobro registrado para esta cita.');
       }
 
-      barbero = cita.barbero;
+      empleado = cita.empleado;
       subtotalServicio = Number(cita.servicio.precioBase || 0);
-      const pctServicio = Number(barbero.porcentajeComision || 0);
+      const pctServicio = Number(empleado.porcentajeComision || 0);
       comisionServicio = (subtotalServicio * pctServicio) / 100;
-    } else if (dto.barberoId) {
-      // Venta directa de mostrador sin cita: Obtener barbero vendedor si fue asignado
-      barbero = await db.query.usuarios.findFirst({
-        where: eq(usuarios.id, dto.barberoId),
+    } else if (dto.empleadoId) {
+      // Venta directa de mostrador sin cita: Obtener empleado vendedor si fue asignado
+      empleado = await db.query.usuarios.findFirst({
+        where: eq(usuarios.id, dto.empleadoId),
       });
     }
 
@@ -119,7 +119,7 @@ export class TransaccionesService {
 
         const precioUnitario = Number(prod.precio_venta || prod.precioVenta || 0);
         const subtotalProd = precioUnitario * item.cantidad;
-        const pctComisionProd = Number(barbero?.porcentajeComisionProducto || 0);
+        const pctComisionProd = Number(empleado?.porcentajeComisionProducto || 0);
         const comisionProd = (subtotalProd * pctComisionProd) / 100;
 
         subtotalProductosTotal += subtotalProd;
@@ -141,7 +141,7 @@ export class TransaccionesService {
     }
 
     const totalFacturado = subtotalServicio + subtotalProductosTotal;
-    const comisionBarberoTotal = comisionServicio + comisionProductosTotal;
+    const comisionEmpleadoTotal = comisionServicio + comisionProductosTotal;
     const yappyOrderId = dto.metodoPago === 'yappy' ? crypto.randomBytes(6).toString('hex') : null;
 
     // 4. Insertar Transacción Maestro
@@ -152,7 +152,7 @@ export class TransaccionesService {
       metodoPago: dto.metodoPago,
       totalFacturado: totalFacturado.toFixed(2),
       montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toFixed(2) : null,
-      comisionBarbero: comisionBarberoTotal.toFixed(2),
+      comisionBarbero: comisionEmpleadoTotal.toFixed(2),
       propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toFixed(2) : '0.00',
       rucCliente: dto.rucCliente,
       nombreFiscalCliente: dto.nombreFiscalCliente,
@@ -212,7 +212,7 @@ export class TransaccionesService {
       with: {
         cita: {
           with: {
-            barbero: true,
+            empleado: true,
             servicio: true,
             cliente: true,
           }
