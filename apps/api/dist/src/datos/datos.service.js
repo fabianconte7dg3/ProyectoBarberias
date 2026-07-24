@@ -175,14 +175,14 @@ let DatosService = class DatosService {
             with: {
                 cita: {
                     with: {
-                        barbero: true,
+                        empleado: true,
                         cliente: true,
                         servicio: true,
                     }
                 }
             }
         });
-        const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Barbero', 'Propina_Barbero', 'Barbero', 'Cliente_Tel'];
+        const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Barbero', 'Propina_Barbero', 'Empleado', 'Cliente_Tel'];
         const rows = [headers.join(',')];
         for (const tx of txs) {
             const fila = [
@@ -192,7 +192,7 @@ let DatosService = class DatosService {
                 (0, datos_utils_1.sanitizeCsvCell)(tx.totalFacturado),
                 (0, datos_utils_1.sanitizeCsvCell)(tx.comisionBarbero),
                 (0, datos_utils_1.sanitizeCsvCell)(tx.propinaBarbero),
-                (0, datos_utils_1.sanitizeCsvCell)(tx.cita?.barbero?.nombreCompleto || 'Staff'),
+                (0, datos_utils_1.sanitizeCsvCell)(tx.cita?.empleado?.nombreCompleto || 'Staff'),
                 (0, datos_utils_1.sanitizeCsvCell)(tx.cita?.cliente?.telefonoWhatsapp || 'Sin Teléfono'),
             ];
             rows.push(fila.join(','));
@@ -230,7 +230,7 @@ let DatosService = class DatosService {
             with: {
                 cita: {
                     with: {
-                        barbero: true,
+                        empleado: true,
                     }
                 },
                 detalles: true
@@ -238,8 +238,8 @@ let DatosService = class DatosService {
         });
         const nominaMap = new Map();
         for (const tx of txs) {
-            const bId = tx.cita?.barbero?.id;
-            const bNombre = tx.cita?.barbero?.nombreCompleto || 'Staff General';
+            const bId = tx.cita?.empleado?.id;
+            const bNombre = tx.cita?.empleado?.nombreCompleto || 'Staff General';
             if (!bId)
                 continue;
             let entry = nominaMap.get(bId) || { nombre: bNombre, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
@@ -261,7 +261,7 @@ let DatosService = class DatosService {
             }
             nominaMap.set(bId, entry);
         }
-        const headers = ['Barbero', 'Facturado_Servicios', 'Facturado_Productos', 'Comision_Neto_Congelada', 'Propinas', 'Total_Pagar'];
+        const headers = ['Empleado', 'Facturado_Servicios', 'Facturado_Productos', 'Comision_Neto_Congelada', 'Propinas', 'Total_Pagar'];
         const rows = [headers.join(',')];
         for (const [_, data] of nominaMap.entries()) {
             const totalPagar = data.comisionAcumulada + data.propinas;

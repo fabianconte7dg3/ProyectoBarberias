@@ -15,7 +15,7 @@ class UpdateClienteDto {
     nombreCompleto;
     emailFacturacion;
     notasPreferencia;
-    barberoFrecuenteId;
+    empleadoFrecuenteId;
     bloqueado;
     aceptaMarketing;
 }
@@ -41,7 +41,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
-], UpdateClienteDto.prototype, "barberoFrecuenteId", void 0);
+], UpdateClienteDto.prototype, "empleadoFrecuenteId", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),

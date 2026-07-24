@@ -120,7 +120,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "loginStaff", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Get)('me'),
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),

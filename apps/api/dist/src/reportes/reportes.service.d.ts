@@ -35,8 +35,8 @@ export declare class ReportesService {
         comparativaProductosStock: any;
         productosStockBajoCount: any;
         productosStockBajoList: any;
-        rendimientoBarberos: {
-            barberoId: string;
+        rendimientoEmpleados: {
+            empleadoId: string;
             nombreCompleto: string;
             porcentajeComision: number;
             porcentajeComisionProducto: number;
@@ -49,8 +49,8 @@ export declare class ReportesService {
         }[];
         clientesStrikes: any;
     }>;
-    getMiDesempeno(barberoId: string, desdeStr?: string, hastaStr?: string): Promise<{
-        barberoId: any;
+    getMiDesempeno(empleadoId: string, desdeStr?: string, hastaStr?: string): Promise<{
+        empleadoId: any;
         nombreCompleto: any;
         porcentajeComision: number;
         porcentajeComisionProducto: number;

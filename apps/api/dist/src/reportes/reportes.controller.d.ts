@@ -38,8 +38,8 @@ export declare class ReportesController {
         comparativaProductosStock: any;
         productosStockBajoCount: any;
         productosStockBajoList: any;
-        rendimientoBarberos: {
-            barberoId: string;
+        rendimientoEmpleados: {
+            empleadoId: string;
             nombreCompleto: string;
             porcentajeComision: number;
             porcentajeComisionProducto: number;
@@ -53,7 +53,7 @@ export declare class ReportesController {
         clientesStrikes: any;
     }>;
     getMiDesempeno(req: any, desde?: string, hasta?: string): Promise<{
-        barberoId: any;
+        empleadoId: any;
         nombreCompleto: any;
         porcentajeComision: number;
         porcentajeComisionProducto: number;

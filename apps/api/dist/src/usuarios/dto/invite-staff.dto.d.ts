@@ -1,6 +1,6 @@
 export declare class InviteStaffDto {
     nombreCompleto: string;
-    rol: 'barbero' | 'recepcion';
+    rol: 'empleado' | 'recepcion';
     porcentajeComision?: number;
     porcentajeComisionProducto?: number;
 }

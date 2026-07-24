@@ -44,7 +44,7 @@ __decorate([
 ], ReportesController.prototype, "getDashboardMetrics", null);
 __decorate([
     (0, common_1.Get)('mi-desempeno'),
-    (0, roles_decorator_1.Roles)('barbero', 'admin', 'recepcion'),
+    (0, roles_decorator_1.Roles)('empleado', 'admin', 'recepcion'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('desde')),
     __param(2, (0, common_1.Query)('hasta')),

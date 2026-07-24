@@ -148,7 +148,7 @@ let AuthService = class AuthService {
         }
         const staffMembers = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
             return await tx.query.usuarios.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion']), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true)),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['empleado', 'recepcion', 'admin']), (0, drizzle_orm_1.eq)(schema.usuarios.activo, true)),
                 columns: {
                     id: true,
                     nombreCompleto: true,
@@ -175,7 +175,7 @@ let AuthService = class AuthService {
         }
         const matchedStaffArray = await (0, tenant_utils_1.runInTenantScope)(this.db, barberia.id, async (tx) => {
             return await tx.query.usuarios.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.id, dto.userId), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['barbero', 'recepcion'])),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.usuarios.tenantId, barberia.id), (0, drizzle_orm_1.eq)(schema.usuarios.id, dto.userId), (0, drizzle_orm_1.inArray)(schema.usuarios.rol, ['empleado', 'recepcion'])),
             });
         });
         const matchedStaff = matchedStaffArray[0];

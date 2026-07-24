@@ -10,5 +10,5 @@ export declare class CobrarCitaDto {
     rucCliente?: string;
     nombreFiscalCliente?: string;
     productosAdicionales?: ProductoAdicionalDto[];
-    barberoId?: string;
+    empleadoId?: string;
 }

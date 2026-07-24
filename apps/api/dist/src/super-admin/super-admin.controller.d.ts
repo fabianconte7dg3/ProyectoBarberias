@@ -63,7 +63,7 @@ export declare class SuperAdminController {
         adminEmail: any;
         adminNombre: any;
         createdAt: any;
-        totalBarberos: number;
+        totalEmpleados: number;
         totalCitasMes: number;
         totalFacturadoMes: number;
     }[]>;
@@ -90,7 +90,7 @@ export declare class SuperAdminController {
         message: string;
     }>;
     cambiarEstado(id: string, estado: 'activo' | 'suspendido_pago' | 'cancelado'): Promise<any>;
-    cambiarPlan(id: string, plan: 'basico' | 'premium'): Promise<any>;
+    cambiarPlan(id: string, plan: 'independiente' | 'basico' | 'premium'): Promise<any>;
     toggleKillSwitch(id: string, bloqueado: boolean): Promise<any>;
     getBusinessMetrics(): Promise<{
         nuevasMes: number;

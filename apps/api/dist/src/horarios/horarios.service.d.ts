@@ -7,12 +7,12 @@ export declare class HorariosService {
     constructor(db: NodePgDatabase<typeof schema>);
     private parseTime;
     private validateDia;
-    setHorarioSemanal(barberoId: string, dto: UpsertHorarioSemanalDto): Promise<any>;
-    getHorarioSemanal(barberoId: string): Promise<any>;
+    setHorarioSemanal(empleadoId: string, dto: UpsertHorarioSemanalDto): Promise<any>;
+    getHorarioSemanal(empleadoId: string): Promise<any>;
     createBloqueo(dto: CreateBloqueoDto): Promise<any>;
-    getBloqueosVigentes(barberoId: string): Promise<any>;
+    getBloqueosVigentes(empleadoId: string): Promise<any>;
     getHistorialBloqueosStaff(): Promise<any>;
-    getDisponibilidad(barberoId: string, fechaYYYYMMDD: string): Promise<{
+    getDisponibilidad(empleadoId: string, fechaYYYYMMDD: string): Promise<{
         disponible: boolean;
         jornada: {
             inicio: any;

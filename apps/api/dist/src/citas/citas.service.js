@@ -37,6 +37,23 @@ let CitasService = class CitasService {
             .where((0, drizzle_orm_1.eq)(schema_1.servicios.id, data.servicioId));
         if (!servicio)
             throw new common_1.NotFoundException('Servicio no encontrado');
+        let resolvedEmpleadoId = data.empleadoId;
+        if (!resolvedEmpleadoId) {
+            const staff = await db
+                .select({ id: schema_1.usuarios.id })
+                .from(schema_1.usuarios)
+                .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.activo, true)))
+                .limit(2);
+            if (staff.length === 1) {
+                resolvedEmpleadoId = staff[0].id;
+            }
+            else if (staff.length > 1) {
+                throw new common_1.NotFoundException('Debes seleccionar un empleado para continuar con la reserva.');
+            }
+            else {
+                throw new common_1.NotFoundException('No hay empleados disponibles en esta barbería.');
+            }
+        }
         const inicio = new Date(data.inicioEstimado);
         const fin = new Date(inicio.getTime() + servicio.duracionMinutos * 60000);
         db.delete(schema_1.bloqueosTemporales)
@@ -49,7 +66,7 @@ let CitasService = class CitasService {
                 .values({
                 tenantId,
                 clienteId: data.clienteId,
-                barberoId: data.barberoId,
+                empleadoId: resolvedEmpleadoId,
                 servicioId: data.servicioId,
                 inicioEstimado: inicio,
                 finEstimado: fin,
@@ -86,10 +103,10 @@ let CitasService = class CitasService {
         }
     }
     async bloquearTurno(data) {
-        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${data.barberoId}) as tenant_id`);
+        const result = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${data.empleadoId}) as tenant_id`);
         const tenantId = result.rows[0]?.tenant_id;
         if (!tenantId)
-            throw new common_1.NotFoundException('Barbero no encontrado o inactivo');
+            throw new common_1.NotFoundException('Empleado no encontrado o inactivo');
         const expiraEn = new Date(Date.now() + 3 * 60000);
         return await (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async (tx) => {
             tx.delete(schema_1.bloqueosTemporales)
@@ -101,7 +118,7 @@ let CitasService = class CitasService {
                     .insert(schema_1.bloqueosTemporales)
                     .values({
                     tenantId: tenantId,
-                    barberoId: data.barberoId,
+                    empleadoId: data.empleadoId,
                     inicio: new Date(data.inicio),
                     fin: new Date(data.fin),
                     tipo: 'lock_reserva',
@@ -121,7 +138,7 @@ let CitasService = class CitasService {
             }
         });
     }
-    async obtenerCitasAgenda({ user, fechaStr, barberoId }) {
+    async obtenerCitasAgenda({ user, fechaStr, empleadoId }) {
         const db = tenant_context_1.TenantContext.getDb();
         const targetDate = fechaStr ? new Date(fechaStr + 'T00:00:00') : new Date();
         const inicioDia = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
@@ -130,11 +147,11 @@ let CitasService = class CitasService {
             (0, drizzle_orm_1.gte)(schema_1.citas.inicioEstimado, inicioDia),
             (0, drizzle_orm_1.lte)(schema_1.citas.inicioEstimado, finDia),
         ];
-        if (user.rol === 'barbero') {
-            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.barberoId, user.userId));
+        if (user.rol === 'empleado') {
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.empleadoId, user.userId));
         }
-        else if (barberoId) {
-            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.barberoId, barberoId));
+        else if (empleadoId) {
+            conditions.push((0, drizzle_orm_1.eq)(schema_1.citas.empleadoId, empleadoId));
         }
         const listaCitas = await db
             .select({
@@ -143,8 +160,8 @@ let CitasService = class CitasService {
             finEstimado: schema_1.citas.finEstimado,
             estado: schema_1.citas.estado,
             origen: schema_1.citas.origen,
-            barberoId: schema_1.citas.barberoId,
-            barberoNombre: schema_1.usuarios.nombreCompleto,
+            empleadoId: schema_1.citas.empleadoId,
+            empleadoNombre: schema_1.usuarios.nombreCompleto,
             clienteId: schema_1.citas.clienteId,
             clienteNombre: schema_1.clientes.nombreCompleto,
             clienteTelefono: schema_1.clientes.telefonoWhatsapp,
@@ -154,7 +171,7 @@ let CitasService = class CitasService {
             servicioDuracion: schema_1.servicios.duracionMinutos,
         })
             .from(schema_1.citas)
-            .leftJoin(schema_1.usuarios, (0, drizzle_orm_1.eq)(schema_1.citas.barberoId, schema_1.usuarios.id))
+            .leftJoin(schema_1.usuarios, (0, drizzle_orm_1.eq)(schema_1.citas.empleadoId, schema_1.usuarios.id))
             .leftJoin(schema_1.clientes, (0, drizzle_orm_1.eq)(schema_1.citas.clienteId, schema_1.clientes.id))
             .leftJoin(schema_1.servicios, (0, drizzle_orm_1.eq)(schema_1.citas.servicioId, schema_1.servicios.id))
             .where((0, drizzle_orm_1.and)(...conditions))
@@ -163,12 +180,12 @@ let CitasService = class CitasService {
     }
     async cambiarEstado(citaId, nuevoEstado, user) {
         const db = tenant_context_1.TenantContext.getDb();
-        if (user && user.rol === 'barbero') {
-            const [existente] = await db.select({ barberoId: schema_1.citas.barberoId }).from(schema_1.citas).where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId));
+        if (user && user.rol === 'empleado') {
+            const [existente] = await db.select({ empleadoId: schema_1.citas.empleadoId }).from(schema_1.citas).where((0, drizzle_orm_1.eq)(schema_1.citas.id, citaId));
             if (!existente)
                 throw new common_1.NotFoundException('Cita no encontrada');
-            if (existente.barberoId !== user.userId) {
-                throw new common_1.ForbiddenException('No tienes permisos para modificar las citas de otro barbero.');
+            if (existente.empleadoId !== user.userId) {
+                throw new common_1.ForbiddenException('No tienes permisos para modificar las citas de otro empleado.');
             }
         }
         return await db.transaction(async (tx) => {

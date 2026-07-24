@@ -34,7 +34,7 @@ class CobrarCitaDto {
     rucCliente;
     nombreFiscalCliente;
     productosAdicionales;
-    barberoId;
+    empleadoId;
 }
 exports.CobrarCitaDto = CobrarCitaDto;
 __decorate([
@@ -77,5 +77,5 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CobrarCitaDto.prototype, "barberoId", void 0);
+], CobrarCitaDto.prototype, "empleadoId", void 0);
 //# sourceMappingURL=cobrar-cita.dto.js.map

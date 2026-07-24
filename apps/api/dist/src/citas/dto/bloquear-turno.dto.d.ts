@@ -1,5 +1,5 @@
 export declare class BloquearTurnoDto {
-    barberoId: string;
+    empleadoId: string;
     inicio: string;
     fin: string;
     notas?: string;

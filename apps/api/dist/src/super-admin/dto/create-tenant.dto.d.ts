@@ -3,5 +3,9 @@ export declare class CreateTenantDto {
     slug: string;
     adminEmail: string;
     adminNombre: string;
-    planId?: 'basico' | 'premium';
+    planId?: 'independiente' | 'basico' | 'premium';
+    industria?: 'barberia' | 'salon_belleza' | 'spa_masajes' | 'veterinaria' | 'clinica_medica' | 'taller_mecanico' | 'espacio_alquiler' | 'otro';
+    terminologiaEmpleado?: string;
+    terminologiaServicio?: string;
+    terminologiaCliente?: string;
 }

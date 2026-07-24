@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateBloqueoDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateBloqueoDto {
-    barberoId;
+    empleadoId;
     inicio;
     fin;
     tipo;
@@ -23,7 +23,7 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], CreateBloqueoDto.prototype, "barberoId", void 0);
+], CreateBloqueoDto.prototype, "empleadoId", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)(),
     (0, class_validator_1.IsNotEmpty)(),

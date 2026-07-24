@@ -2,7 +2,7 @@ export declare class UpdateClienteDto {
     nombreCompleto?: string;
     emailFacturacion?: string;
     notasPreferencia?: string;
-    barberoFrecuenteId?: string;
+    empleadoFrecuenteId?: string;
     bloqueado?: boolean;
     aceptaMarketing?: boolean;
 }

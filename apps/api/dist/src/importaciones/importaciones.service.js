@@ -118,12 +118,12 @@ let ImportacionesService = class ImportacionesService {
             metodoPago: schema.transacciones.metodoPago,
             totalFacturado: schema.transacciones.totalFacturado,
             comisionBarbero: schema.transacciones.comisionBarbero,
-            barberoNombre: schema.usuarios.nombreCompleto,
+            empleadoNombre: schema.usuarios.nombreCompleto,
             clienteNombre: schema.clientes.nombreCompleto,
         })
             .from(schema.transacciones)
             .leftJoin(schema.citas, (0, drizzle_orm_1.eq)(schema.transacciones.citaId, schema.citas.id))
-            .leftJoin(schema.usuarios, (0, drizzle_orm_1.eq)(schema.citas.barberoId, schema.usuarios.id))
+            .leftJoin(schema.usuarios, (0, drizzle_orm_1.eq)(schema.citas.empleadoId, schema.usuarios.id))
             .leftJoin(schema.clientes, (0, drizzle_orm_1.eq)(schema.citas.clienteId, schema.clientes.id))
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.gte)(schema.transacciones.createdAt, desde), (0, drizzle_orm_1.lte)(schema.transacciones.createdAt, hasta)));
         const workbook = new ExcelJS.Workbook();
@@ -131,7 +131,7 @@ let ImportacionesService = class ImportacionesService {
         sheet.columns = [
             { header: 'Fecha', key: 'fecha', width: 20 },
             { header: 'Cliente', key: 'cliente', width: 25 },
-            { header: 'Barbero', key: 'barbero', width: 25 },
+            { header: 'Empleado', key: 'empleado', width: 25 },
             { header: 'Método de Pago', key: 'metodoPago', width: 18 },
             { header: 'Total Facturado ($)', key: 'total', width: 20 },
             { header: 'Comisión ($)', key: 'comision', width: 18 },
@@ -140,7 +140,7 @@ let ImportacionesService = class ImportacionesService {
             sheet.addRow({
                 fecha: t.createdAt.toISOString().substring(0, 19).replace('T', ' '),
                 cliente: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(t.clienteNombre || 'Cliente Mostrador'),
-                barbero: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(t.barberoNombre || 'Sin asignar'),
+                empleado: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(t.empleadoNombre || 'Sin asignar'),
                 metodoPago: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(t.metodoPago),
                 total: Number(t.totalFacturado || 0),
                 comision: Number(t.comisionBarbero || 0),
@@ -155,8 +155,8 @@ let ImportacionesService = class ImportacionesService {
         const hasta = hastaStr ? new Date(hastaStr + 'T23:59:59') : new Date();
         const detalles = await db
             .select({
-            barberoId: schema.citas.barberoId,
-            barberoNombre: schema.usuarios.nombreCompleto,
+            empleadoId: schema.citas.empleadoId,
+            empleadoNombre: schema.usuarios.nombreCompleto,
             comisionAplicada: schema.detallesTransaccion.comisionAplicada,
             subtotal: schema.detallesTransaccion.subtotal,
             propina: schema.transacciones.propinaBarbero,
@@ -165,12 +165,12 @@ let ImportacionesService = class ImportacionesService {
             .from(schema.detallesTransaccion)
             .innerJoin(schema.transacciones, (0, drizzle_orm_1.eq)(schema.detallesTransaccion.transaccionId, schema.transacciones.id))
             .leftJoin(schema.citas, (0, drizzle_orm_1.eq)(schema.transacciones.citaId, schema.citas.id))
-            .leftJoin(schema.usuarios, (0, drizzle_orm_1.eq)(schema.citas.barberoId, schema.usuarios.id))
+            .leftJoin(schema.usuarios, (0, drizzle_orm_1.eq)(schema.citas.empleadoId, schema.usuarios.id))
             .where((0, drizzle_orm_1.and)((0, drizzle_orm_1.gte)(schema.transacciones.createdAt, desde), (0, drizzle_orm_1.lte)(schema.transacciones.createdAt, hasta)));
         const resumenNomina = new Map();
         for (const d of detalles) {
-            const nombre = d.barberoNombre || 'Sin Asignar';
-            const prev = resumenNomina.get(nombre) || { barberoNombre: nombre, totalComision: 0, totalVentas: 0 };
+            const nombre = d.empleadoNombre || 'Sin Asignar';
+            const prev = resumenNomina.get(nombre) || { empleadoNombre: nombre, totalComision: 0, totalVentas: 0 };
             prev.totalComision += Number(d.comisionAplicada || 0);
             prev.totalVentas += Number(d.subtotal || 0);
             resumenNomina.set(nombre, prev);
@@ -178,13 +178,13 @@ let ImportacionesService = class ImportacionesService {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Reporte de Nómina');
         sheet.columns = [
-            { header: 'Barbero / Staff', key: 'barbero', width: 30 },
+            { header: 'Empleado / Staff', key: 'empleado', width: 30 },
             { header: 'Total Ventas Generadas ($)', key: 'ventas', width: 25 },
             { header: 'Comisión Congelada a Pagar ($)', key: 'comision', width: 30 },
         ];
         for (const [, item] of resumenNomina) {
             sheet.addRow({
-                barbero: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(item.barberoNombre),
+                empleado: (0, sanitizar_celda_util_1.sanitizarCeldaExport)(item.empleadoNombre),
                 ventas: Number(item.totalVentas.toFixed(2)),
                 comision: Number(item.totalComision.toFixed(2)),
             });

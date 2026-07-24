@@ -11,7 +11,7 @@ export declare class CitasController {
     constructor(citasService: CitasService, db: NodePgDatabase<typeof schema>);
     crearCitaPublica(data: CreateCitaDto, idempotencyKey: string, tenantSlug: string, res: Response): Promise<any>;
     crearCita(data: CreateCitaDto, idempotencyKey: string, res: Response): Promise<any>;
-    getCitas(req: Request, fechaStr?: string, barberoId?: string): Promise<any>;
+    getCitas(req: Request, fechaStr?: string, empleadoId?: string): Promise<any>;
     bloquearTurno(data: BloquearTurnoDto): Promise<any>;
     cambiarEstado(id: string, dto: UpdateEstadoCitaDto, req: Request): Promise<any>;
     cancelarCita(id: string): Promise<any>;

@@ -72,7 +72,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ClientesController.prototype, "createPublico", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
@@ -80,7 +80,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ClientesController.prototype, "create", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Query)('q')),
     __metadata("design:type", Function),
@@ -88,7 +88,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], ClientesController.prototype, "findAll", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Get)(':id'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

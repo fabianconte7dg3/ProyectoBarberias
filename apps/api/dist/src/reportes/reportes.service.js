@@ -26,7 +26,7 @@ let ReportesService = class ReportesService {
             with: {
                 cita: {
                     with: {
-                        barbero: true,
+                        empleado: true,
                         servicio: true,
                         cliente: true,
                     }
@@ -112,13 +112,13 @@ let ReportesService = class ReportesService {
                 }
             }
         }
-        const staffBarberos = await db.query.usuarios.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.rol, 'barbero'))
+        const staffEmpleados = await db.query.usuarios.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.inArray)(schema_1.usuarios.rol, ['empleado', 'admin']))
         });
-        const rendimientoBarberosMap = new Map();
-        for (const b of staffBarberos) {
-            rendimientoBarberosMap.set(b.id, {
-                barberoId: b.id,
+        const rendimientoEmpleadosMap = new Map();
+        for (const b of staffEmpleados) {
+            rendimientoEmpleadosMap.set(b.id, {
+                empleadoId: b.id,
                 nombreCompleto: b.nombreCompleto,
                 porcentajeComision: Number(b.porcentajeComision || 0),
                 porcentajeComisionProducto: Number(b.porcentajeComisionProducto || 0),
@@ -131,15 +131,15 @@ let ReportesService = class ReportesService {
             });
         }
         for (const tx of txsPeriodo) {
-            const bId = tx.cita?.barbero?.id;
+            const bId = tx.cita?.empleado?.id;
             if (bId) {
-                let stats = rendimientoBarberosMap.get(bId);
-                if (!stats && tx.cita?.barbero) {
+                let stats = rendimientoEmpleadosMap.get(bId);
+                if (!stats && tx.cita?.empleado) {
                     stats = {
-                        barberoId: bId,
-                        nombreCompleto: tx.cita.barbero.nombreCompleto,
-                        porcentajeComision: Number(tx.cita.barbero.porcentajeComision || 0),
-                        porcentajeComisionProducto: Number(tx.cita.barbero.porcentajeComisionProducto || 0),
+                        empleadoId: bId,
+                        nombreCompleto: tx.cita.empleado.nombreCompleto,
+                        porcentajeComision: Number(tx.cita.empleado.porcentajeComision || 0),
+                        porcentajeComisionProducto: Number(tx.cita.empleado.porcentajeComisionProducto || 0),
                         totalCitas: 0,
                         facturadoServicios: 0,
                         facturadoProductos: 0,
@@ -147,7 +147,7 @@ let ReportesService = class ReportesService {
                         comisionTotal: 0,
                         propinaTotal: 0,
                     };
-                    rendimientoBarberosMap.set(bId, stats);
+                    rendimientoEmpleadosMap.set(bId, stats);
                 }
                 if (stats) {
                     const montoTx = Number(tx.totalFacturado || 0);
@@ -213,7 +213,7 @@ let ReportesService = class ReportesService {
                 stockActual: p.stockActual,
                 stockMinimo: p.stockMinimo,
             })),
-            rendimientoBarberos: Array.from(rendimientoBarberosMap.values()),
+            rendimientoEmpleados: Array.from(rendimientoEmpleadosMap.values()),
             clientesStrikes: clientesStrikes.map((c) => ({
                 id: c.id,
                 nombreCompleto: c.nombreCompleto,
@@ -222,17 +222,17 @@ let ReportesService = class ReportesService {
             }))
         };
     }
-    async getMiDesempeno(barberoId, desdeStr, hastaStr) {
+    async getMiDesempeno(empleadoId, desdeStr, hastaStr) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         let desde = desdeStr ? new Date(`${desdeStr}T00:00:00`) : (0, date_fns_1.subDays)(new Date(), 30);
         let hasta = hastaStr ? new Date(`${hastaStr}T23:59:59.999`) : (0, date_fns_1.endOfDay)(new Date());
-        const [barbero] = await db.query.usuarios.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.id, barberoId))
+        const [empleado] = await db.query.usuarios.findMany({
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.usuarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema_1.usuarios.id, empleadoId))
         });
-        if (!barbero) {
+        if (!empleado) {
             return {
-                barberoId: barberoId || '',
+                empleadoId: empleadoId || '',
                 nombreCompleto: 'Staff',
                 porcentajeComision: 0,
                 porcentajeComisionProducto: 0,
@@ -246,12 +246,12 @@ let ReportesService = class ReportesService {
                 resumenDiario: []
             };
         }
-        const txsBarbero = await db.query.transacciones.findMany({
+        const txsEmpleado = await db.query.transacciones.findMany({
             where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema_1.transacciones.tenantId, tenantId), (0, drizzle_orm_1.gte)(schema_1.transacciones.createdAt, desde), (0, drizzle_orm_1.lte)(schema_1.transacciones.createdAt, hasta)),
             with: {
                 cita: {
                     with: {
-                        barbero: true,
+                        empleado: true,
                         servicio: true,
                         cliente: true,
                     }
@@ -264,7 +264,7 @@ let ReportesService = class ReportesService {
                 }
             }
         });
-        const txsFiltradas = txsBarbero.filter((tx) => tx.cita?.barberoId === barberoId);
+        const txsFiltradas = txsEmpleado.filter((tx) => tx.cita?.empleadoId === empleadoId);
         let totalCitas = 0;
         let totalFacturado = 0;
         let comisionTotal = 0;
@@ -279,9 +279,10 @@ let ReportesService = class ReportesService {
             resumenDiarioMap.set(ymd, { fecha: ymd, label, citas: 0, facturado: 0, comision: 0, propina: 0 });
             curr.setDate(curr.getDate() + 1);
         }
+        const esSoloPreneurODueno = empleado.rol === 'admin' || Number(empleado.porcentajeComision || 0) === 0;
         for (const tx of txsFiltradas) {
             const montoTx = Number(tx.totalFacturado || 0);
-            const comisionTx = Number(tx.comisionBarbero || 0);
+            const comisionTx = esSoloPreneurODueno ? montoTx : Number(tx.comisionBarbero || 0);
             const propinaTx = Number(tx.propinaBarbero || 0);
             totalCitas += tx.cita ? 1 : 0;
             totalFacturado += montoTx;
@@ -299,7 +300,7 @@ let ReportesService = class ReportesService {
             p.propina += propinaTx;
             if (tx.detalles && tx.detalles.length > 0) {
                 for (const det of tx.detalles) {
-                    const comDet = Number(det.comisionAplicada || 0);
+                    const comDet = esSoloPreneurODueno ? Number(det.subtotal || 0) : Number(det.comisionAplicada || 0);
                     if (det.tipoItem === 'servicio')
                         comisionServicios += comDet;
                     else if (det.tipoItem === 'producto')
@@ -310,19 +311,22 @@ let ReportesService = class ReportesService {
                 comisionServicios += comisionTx;
             }
         }
+        const resumenDiarioFiltrado = Array.from(resumenDiarioMap.values())
+            .filter((d) => d.citas > 0 || d.facturado > 0 || d.comision > 0 || d.propina > 0)
+            .sort((a, b) => b.fecha.localeCompare(a.fecha));
         return {
-            barberoId: barbero.id,
-            nombreCompleto: barbero.nombreCompleto,
-            porcentajeComision: Number(barbero.porcentajeComision || 0),
-            porcentajeComisionProducto: Number(barbero.porcentajeComisionProducto || 0),
+            empleadoId: empleado.id,
+            nombreCompleto: empleado.nombreCompleto,
+            porcentajeComision: Number(empleado.porcentajeComision || 0),
+            porcentajeComisionProducto: Number(empleado.porcentajeComisionProducto || 0),
             rangoFechas: { desde, hasta },
             totalCitas,
             totalFacturado,
-            comisionServicios,
+            comisionServicios: esSoloPreneurODueno ? totalFacturado : comisionServicios,
             comisionProductos,
-            comisionTotal,
+            comisionTotal: esSoloPreneurODueno ? totalFacturado : comisionTotal,
             propinaTotal,
-            resumenDiario: Array.from(resumenDiarioMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha))
+            resumenDiario: resumenDiarioFiltrado
         };
     }
 };

@@ -1,13 +1,13 @@
-export declare const planSuscripcionEnum: import("drizzle-orm/pg-core").PgEnum<["basico", "premium"]>;
+export declare const planSuscripcionEnum: import("drizzle-orm/pg-core").PgEnum<["independiente", "basico", "premium"]>;
 export declare const estadoBarberiaEnum: import("drizzle-orm/pg-core").PgEnum<["activo", "suspendido_pago", "cancelado"]>;
-export declare const rolUsuarioEnum: import("drizzle-orm/pg-core").PgEnum<["superadmin", "admin", "barbero", "recepcion"]>;
+export declare const rolUsuarioEnum: import("drizzle-orm/pg-core").PgEnum<["superadmin", "admin", "empleado", "recepcion"]>;
 export declare const diaSemanaEnum: import("drizzle-orm/pg-core").PgEnum<["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]>;
 export declare const origenCitaEnum: import("drizzle-orm/pg-core").PgEnum<["bot_whatsapp", "walk_in", "manual_admin", "web_publica"]>;
 export declare const estadoCitaEnum: import("drizzle-orm/pg-core").PgEnum<["programada", "en_curso", "completada", "ausente_strike", "cancelada", "revision_manual"]>;
 export declare const metodoPagoEnum: import("drizzle-orm/pg-core").PgEnum<["efectivo", "yappy", "mixto", "deuda"]>;
 export declare const estadoDgiEnum: import("drizzle-orm/pg-core").PgEnum<["pendiente", "procesando", "emitida", "error_pac"]>;
 export declare const tipoBloqueoEnum: import("drizzle-orm/pg-core").PgEnum<["almuerzo_dinamico", "walk_in", "lock_reserva", "emergencia", "extension_turno"]>;
-export declare const origenBloqueoEnum: import("drizzle-orm/pg-core").PgEnum<["sistema", "barbero", "admin"]>;
+export declare const origenBloqueoEnum: import("drizzle-orm/pg-core").PgEnum<["sistema", "empleado", "admin"]>;
 export declare const accionAuditEnum: import("drizzle-orm/pg-core").PgEnum<["login", "logout", "cobro", "update_intento", "delete_intento", "kill_switch", "cambio_comision", "cierre_emergencia", "conciliacion_yappy", "crear_tenant", "cambiar_estado_tenant", "cambiar_plan_tenant", "kill_switch_plataforma"]>;
 export declare const estadoWhatsappEnum: import("drizzle-orm/pg-core").PgEnum<["conectado", "desconectado", "pendiente_qr", "suspendido"]>;
 export declare const estadoCierreEnum: import("drizzle-orm/pg-core").PgEnum<["cuadrado", "faltante", "sobrante"]>;
@@ -16,6 +16,7 @@ export declare const yappyModoEnum: import("drizzle-orm/pg-core").PgEnum<["manua
 export declare const tipoImportacionEnum: import("drizzle-orm/pg-core").PgEnum<["clientes", "productos", "servicios"]>;
 export declare const estadoTrabajoImportacionEnum: import("drizzle-orm/pg-core").PgEnum<["procesando", "completado", "completado_con_errores", "fallido"]>;
 export declare const tipoItemEnum: import("drizzle-orm/pg-core").PgEnum<["servicio", "producto"]>;
+export declare const industriaNegocioEnum: import("drizzle-orm/pg-core").PgEnum<["barberia", "salon_belleza", "spa_masajes", "veterinaria", "clinica_medica", "taller_mecanico", "espacio_alquiler", "otro"]>;
 export declare const planes: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "planes";
     schema: undefined;
@@ -75,8 +76,8 @@ export declare const planes: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        limiteBarberos: import("drizzle-orm/pg-core").PgColumn<{
-            name: "limite_barberos";
+        limiteEmpleados: import("drizzle-orm/pg-core").PgColumn<{
+            name: "limite_empleados";
             tableName: "planes";
             dataType: "number";
             columnType: "PgInteger";
@@ -212,14 +213,14 @@ export declare const barberias: import("drizzle-orm/pg-core").PgTableWithColumns
             tableName: "barberias";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "basico" | "premium";
+            data: "independiente" | "basico" | "premium";
             driverParam: string;
             notNull: true;
             hasDefault: true;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["basico", "premium"];
+            enumValues: ["independiente", "basico", "premium"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -349,6 +350,80 @@ export declare const barberias: import("drizzle-orm/pg-core").PgTableWithColumns
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        industria: import("drizzle-orm/pg-core").PgColumn<{
+            name: "industria";
+            tableName: "barberias";
+            dataType: "string";
+            columnType: "PgEnumColumn";
+            data: "barberia" | "salon_belleza" | "spa_masajes" | "veterinaria" | "clinica_medica" | "taller_mecanico" | "espacio_alquiler" | "otro";
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: ["barberia", "salon_belleza", "spa_masajes", "veterinaria", "clinica_medica", "taller_mecanico", "espacio_alquiler", "otro"];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        terminologiaEmpleado: import("drizzle-orm/pg-core").PgColumn<{
+            name: "terminologia_empleado";
+            tableName: "barberias";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 100;
+        }>;
+        terminologiaServicio: import("drizzle-orm/pg-core").PgColumn<{
+            name: "terminologia_servicio";
+            tableName: "barberias";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 100;
+        }>;
+        terminologiaCliente: import("drizzle-orm/pg-core").PgColumn<{
+            name: "terminologia_cliente";
+            tableName: "barberias";
+            dataType: "string";
+            columnType: "PgVarchar";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            length: 100;
+        }>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "barberias";
@@ -469,14 +544,14 @@ export declare const usuarios: import("drizzle-orm/pg-core").PgTableWithColumns<
             tableName: "usuarios";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "superadmin" | "admin" | "barbero" | "recepcion";
+            data: "superadmin" | "admin" | "empleado" | "recepcion";
             driverParam: string;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["superadmin", "admin", "barbero", "recepcion"];
+            enumValues: ["superadmin", "admin", "empleado", "recepcion"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -990,8 +1065,8 @@ export declare const clientes: import("drizzle-orm/pg-core").PgTableWithColumns<
         }, {}, {
             length: 255;
         }>;
-        barberoFrecuenteId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "barbero_frecuente_id";
+        empleadoFrecuenteId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "empleado_frecuente_id";
             tableName: "clientes";
             dataType: "string";
             columnType: "PgUUID";
@@ -1145,6 +1220,23 @@ export declare const clientes: import("drizzle-orm/pg-core").PgTableWithColumns<
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        datosAdicionales: import("drizzle-orm/pg-core").PgColumn<{
+            name: "datos_adicionales";
+            tableName: "clientes";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: unknown;
+            driverParam: unknown;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         createdAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_at";
             tableName: "clientes";
@@ -1220,8 +1312,8 @@ export declare const citas: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        barberoId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "barbero_id";
+        empleadoId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "empleado_id";
             tableName: "citas";
             dataType: "string";
             columnType: "PgUUID";
@@ -1407,6 +1499,23 @@ export declare const citas: import("drizzle-orm/pg-core").PgTableWithColumns<{
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        notas: import("drizzle-orm/pg-core").PgColumn<{
+            name: "notas";
+            tableName: "citas";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -2005,8 +2114,8 @@ export declare const horarios: import("drizzle-orm/pg-core").PgTableWithColumns<
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        barberoId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "barbero_id";
+        empleadoId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "empleado_id";
             tableName: "horarios";
             dataType: "string";
             columnType: "PgUUID";
@@ -2165,8 +2274,8 @@ export declare const bloqueosTemporales: import("drizzle-orm/pg-core").PgTableWi
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-        barberoId: import("drizzle-orm/pg-core").PgColumn<{
-            name: "barbero_id";
+        empleadoId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "empleado_id";
             tableName: "bloqueos_temporales";
             dataType: "string";
             columnType: "PgUUID";
@@ -2255,14 +2364,14 @@ export declare const bloqueosTemporales: import("drizzle-orm/pg-core").PgTableWi
             tableName: "bloqueos_temporales";
             dataType: "string";
             columnType: "PgEnumColumn";
-            data: "admin" | "barbero" | "sistema";
+            data: "admin" | "empleado" | "sistema";
             driverParam: string;
             notNull: true;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;
-            enumValues: ["sistema", "barbero", "admin"];
+            enumValues: ["sistema", "empleado", "admin"];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -3043,7 +3152,7 @@ export declare const barberiasRelations: import("drizzle-orm").Relations<"barber
 export declare const usuariosRelations: import("drizzle-orm").Relations<"usuarios", {
     barberia: import("drizzle-orm").One<"barberias", true>;
     horarios: import("drizzle-orm").Many<"horarios">;
-    citasComoBarbero: import("drizzle-orm").Many<"citas">;
+    citasComoEmpleado: import("drizzle-orm").Many<"citas">;
 }>;
 export declare const productosRelations: import("drizzle-orm").Relations<"productos", {
     barberia: import("drizzle-orm").One<"barberias", true>;
@@ -3051,13 +3160,13 @@ export declare const productosRelations: import("drizzle-orm").Relations<"produc
 }>;
 export declare const clientesRelations: import("drizzle-orm").Relations<"clientes", {
     barberia: import("drizzle-orm").One<"barberias", true>;
-    barberoFrecuente: import("drizzle-orm").One<"usuarios", false>;
+    empleadoFrecuente: import("drizzle-orm").One<"usuarios", false>;
     citas: import("drizzle-orm").Many<"citas">;
 }>;
 export declare const citasRelations: import("drizzle-orm").Relations<"citas", {
     barberia: import("drizzle-orm").One<"barberias", true>;
     cliente: import("drizzle-orm").One<"clientes", false>;
-    barbero: import("drizzle-orm").One<"usuarios", true>;
+    empleado: import("drizzle-orm").One<"usuarios", true>;
     servicio: import("drizzle-orm").One<"servicios", true>;
     transaccion: import("drizzle-orm").One<"transacciones", true>;
 }>;
@@ -3072,7 +3181,7 @@ export declare const auditLogsRelations: import("drizzle-orm").Relations<"audit_
 }>;
 export declare const bloqueosTemporalesRelations: import("drizzle-orm").Relations<"bloqueos_temporales", {
     barberia: import("drizzle-orm").One<"barberias", true>;
-    barbero: import("drizzle-orm").One<"usuarios", true>;
+    empleado: import("drizzle-orm").One<"usuarios", true>;
 }>;
 export declare const detallesTransaccionRelations: import("drizzle-orm").Relations<"detalles_transaccion", {
     barberia: import("drizzle-orm").One<"barberias", true>;

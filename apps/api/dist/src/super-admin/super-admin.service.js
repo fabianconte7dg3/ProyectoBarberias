@@ -222,7 +222,7 @@ FECHA: ${new Date().toISOString()}
             adminEmail: row.admin_email || 'Sin admin',
             adminNombre: row.admin_nombre || 'Sin nombre',
             createdAt: row.created_at,
-            totalBarberos: Number(row.total_barberos || 0),
+            totalEmpleados: Number(row.total_empleados || 0),
             totalCitasMes: Number(row.total_citas_mes || 0),
             totalFacturadoMes: Number(row.total_facturado_mes || 0),
         }));
@@ -258,6 +258,10 @@ FECHA: ${new Date().toISOString()}
                 slug: dto.slug,
                 planSuscripcion: planElegido,
                 planId: planElegido,
+                ...(dto.industria && { industria: dto.industria }),
+                ...(dto.terminologiaEmpleado && { terminologiaEmpleado: dto.terminologiaEmpleado }),
+                ...(dto.terminologiaServicio && { terminologiaServicio: dto.terminologiaServicio }),
+                ...(dto.terminologiaCliente && { terminologiaCliente: dto.terminologiaCliente }),
             });
             await tx.insert(schema.usuarios).values({
                 id: adminId,
@@ -282,7 +286,7 @@ FECHA: ${new Date().toISOString()}
             tenantId,
             slug: dto.slug,
             activationToken,
-            activationUrl: `http://localhost:3001/${dto.slug}/activar-admin?token=${activationToken}`,
+            activationUrl: `${process.env.WEB_URL || 'http://localhost:3000'}/${dto.slug}/activar-admin?token=${activationToken}`,
         };
     }
     async activarAdminManual(dto) {
@@ -393,7 +397,7 @@ FECHA: ${new Date().toISOString()}
         });
     }
     async cambiarPlanTenant(tenantId, plan) {
-        if (!['basico', 'premium'].includes(plan)) {
+        if (!['independiente', 'basico', 'premium'].includes(plan)) {
             throw new common_1.BadRequestException('Plan de suscripción inválido.');
         }
         return await (0, tenant_utils_1.runInTenantScope)(this.db, tenantId, async (tx) => {

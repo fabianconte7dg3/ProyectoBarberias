@@ -1,11 +1,11 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.alertasSeguridadRelations = exports.alertasSeguridad = exports.plataformaAdmins = exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.planes = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
+exports.alertasSeguridadRelations = exports.alertasSeguridad = exports.plataformaAdmins = exports.trabajosImportacionRelations = exports.trabajosImportacion = exports.detallesTransaccionRelations = exports.bloqueosTemporalesRelations = exports.auditLogsRelations = exports.transaccionesRelations = exports.citasRelations = exports.clientesRelations = exports.productosRelations = exports.usuariosRelations = exports.barberiasRelations = exports.yappyConfig = exports.plantillasWhatsapp = exports.cierresDeCaja = exports.whatsappConfig = exports.auditLogs = exports.bloqueosTemporales = exports.horarios = exports.detallesTransaccion = exports.transacciones = exports.citas = exports.clientes = exports.productos = exports.servicios = exports.usuarios = exports.barberias = exports.planes = exports.industriaNegocioEnum = exports.tipoItemEnum = exports.estadoTrabajoImportacionEnum = exports.tipoImportacionEnum = exports.yappyModoEnum = exports.tipoPlantillaEnum = exports.estadoCierreEnum = exports.estadoWhatsappEnum = exports.accionAuditEnum = exports.origenBloqueoEnum = exports.tipoBloqueoEnum = exports.estadoDgiEnum = exports.metodoPagoEnum = exports.estadoCitaEnum = exports.origenCitaEnum = exports.diaSemanaEnum = exports.rolUsuarioEnum = exports.estadoBarberiaEnum = exports.planSuscripcionEnum = void 0;
 const pg_core_1 = require("drizzle-orm/pg-core");
 const drizzle_orm_1 = require("drizzle-orm");
-exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['basico', 'premium']);
+exports.planSuscripcionEnum = (0, pg_core_1.pgEnum)('plan_suscripcion', ['independiente', 'basico', 'premium']);
 exports.estadoBarberiaEnum = (0, pg_core_1.pgEnum)('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
-exports.rolUsuarioEnum = (0, pg_core_1.pgEnum)('rol_usuario', ['superadmin', 'admin', 'barbero', 'recepcion']);
+exports.rolUsuarioEnum = (0, pg_core_1.pgEnum)('rol_usuario', ['superadmin', 'admin', 'empleado', 'recepcion']);
 exports.diaSemanaEnum = (0, pg_core_1.pgEnum)('dia_semana', [
     'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
@@ -18,7 +18,7 @@ exports.estadoDgiEnum = (0, pg_core_1.pgEnum)('estado_dgi', ['pendiente', 'proce
 exports.tipoBloqueoEnum = (0, pg_core_1.pgEnum)('tipo_bloqueo', [
     'almuerzo_dinamico', 'walk_in', 'lock_reserva', 'emergencia', 'extension_turno',
 ]);
-exports.origenBloqueoEnum = (0, pg_core_1.pgEnum)('origen_bloqueo', ['sistema', 'barbero', 'admin']);
+exports.origenBloqueoEnum = (0, pg_core_1.pgEnum)('origen_bloqueo', ['sistema', 'empleado', 'admin']);
 exports.accionAuditEnum = (0, pg_core_1.pgEnum)('accion_audit', [
     'login', 'logout', 'cobro', 'update_intento', 'delete_intento',
     'kill_switch', 'cambio_comision', 'cierre_emergencia', 'conciliacion_yappy',
@@ -38,11 +38,15 @@ exports.estadoTrabajoImportacionEnum = (0, pg_core_1.pgEnum)('estado_trabajo_imp
     'procesando', 'completado', 'completado_con_errores', 'fallido',
 ]);
 exports.tipoItemEnum = (0, pg_core_1.pgEnum)('tipo_item', ['servicio', 'producto']);
+exports.industriaNegocioEnum = (0, pg_core_1.pgEnum)('industria_negocio', [
+    'barberia', 'salon_belleza', 'spa_masajes', 'veterinaria',
+    'clinica_medica', 'taller_mecanico', 'espacio_alquiler', 'otro',
+]);
 exports.planes = (0, pg_core_1.pgTable)('planes', {
     id: (0, pg_core_1.varchar)('id', { length: 50 }).primaryKey(),
     nombre: (0, pg_core_1.varchar)('nombre', { length: 255 }).notNull(),
     precioMensual: (0, pg_core_1.decimal)('precio_mensual', { precision: 10, scale: 2 }).notNull(),
-    limiteBarberos: (0, pg_core_1.integer)('limite_barberos').notNull().default(3),
+    limiteEmpleados: (0, pg_core_1.integer)('limite_empleados').notNull().default(3),
     activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
@@ -59,6 +63,10 @@ exports.barberias = (0, pg_core_1.pgTable)('barberias', {
     bloqueadoPorPlataforma: (0, pg_core_1.boolean)('bloqueado_por_plataforma').notNull().default(false),
     colorPrimario: (0, pg_core_1.varchar)('color_primario', { length: 7 }),
     logoUrl: (0, pg_core_1.text)('logo_url'),
+    industria: (0, exports.industriaNegocioEnum)('industria').notNull().default('barberia'),
+    terminologiaEmpleado: (0, pg_core_1.varchar)('terminologia_empleado', { length: 100 }).notNull().default('Barbero'),
+    terminologiaServicio: (0, pg_core_1.varchar)('terminologia_servicio', { length: 100 }).notNull().default('Servicio'),
+    terminologiaCliente: (0, pg_core_1.varchar)('terminologia_cliente', { length: 100 }).notNull().default('Cliente'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 exports.usuarios = (0, pg_core_1.pgTable)('usuarios', {
@@ -96,13 +104,15 @@ exports.productos = (0, pg_core_1.pgTable)('productos', {
     stockMinimo: (0, pg_core_1.integer)('stock_minimo').notNull().default(2),
     activo: (0, pg_core_1.boolean)('activo').notNull().default(true),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+    idxProductosTenantStock: (0, pg_core_1.index)('idx_productos_tenant_stock').on(table.tenantId, table.stockActual),
+}));
 exports.clientes = (0, pg_core_1.pgTable)('clientes', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
     telefonoWhatsapp: (0, pg_core_1.varchar)('telefono_whatsapp', { length: 30 }).notNull(),
     nombreCompleto: (0, pg_core_1.varchar)('nombre_completo', { length: 255 }),
-    barberoFrecuenteId: (0, pg_core_1.uuid)('barbero_frecuente_id').references(() => exports.usuarios.id),
+    empleadoFrecuenteId: (0, pg_core_1.uuid)('empleado_frecuente_id').references(() => exports.usuarios.id),
     notasPreferencia: (0, pg_core_1.text)('notas_preferencia'),
     totalAsistencias: (0, pg_core_1.integer)('total_asistencias').notNull().default(0),
     ausenciasStrikes: (0, pg_core_1.integer)('ausencias_strikes').notNull().default(0),
@@ -111,6 +121,7 @@ exports.clientes = (0, pg_core_1.pgTable)('clientes', {
     bloqueado: (0, pg_core_1.boolean)('bloqueado').notNull().default(false),
     aceptaMarketing: (0, pg_core_1.boolean)('acepta_marketing').notNull().default(false),
     ultimoMensajeRecibidoAt: (0, pg_core_1.timestamp)('ultimo_mensaje_recibido_at', { withTimezone: true }),
+    datosAdicionales: (0, pg_core_1.jsonb)('datos_adicionales').notNull().default({}),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
     telefonoPorTenantUnico: (0, pg_core_1.unique)().on(table.tenantId, table.telefonoWhatsapp),
@@ -119,7 +130,7 @@ exports.citas = (0, pg_core_1.pgTable)('citas', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
     clienteId: (0, pg_core_1.uuid)('cliente_id').references(() => exports.clientes.id),
-    barberoId: (0, pg_core_1.uuid)('barbero_id').notNull().references(() => exports.usuarios.id),
+    empleadoId: (0, pg_core_1.uuid)('empleado_id').notNull().references(() => exports.usuarios.id),
     servicioId: (0, pg_core_1.uuid)('servicio_id').notNull().references(() => exports.servicios.id),
     inicioEstimado: (0, pg_core_1.timestamp)('inicio_estimado', { withTimezone: true }).notNull(),
     finEstimado: (0, pg_core_1.timestamp)('fin_estimado', { withTimezone: true }).notNull(),
@@ -130,8 +141,11 @@ exports.citas = (0, pg_core_1.pgTable)('citas', {
     idempotencyKey: (0, pg_core_1.varchar)('idempotency_key', { length: 255 }).notNull().unique(),
     tokenCliente: (0, pg_core_1.varchar)('token_cliente', { length: 255 }),
     tokenExpiraEn: (0, pg_core_1.timestamp)('token_expira_en', { withTimezone: true }),
+    notas: (0, pg_core_1.text)('notas'),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+    idxCitasTenantEmpleadoInicio: (0, pg_core_1.index)('idx_citas_tenant_empleado_inicio').on(table.tenantId, table.empleadoId, table.inicioEstimado),
+}));
 exports.transacciones = (0, pg_core_1.pgTable)('transacciones', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
@@ -152,7 +166,9 @@ exports.transacciones = (0, pg_core_1.pgTable)('transacciones', {
     yappyWebhookPayload: (0, pg_core_1.jsonb)('yappy_webhook_payload'),
     confirmadoPorId: (0, pg_core_1.uuid)('confirmado_por_id').references(() => exports.usuarios.id),
     createdAt: (0, pg_core_1.timestamp)('created_at', { withTimezone: true }).notNull().defaultNow(),
-});
+}, (table) => ({
+    idxTransaccionesTenantCreated: (0, pg_core_1.index)('idx_transacciones_tenant_created').on(table.tenantId, table.createdAt),
+}));
 exports.detallesTransaccion = (0, pg_core_1.pgTable)('detalles_transaccion', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
@@ -169,7 +185,7 @@ exports.detallesTransaccion = (0, pg_core_1.pgTable)('detalles_transaccion', {
 exports.horarios = (0, pg_core_1.pgTable)('horarios', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
-    barberoId: (0, pg_core_1.uuid)('barbero_id').notNull().references(() => exports.usuarios.id),
+    empleadoId: (0, pg_core_1.uuid)('empleado_id').notNull().references(() => exports.usuarios.id),
     diaSemana: (0, exports.diaSemanaEnum)('dia_semana').notNull(),
     horaInicio: (0, pg_core_1.time)('hora_inicio').notNull(),
     horaFin: (0, pg_core_1.time)('hora_fin').notNull(),
@@ -180,7 +196,7 @@ exports.horarios = (0, pg_core_1.pgTable)('horarios', {
 exports.bloqueosTemporales = (0, pg_core_1.pgTable)('bloqueos_temporales', {
     id: (0, pg_core_1.uuid)('id').primaryKey().defaultRandom(),
     tenantId: (0, pg_core_1.uuid)('tenant_id').notNull().references(() => exports.barberias.id, { onDelete: 'cascade' }),
-    barberoId: (0, pg_core_1.uuid)('barbero_id').notNull().references(() => exports.usuarios.id),
+    empleadoId: (0, pg_core_1.uuid)('empleado_id').notNull().references(() => exports.usuarios.id),
     inicio: (0, pg_core_1.timestamp)('inicio', { withTimezone: true }).notNull(),
     fin: (0, pg_core_1.timestamp)('fin', { withTimezone: true }).notNull(),
     tipo: (0, exports.tipoBloqueoEnum)('tipo').notNull(),
@@ -251,7 +267,7 @@ exports.barberiasRelations = (0, drizzle_orm_1.relations)(exports.barberias, ({ 
 exports.usuariosRelations = (0, drizzle_orm_1.relations)(exports.usuarios, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.usuarios.tenantId], references: [exports.barberias.id] }),
     horarios: many(exports.horarios),
-    citasComoBarbero: many(exports.citas),
+    citasComoEmpleado: many(exports.citas),
 }));
 exports.productosRelations = (0, drizzle_orm_1.relations)(exports.productos, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.productos.tenantId], references: [exports.barberias.id] }),
@@ -259,13 +275,13 @@ exports.productosRelations = (0, drizzle_orm_1.relations)(exports.productos, ({ 
 }));
 exports.clientesRelations = (0, drizzle_orm_1.relations)(exports.clientes, ({ one, many }) => ({
     barberia: one(exports.barberias, { fields: [exports.clientes.tenantId], references: [exports.barberias.id] }),
-    barberoFrecuente: one(exports.usuarios, { fields: [exports.clientes.barberoFrecuenteId], references: [exports.usuarios.id] }),
+    empleadoFrecuente: one(exports.usuarios, { fields: [exports.clientes.empleadoFrecuenteId], references: [exports.usuarios.id] }),
     citas: many(exports.citas),
 }));
 exports.citasRelations = (0, drizzle_orm_1.relations)(exports.citas, ({ one }) => ({
     barberia: one(exports.barberias, { fields: [exports.citas.tenantId], references: [exports.barberias.id] }),
     cliente: one(exports.clientes, { fields: [exports.citas.clienteId], references: [exports.clientes.id] }),
-    barbero: one(exports.usuarios, { fields: [exports.citas.barberoId], references: [exports.usuarios.id] }),
+    empleado: one(exports.usuarios, { fields: [exports.citas.empleadoId], references: [exports.usuarios.id] }),
     servicio: one(exports.servicios, { fields: [exports.citas.servicioId], references: [exports.servicios.id] }),
     transaccion: one(exports.transacciones, { fields: [exports.citas.id], references: [exports.transacciones.citaId] }),
 }));
@@ -280,7 +296,7 @@ exports.auditLogsRelations = (0, drizzle_orm_1.relations)(exports.auditLogs, ({ 
 }));
 exports.bloqueosTemporalesRelations = (0, drizzle_orm_1.relations)(exports.bloqueosTemporales, ({ one }) => ({
     barberia: one(exports.barberias, { fields: [exports.bloqueosTemporales.tenantId], references: [exports.barberias.id] }),
-    barbero: one(exports.usuarios, { fields: [exports.bloqueosTemporales.barberoId], references: [exports.usuarios.id] }),
+    empleado: one(exports.usuarios, { fields: [exports.bloqueosTemporales.empleadoId], references: [exports.usuarios.id] }),
 }));
 exports.detallesTransaccionRelations = (0, drizzle_orm_1.relations)(exports.detallesTransaccion, ({ one }) => ({
     barberia: one(exports.barberias, { fields: [exports.detallesTransaccion.tenantId], references: [exports.barberias.id] }),

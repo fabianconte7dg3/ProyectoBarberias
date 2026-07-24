@@ -56,12 +56,12 @@ let CitasController = class CitasController {
         }
         return result.cita;
     }
-    async getCitas(req, fechaStr, barberoId) {
+    async getCitas(req, fechaStr, empleadoId) {
         const user = req.user;
         return this.citasService.obtenerCitasAgenda({
             user,
             fechaStr,
-            barberoId,
+            empleadoId,
         });
     }
     async bloquearTurno(data) {
@@ -87,7 +87,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "crearCitaPublica", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Post)(),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Headers)('idempotency-key')),
@@ -97,11 +97,11 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "crearCita", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Get)(),
     __param(0, (0, common_1.Req)()),
     __param(1, (0, common_1.Query)('fecha')),
-    __param(2, (0, common_1.Query)('barberoId')),
+    __param(2, (0, common_1.Query)('empleadoId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, String, String]),
     __metadata("design:returntype", Promise)
@@ -115,7 +115,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "bloquearTurno", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Patch)(':id/estado'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Body)()),
@@ -125,7 +125,7 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], CitasController.prototype, "cambiarEstado", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     (0, common_1.Post)(':id/cancelar'),
     __param(0, (0, common_1.Param)('id')),
     __metadata("design:type", Function),

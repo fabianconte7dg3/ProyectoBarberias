@@ -46,7 +46,7 @@ let TransaccionesController = class TransaccionesController {
 exports.TransaccionesController = TransaccionesController;
 __decorate([
     (0, common_1.Post)('citas/:id/cobrar'),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
     __param(2, (0, common_1.Body)()),
@@ -57,7 +57,7 @@ __decorate([
 ], TransaccionesController.prototype, "cobrarCita", null);
 __decorate([
     (0, common_1.Post)('transacciones/mostrador'),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __param(2, (0, common_1.Res)({ passthrough: true })),

@@ -93,7 +93,7 @@ let ClientesService = class ClientesService {
             ...(dto.nombreCompleto !== undefined && { nombreCompleto: dto.nombreCompleto }),
             ...(dto.emailFacturacion !== undefined && { emailFacturacion: dto.emailFacturacion }),
             ...(dto.notasPreferencia !== undefined && { notasPreferencia: dto.notasPreferencia }),
-            ...(dto.barberoFrecuenteId !== undefined && { barberoFrecuenteId: dto.barberoFrecuenteId }),
+            ...(dto.empleadoFrecuenteId !== undefined && { empleadoFrecuenteId: dto.empleadoFrecuenteId }),
             ...(dto.bloqueado !== undefined && { bloqueado: dto.bloqueado }),
             ...(dto.aceptaMarketing !== undefined && { aceptaMarketing: dto.aceptaMarketing }),
         })

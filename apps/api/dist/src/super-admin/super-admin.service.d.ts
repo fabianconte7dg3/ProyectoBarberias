@@ -71,7 +71,7 @@ export declare class SuperAdminService {
         adminEmail: any;
         adminNombre: any;
         createdAt: any;
-        totalBarberos: number;
+        totalEmpleados: number;
         totalCitasMes: number;
         totalFacturadoMes: number;
     }[]>;
@@ -98,7 +98,7 @@ export declare class SuperAdminService {
         auditLogs: any;
     }>;
     cambiarEstadoTenant(tenantId: string, estado: 'activo' | 'suspendido_pago' | 'cancelado'): Promise<any>;
-    cambiarPlanTenant(tenantId: string, plan: 'basico' | 'premium'): Promise<any>;
+    cambiarPlanTenant(tenantId: string, plan: 'independiente' | 'basico' | 'premium'): Promise<any>;
     toggleKillSwitchPlatform(tenantId: string, bloqueado: boolean): Promise<any>;
     obtenerMetricasNegocio(): Promise<{
         nuevasMes: number;

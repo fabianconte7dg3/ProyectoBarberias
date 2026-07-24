@@ -4,12 +4,12 @@ import { CreateBloqueoDto } from './dto/create-bloqueo.dto';
 export declare class HorariosController {
     private readonly horariosService;
     constructor(horariosService: HorariosService);
-    setHorarioSemanal(barberoId: string, dto: UpsertHorarioSemanalDto): Promise<any>;
-    getHorarioSemanal(barberoId: string): Promise<any>;
+    setHorarioSemanal(empleadoId: string, dto: UpsertHorarioSemanalDto): Promise<any>;
+    getHorarioSemanal(empleadoId: string): Promise<any>;
     createBloqueo(dto: CreateBloqueoDto): Promise<any>;
-    getBloqueos(barberoId: string): Promise<any>;
+    getBloqueos(empleadoId: string): Promise<any>;
     getHistorialBloqueos(): Promise<any>;
-    getDisponibilidad(barberoId: string, fecha: string): Promise<{
+    getDisponibilidad(empleadoId: string, fecha: string): Promise<{
         disponible: boolean;
         jornada: {
             inicio: any;

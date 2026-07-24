@@ -14,7 +14,7 @@ const class_validator_1 = require("class-validator");
 const schema_1 = require("../../database/schema");
 class CreateCitaDto {
     clienteId;
-    barberoId;
+    empleadoId;
     servicioId;
     inicioEstimado;
     origen;
@@ -27,8 +27,9 @@ __decorate([
 ], CreateCitaDto.prototype, "clienteId", void 0);
 __decorate([
     (0, class_validator_1.IsUUID)(),
+    (0, class_validator_1.IsOptional)(),
     __metadata("design:type", String)
-], CreateCitaDto.prototype, "barberoId", void 0);
+], CreateCitaDto.prototype, "empleadoId", void 0);
 __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)

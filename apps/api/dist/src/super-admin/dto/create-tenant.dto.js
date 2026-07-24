@@ -17,6 +17,10 @@ class CreateTenantDto {
     adminEmail;
     adminNombre;
     planId;
+    industria;
+    terminologiaEmpleado;
+    terminologiaServicio;
+    terminologiaCliente;
 }
 exports.CreateTenantDto = CreateTenantDto;
 __decorate([
@@ -37,7 +41,27 @@ __decorate([
 ], CreateTenantDto.prototype, "adminNombre", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsEnum)(['basico', 'premium']),
+    (0, class_validator_1.IsEnum)(['independiente', 'basico', 'premium']),
     __metadata("design:type", String)
 ], CreateTenantDto.prototype, "planId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsEnum)(['barberia', 'salon_belleza', 'spa_masajes', 'veterinaria', 'clinica_medica', 'taller_mecanico', 'espacio_alquiler', 'otro']),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "industria", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "terminologiaEmpleado", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "terminologiaServicio", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateTenantDto.prototype, "terminologiaCliente", void 0);
 //# sourceMappingURL=create-tenant.dto.js.map

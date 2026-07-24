@@ -24,7 +24,7 @@ __decorate([
     __metadata("design:type", String)
 ], InviteStaffDto.prototype, "nombreCompleto", void 0);
 __decorate([
-    (0, class_validator_1.IsEnum)(['barbero', 'recepcion']),
+    (0, class_validator_1.IsEnum)(['empleado', 'recepcion']),
     __metadata("design:type", String)
 ], InviteStaffDto.prototype, "rol", void 0);
 __decorate([

@@ -81,16 +81,16 @@ let HorariosService = class HorariosService {
             throw new common_1.BadRequestException(`Para el día ${dia.diaSemana}, debe especificar inicio y fin de almuerzo, o ninguno de los dos.`);
         }
     }
-    async setHorarioSemanal(barberoId, dto) {
+    async setHorarioSemanal(empleadoId, dto) {
         const db = tenant_context_1.TenantContext.getDb();
         const tenantId = tenant_context_1.TenantContext.getTenantId();
         dto.dias.forEach(dia => this.validateDia(dia));
         return await db.transaction(async (tx) => {
-            await tx.delete(schema.horarios).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema.horarios.barberoId, barberoId)));
+            await tx.delete(schema.horarios).where((0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.tenantId, tenantId), (0, drizzle_orm_1.eq)(schema.horarios.empleadoId, empleadoId)));
             if (dto.dias.length > 0) {
                 const valores = dto.dias.map(d => ({
                     tenantId,
-                    barberoId,
+                    empleadoId,
                     diaSemana: d.diaSemana,
                     horaInicio: d.horaInicio,
                     horaFin: d.horaFin,
@@ -103,10 +103,10 @@ let HorariosService = class HorariosService {
             return { message: 'Horario semanal actualizado correctamente.' };
         });
     }
-    async getHorarioSemanal(barberoId) {
+    async getHorarioSemanal(empleadoId) {
         const db = tenant_context_1.TenantContext.getDb();
         return db.query.horarios.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.barberoId, barberoId), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.empleadoId, empleadoId), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
         });
     }
     async createBloqueo(dto) {
@@ -119,7 +119,7 @@ let HorariosService = class HorariosService {
         }
         const [bloqueo] = await db.insert(schema.bloqueosTemporales).values({
             tenantId,
-            barberoId: dto.barberoId,
+            empleadoId: dto.empleadoId,
             inicio,
             fin,
             tipo: dto.tipo,
@@ -129,11 +129,11 @@ let HorariosService = class HorariosService {
         }).returning();
         return bloqueo;
     }
-    async getBloqueosVigentes(barberoId) {
+    async getBloqueosVigentes(empleadoId) {
         const db = tenant_context_1.TenantContext.getDb();
         const ahora = new Date();
         return db.query.bloqueosTemporales.findMany({
-            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.barberoId, barberoId), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, ahora), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
+            where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.empleadoId, empleadoId), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, ahora), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
             orderBy: [(0, drizzle_orm_1.asc)(schema.bloqueosTemporales.inicio)],
         });
     }
@@ -145,7 +145,7 @@ let HorariosService = class HorariosService {
             orderBy: [(0, drizzle_orm_1.desc)(schema.bloqueosTemporales.inicio)],
             limit: 100,
             with: {
-                barbero: {
+                empleado: {
                     columns: {
                         id: true,
                         nombreCompleto: true,
@@ -155,8 +155,8 @@ let HorariosService = class HorariosService {
             }
         });
     }
-    async getDisponibilidad(barberoId, fechaYYYYMMDD) {
-        const res = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${barberoId}) as tenant_id`);
+    async getDisponibilidad(empleadoId, fechaYYYYMMDD) {
+        const res = await this.db.execute((0, drizzle_orm_1.sql) `SELECT get_tenant_for_usuario(${empleadoId}) as tenant_id`);
         const tenantId = res.rows[0]?.tenant_id;
         if (!tenantId) {
             return { disponible: false, jornada: null, ocupados: [], almuerzo: null };
@@ -167,7 +167,7 @@ let HorariosService = class HorariosService {
             const diasSemana = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
             const diaString = diasSemana[fechaDate.getUTCDay()];
             const [horario] = await db.query.horarios.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.barberoId, barberoId), (0, drizzle_orm_1.eq)(schema.horarios.diaSemana, diaString), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.horarios.empleadoId, empleadoId), (0, drizzle_orm_1.eq)(schema.horarios.diaSemana, diaString), (0, drizzle_orm_1.eq)(schema.horarios.activo, true)),
             });
             if (!horario) {
                 return { disponible: false, jornada: null, ocupados: [], almuerzo: null };
@@ -176,10 +176,10 @@ let HorariosService = class HorariosService {
             const finDia = new Date(fechaDate);
             finDia.setUTCDate(finDia.getUTCDate() + 1);
             const citasHoy = await db.query.citas.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.citas.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.citas.finEstimado, inicioDia), (0, drizzle_orm_1.lte)(schema.citas.inicioEstimado, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.citas.estado, 'programada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'en_curso'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'completada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'revision_manual'))),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.citas.empleadoId, empleadoId), (0, drizzle_orm_1.gt)(schema.citas.finEstimado, inicioDia), (0, drizzle_orm_1.lte)(schema.citas.inicioEstimado, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.eq)(schema.citas.estado, 'programada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'en_curso'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'completada'), (0, drizzle_orm_1.eq)(schema.citas.estado, 'revision_manual'))),
             });
             const bloqueosHoy = await db.query.bloqueosTemporales.findMany({
-                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.barberoId, barberoId), (0, drizzle_orm_1.gt)(schema.bloqueosTemporales.fin, inicioDia), (0, drizzle_orm_1.lte)(schema.bloqueosTemporales.inicio, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, new Date()), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
+                where: (0, drizzle_orm_1.and)((0, drizzle_orm_1.eq)(schema.bloqueosTemporales.empleadoId, empleadoId), (0, drizzle_orm_1.gt)(schema.bloqueosTemporales.fin, inicioDia), (0, drizzle_orm_1.lte)(schema.bloqueosTemporales.inicio, finDia), (0, drizzle_orm_1.or)((0, drizzle_orm_1.gt)(schema.bloqueosTemporales.expiraEn, new Date()), (0, drizzle_orm_1.isNull)(schema.bloqueosTemporales.expiraEn))),
             });
             let maxRetrasoMinutos = 0;
             for (const c of citasHoy) {

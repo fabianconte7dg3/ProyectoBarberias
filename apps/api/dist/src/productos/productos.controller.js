@@ -50,7 +50,7 @@ __decorate([
 ], ProductosController.prototype, "create", null);
 __decorate([
     (0, common_1.Get)(),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
@@ -58,7 +58,7 @@ __decorate([
 ], ProductosController.prototype, "findAll", null);
 __decorate([
     (0, common_1.Get)(':id'),
-    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'barbero'),
+    (0, roles_decorator_1.Roles)('admin', 'recepcion', 'empleado'),
     __param(0, (0, common_1.Param)('id')),
     __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),

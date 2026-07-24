@@ -24,39 +24,39 @@ let HorariosController = class HorariosController {
     constructor(horariosService) {
         this.horariosService = horariosService;
     }
-    setHorarioSemanal(barberoId, dto) {
-        return this.horariosService.setHorarioSemanal(barberoId, dto);
+    setHorarioSemanal(empleadoId, dto) {
+        return this.horariosService.setHorarioSemanal(empleadoId, dto);
     }
-    getHorarioSemanal(barberoId) {
-        return this.horariosService.getHorarioSemanal(barberoId);
+    getHorarioSemanal(empleadoId) {
+        return this.horariosService.getHorarioSemanal(empleadoId);
     }
     createBloqueo(dto) {
         return this.horariosService.createBloqueo(dto);
     }
-    getBloqueos(barberoId) {
-        return this.horariosService.getBloqueosVigentes(barberoId);
+    getBloqueos(empleadoId) {
+        return this.horariosService.getBloqueosVigentes(empleadoId);
     }
     getHistorialBloqueos() {
         return this.horariosService.getHistorialBloqueosStaff();
     }
-    getDisponibilidad(barberoId, fecha) {
-        return this.horariosService.getDisponibilidad(barberoId, fecha);
+    getDisponibilidad(empleadoId, fecha) {
+        return this.horariosService.getDisponibilidad(empleadoId, fecha);
     }
 };
 exports.HorariosController = HorariosController;
 __decorate([
     (0, roles_decorator_1.Roles)('admin'),
-    (0, common_1.Post)('barbero/:barberoId'),
-    __param(0, (0, common_1.Param)('barberoId')),
+    (0, common_1.Post)('empleado/:empleadoId'),
+    __param(0, (0, common_1.Param)('empleadoId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, upsert_horario_semanal_dto_1.UpsertHorarioSemanalDto]),
     __metadata("design:returntype", void 0)
 ], HorariosController.prototype, "setHorarioSemanal", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'barbero', 'recepcion'),
-    (0, common_1.Get)('barbero/:barberoId'),
-    __param(0, (0, common_1.Param)('barberoId')),
+    (0, roles_decorator_1.Roles)('admin', 'empleado', 'recepcion'),
+    (0, common_1.Get)('empleado/:empleadoId'),
+    __param(0, (0, common_1.Param)('empleadoId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -70,9 +70,9 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], HorariosController.prototype, "createBloqueo", null);
 __decorate([
-    (0, roles_decorator_1.Roles)('admin', 'barbero', 'recepcion'),
-    (0, common_1.Get)('bloqueos/:barberoId'),
-    __param(0, (0, common_1.Param)('barberoId')),
+    (0, roles_decorator_1.Roles)('admin', 'empleado', 'recepcion'),
+    (0, common_1.Get)('bloqueos/:empleadoId'),
+    __param(0, (0, common_1.Param)('empleadoId')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
@@ -87,7 +87,7 @@ __decorate([
 __decorate([
     (0, public_decorator_1.Public)(),
     (0, common_1.Get)('disponibilidad'),
-    __param(0, (0, common_1.Query)('barberoId')),
+    __param(0, (0, common_1.Query)('empleadoId')),
     __param(1, (0, common_1.Query)('fecha')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String, String]),

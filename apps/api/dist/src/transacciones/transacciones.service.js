@@ -77,22 +77,22 @@ let TransaccionesService = class TransaccionesService {
             };
         }
         let cita = null;
-        let barbero = null;
+        let empleado = null;
         let subtotalServicio = 0;
         let comisionServicio = 0;
         if (citaId) {
             cita = await db.query.citas.findFirst({
                 where: (0, drizzle_orm_1.eq)(schema_1.citas.id, citaId),
                 with: {
-                    barbero: true,
+                    empleado: true,
                     servicio: true,
                 },
             });
             if (!cita) {
                 throw new common_1.NotFoundException('Cita no encontrada');
             }
-            if (user && user.rol === 'barbero' && cita.barberoId !== user.userId) {
-                throw new common_1.ForbiddenException('No tienes permisos para cobrar citas asignadas a otro barbero.');
+            if (user && user.rol === 'empleado' && cita.empleadoId !== user.userId) {
+                throw new common_1.ForbiddenException('No tienes permisos para cobrar citas asignadas a otro empleado.');
             }
             if (cita.estado === 'completada' || cita.estado === 'cancelada') {
                 throw new common_1.ConflictException(`Esta cita ya fue procesada o cancelada (Estado: ${cita.estado}).`);
@@ -103,14 +103,14 @@ let TransaccionesService = class TransaccionesService {
             if (txExistenteCita) {
                 throw new common_1.ConflictException('Ya existe un cobro registrado para esta cita.');
             }
-            barbero = cita.barbero;
+            empleado = cita.empleado;
             subtotalServicio = Number(cita.servicio.precioBase || 0);
-            const pctServicio = Number(barbero.porcentajeComision || 0);
+            const pctServicio = Number(empleado.porcentajeComision || 0);
             comisionServicio = (subtotalServicio * pctServicio) / 100;
         }
-        else if (dto.barberoId) {
-            barbero = await db.query.usuarios.findFirst({
-                where: (0, drizzle_orm_1.eq)(schema_1.usuarios.id, dto.barberoId),
+        else if (dto.empleadoId) {
+            empleado = await db.query.usuarios.findFirst({
+                where: (0, drizzle_orm_1.eq)(schema_1.usuarios.id, dto.empleadoId),
             });
         }
         const lineasDetalle = [];
@@ -131,7 +131,7 @@ let TransaccionesService = class TransaccionesService {
                 const prod = await this.productosService.descontarStockAtomico(item.productoId, item.cantidad, db);
                 const precioUnitario = Number(prod.precio_venta || prod.precioVenta || 0);
                 const subtotalProd = precioUnitario * item.cantidad;
-                const pctComisionProd = Number(barbero?.porcentajeComisionProducto || 0);
+                const pctComisionProd = Number(empleado?.porcentajeComisionProducto || 0);
                 const comisionProd = (subtotalProd * pctComisionProd) / 100;
                 subtotalProductosTotal += subtotalProd;
                 comisionProductosTotal += comisionProd;
@@ -149,7 +149,7 @@ let TransaccionesService = class TransaccionesService {
             throw new common_1.BadRequestException('Una venta de mostrador debe incluir al menos un producto.');
         }
         const totalFacturado = subtotalServicio + subtotalProductosTotal;
-        const comisionBarberoTotal = comisionServicio + comisionProductosTotal;
+        const comisionEmpleadoTotal = comisionServicio + comisionProductosTotal;
         const yappyOrderId = dto.metodoPago === 'yappy' ? crypto.randomBytes(6).toString('hex') : null;
         const [nuevaTransaccion] = await db.insert(schema_1.transacciones).values({
             tenantId,
@@ -158,7 +158,7 @@ let TransaccionesService = class TransaccionesService {
             metodoPago: dto.metodoPago,
             totalFacturado: totalFacturado.toFixed(2),
             montoEfectivoIngresado: dto.montoEfectivoIngresado ? dto.montoEfectivoIngresado.toFixed(2) : null,
-            comisionBarbero: comisionBarberoTotal.toFixed(2),
+            comisionBarbero: comisionEmpleadoTotal.toFixed(2),
             propinaBarbero: dto.propinaBarbero ? dto.propinaBarbero.toFixed(2) : '0.00',
             rucCliente: dto.rucCliente,
             nombreFiscalCliente: dto.nombreFiscalCliente,
@@ -203,7 +203,7 @@ let TransaccionesService = class TransaccionesService {
             with: {
                 cita: {
                     with: {
-                        barbero: true,
+                        empleado: true,
                         servicio: true,
                         cliente: true,
                     }

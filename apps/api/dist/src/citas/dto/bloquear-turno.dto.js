@@ -12,7 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BloquearTurnoDto = void 0;
 const class_validator_1 = require("class-validator");
 class BloquearTurnoDto {
-    barberoId;
+    empleadoId;
     inicio;
     fin;
     notas;
@@ -21,7 +21,7 @@ exports.BloquearTurnoDto = BloquearTurnoDto;
 __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
-], BloquearTurnoDto.prototype, "barberoId", void 0);
+], BloquearTurnoDto.prototype, "empleadoId", void 0);
 __decorate([
     (0, class_validator_1.IsDateString)(),
     __metadata("design:type", String)

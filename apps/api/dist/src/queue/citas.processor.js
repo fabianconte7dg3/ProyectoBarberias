@@ -84,7 +84,7 @@ let CitasProcessor = CitasProcessor_1 = class CitasProcessor extends bullmq_1.Wo
                 where: (0, drizzle_orm_1.eq)(schema.citas.id, citaId),
                 with: {
                     cliente: true,
-                    barbero: true,
+                    empleado: true,
                     servicio: true,
                 },
             });
@@ -95,7 +95,7 @@ let CitasProcessor = CitasProcessor_1 = class CitasProcessor extends bullmq_1.Wo
         }
         const fecha = new Date(result.inicioEstimado);
         const strHora = fecha.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-        const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.barbero.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
+        const mensaje = `Hola ${result.cliente?.nombreCompleto || ''}, te recordamos tu cita para *${result.servicio.nombre}* con ${result.empleado.nombreCompleto} mañana a las ${strHora}. \n\nResponde:\n1️⃣ para Confirmar\n2️⃣ para Cancelar`;
         if (result.cliente?.telefonoWhatsapp) {
             let interactedRecently = false;
             if (result.cliente.ultimoMensajeRecibidoAt) {
