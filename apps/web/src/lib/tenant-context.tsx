@@ -20,6 +20,7 @@ export interface TenantPublica {
   terminologiaServicio: string;
   terminologiaCliente: string;
   configCamposPersonalizados: CampoPersonalizado[];
+  configWidgetsDestacados: string[];
 }
 
 const TenantContext = createContext<TenantPublica | null>(null);

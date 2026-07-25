@@ -11,9 +11,10 @@ import {
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 import { useTenant } from '@/lib/tenant-context';
-import { 
-  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar, CartesianGrid 
+import {
+  ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar, CartesianGrid
 } from 'recharts';
+import { WIDGET_REGISTRY } from '@/components/admin/dashboard-widgets';
 
 interface RendimientoEmpleado {
   empleadoId: string;
@@ -92,6 +93,8 @@ interface DashboardData {
   productosStockBajoList?: ProductoStockBajo[];
   rendimientoEmpleados: RendimientoEmpleado[];
   clientesStrikes: ClienteStrike[];
+  pacientesActivosCount?: number;
+  proximasRevisionesCount?: number;
 }
 
 export type PeriodoPreset = 
@@ -124,7 +127,7 @@ export default function AdminDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
+  const { terminologiaEmpleado, terminologiaServicio, configWidgetsDestacados } = useTenant();
 
   const currentUser = useAdminStore((state) => state.user);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -401,6 +404,24 @@ export default function AdminDashboardPage() {
             >
               Ver Inventario
             </button>
+          </div>
+        )}
+
+        {/* Zona de Widgets Destacados (Fase 2.2 — configurable por industria) */}
+        {data && configWidgetsDestacados.length > 0 && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            {configWidgetsDestacados.map((key) => {
+              const Widget = WIDGET_REGISTRY[key];
+              if (!Widget) return null;
+              return (
+                <Widget
+                  key={key}
+                  data={data}
+                  terminologiaEmpleado={terminologiaEmpleado}
+                  terminologiaServicio={terminologiaServicio}
+                />
+              );
+            })}
           </div>
         )}
 
