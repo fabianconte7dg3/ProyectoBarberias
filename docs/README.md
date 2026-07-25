@@ -4,6 +4,12 @@
 
 Esta documentación está organizada de forma modular en categorías claras para facilitar su navegación, mantenimiento y referencia técnica.
 
+## 🚀 Empezar aquí
+
+- [`spec.md`](./spec.md) — especificación de producto completa (verticales, actores, módulos, casos límite, integraciones, estado de tests).
+- [`plan.md`](./plan.md) — roadmap en tareas chicas tachables, fase por fase (incluye el plan de rebrand a Volumetrix, pendiente de decisión).
+- [`04-hitos-y-changelogs/walkthrough.md`](./04-hitos-y-changelogs/walkthrough.md) — recorrido de 15 minutos por la arquitectura y todo lo construido hasta hoy.
+
 ---
 
 ## 📂 Estructura de la Documentación
@@ -43,15 +49,20 @@ docs/
 - [Infraestructura Híbrida](./02-arquitectura-y-db/Infraestructura_Hibrida.md) — Despliegue en VPS y contenedores.
 - [Stack Web](./02-arquitectura-y-db/Stack_Web.md) — Tecnologías clave (NestJS, Next.js, BullMQ, Tailwind).
 - [Escalabilidad y Crecimiento](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md) — Estrategia de escalado.
+- [Auditoría del Stack Tecnológico](./02-arquitectura-y-db/Auditoria_Stack_Tecnologico.md) — 56 vulnerabilidades encontradas y remediadas (39→0 backend, 17→6 frontend), Next.js parchado, dependencias muertas eliminadas, todo verificado en vivo (no solo `npm audit`).
 - [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`.
 - [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend + SuperAdmin conectado a industria/terminología.
 - [Multi-Industria — Fase 2-D: Terminología Dinámica Real](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md) — Endpoint público de tenant + Context de React conectado en el portal de reserva y el panel de administración.
+- [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Diseño acordado (entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados) — aún no implementado.
+- [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Diseño acordado (combos de servicios con comisión itemizada, citas de acompañante, widgets configurables por vertical) — aún no implementado.
+- [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Diseño acordado (calendario en tiempo real vía SSE, confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias con fechas, importación de citas históricas). Incluye el hallazgo de que el recordatorio de WhatsApp promete una confirmación que el webhook no cumple hoy.
 
 ### 📍 [03. Integraciones Externas](./03-integraciones/)
 - [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC.
 - [WhatsApp (Evolution API)](./03-integraciones/WhatsApp_Evolution_API.md) — Mensajería asíncrona y recordatorios.
 
 ### 📍 [04. Hitos Completados & Changelogs](./04-hitos-y-changelogs/)
+- [Walkthrough (15 minutos)](./04-hitos-y-changelogs/walkthrough.md) — Recorrido completo de arquitectura y estado actual para alguien que entra nuevo al proyecto.
 - [Resumen de Hitos y Flujos completos](./04-hitos-y-changelogs/RESUMEN_HITOS_Y_FLUJOS.md) — Resumen actualizado de Hitos 1 a 9.
 - [CHANGELOG Frontend Hito 2](./04-hitos-y-changelogs/CHANGELOG_Frontend_Hito2.md) — Log de interfaz inicial.
 - [CHANGELOG Hito 5](./04-hitos-y-changelogs/CHANGELOG_Hito5.md) — Log del módulo financiero y Yappy.

@@ -55,7 +55,8 @@ Ejemplos incorrectos:
 ## 🔄 Flujo de Trabajo Esperado
 
 ```
-1. PLANIFICAR  → Escribir o actualizar implementation_plan.md antes de tocar código.
+1. PLANIFICAR  → Escribir o actualizar docs/plan.md antes de tocar código (tareas chicas, tachables).
+               → Para iniciativas grandes o nuevas, actualizar también docs/spec.md.
                → Para tareas > 3 archivos, documentar en docs/ antes de ejecutar.
 
 2. EJECUTAR    → Cambios pequeños y atómicos.
@@ -64,8 +65,11 @@ Ejemplos incorrectos:
 
 3. VERIFICAR   → Commit con mensaje Conventional Commits en español.
                → Push a origin/master antes de finalizar la sesión.
-               → Actualizar walkthrough.md o el checklist correspondiente en docs/.
+               → Actualizar docs/04-hitos-y-changelogs/walkthrough.md o el checklist correspondiente en docs/.
 ```
+
+`docs/spec.md`, `docs/plan.md` y `docs/04-hitos-y-changelogs/walkthrough.md` ya existen — mantenerlos
+actualizados en vez de crear duplicados con nombres distintos.
 
 ---
 
