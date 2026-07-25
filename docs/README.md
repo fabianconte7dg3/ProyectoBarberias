@@ -24,6 +24,7 @@ docs/
 ## 🗺️ Índice de Contenidos
 
 ### 📍 [01. Visión y Planificación](./01-vision-y-plan/)
+- [Checklist Multi-Industria y Producción](./01-vision-y-plan/Checklist_Multi_Industria_y_Produccion.md) — Estado actual consolidado y próximos pasos hasta una plataforma multi-industria en producción.
 - [Checklist de Desarrollo SaaS](./01-vision-y-plan/Checklist_Desarrollo_SaaS.md) — Plan maestro de módulos e hitos.
 - [Roadmap Backend](./01-vision-y-plan/Roadmap_Backend.md) — Roadmap de arquitectura backend.
 - [Roadmap Frontend](./01-vision-y-plan/Roadmap_Frontend.md) — Roadmap de desarrollo frontend.
