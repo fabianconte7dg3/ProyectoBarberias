@@ -95,6 +95,9 @@ export const barberias = pgTable('barberias', {
   // Multi-industria (Fase 2.1 — ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md):
   // define la forma de camposPersonalizados en `pacientes`/`clientes.datosAdicionales` para este tenant.
   configCamposPersonalizados: jsonb('config_campos_personalizados').notNull().default([]),
+  // Multi-industria (Fase 2.2 — ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md):
+  // array de claves de widget + orden para la zona de widgets destacados del dashboard.
+  configWidgetsDestacados: jsonb('config_widgets_destacados').notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -152,6 +155,46 @@ export const productos = pgTable('productos', {
 }));
 
 // ============================================================================
+// TABLA 3.6: combos (bundle de servicios rastreado — ver
+// docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md)
+// ============================================================================
+// "Bundle rastreado": la cita agenda el combo como un bloque, pero al cobrar cada
+// servicio interno se sigue itemizando por separado (detallesTransaccion) para
+// reportes y comisión — ver combo_servicios y transacciones.service.ts.
+
+export const combos = pgTable('combos', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  nombre: varchar('nombre', { length: 255 }).notNull(),
+  precioTotal: decimal('precio_total', { precision: 10, scale: 2 }).notNull(),
+  // NULL = usar la suma de duracionMinutos de los servicios del combo.
+  duracionAjustadaMinutos: integer('duracion_ajustada_minutos'),
+  activo: boolean('activo').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ============================================================================
+// TABLA 3.7: combo_servicios (líneas del combo)
+// ============================================================================
+// Desviación deliberada del diseño (que proponía PK compuesta combo_id+servicio_id):
+// se usa id surrogate + unique(comboId, servicioId), consistente con el resto del
+// esquema (ninguna otra tabla usa PK compuesta) y con tenantId propio para que la
+// policy RLS sea directa, igual que detalles_transaccion.
+
+export const comboServicios = pgTable('combo_servicios', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  comboId: uuid('combo_id').notNull().references(() => combos.id, { onDelete: 'cascade' }),
+  servicioId: uuid('servicio_id').notNull().references(() => servicios.id),
+  orden: integer('orden').notNull().default(0),
+  // Porción del precioTotal atribuida a este servicio — usada para poblar
+  // detallesTransaccion (y por tanto la comisión) al cobrar el combo.
+  precioAsignado: decimal('precio_asignado', { precision: 10, scale: 2 }).notNull(),
+}, (table) => ({
+  comboServicioUnico: unique().on(table.comboId, table.servicioId),
+}));
+
+// ============================================================================
 // TABLA 4: clientes
 // ============================================================================
 
@@ -202,10 +245,17 @@ export const citas = pgTable('citas', {
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
   clienteId: uuid('cliente_id').references(() => clientes.id),
   empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id),
-  servicioId: uuid('servicio_id').notNull().references(() => servicios.id),
+  // Exactamente uno de servicioId/comboId debe estar presente — regla de aplicación
+  // (no constraint SQL, a propósito, ver Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §2).
+  servicioId: uuid('servicio_id').references(() => servicios.id),
+  comboId: uuid('combo_id').references(() => combos.id),
   // Multi-industria: sujeto del servicio cuando no es el cliente mismo (mascota/paciente).
   // Nula siempre para barbería/salón; requerida a nivel de aplicación para veterinaria/clínica.
   pacienteId: uuid('paciente_id').references(() => pacientes.id),
+  // Citas grupales (cliente + acompañante): NULL = cita individual, sin cambios.
+  // Mismo valor en 2+ citas = una sola visita para UX/cobro conjunto (ver transacciones
+  // .grupoReservaId). No afecta el motor de disponibilidad — es puramente de presentación/cobro.
+  grupoReservaId: uuid('grupo_reserva_id'),
   inicioEstimado: timestamp('inicio_estimado', { withTimezone: true }).notNull(),
   finEstimado: timestamp('fin_estimado', { withTimezone: true }).notNull(),
   inicioReal: timestamp('inicio_real', { withTimezone: true }),
@@ -221,6 +271,7 @@ export const citas = pgTable('citas', {
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   idxCitasTenantEmpleadoInicio: index('idx_citas_tenant_empleado_inicio').on(table.tenantId, table.empleadoId, table.inicioEstimado),
+  idxCitasGrupoReserva: index('idx_citas_grupo_reserva').on(table.grupoReservaId),
 }));
 
 // ============================================================================
@@ -248,7 +299,11 @@ export const notasClinicas = pgTable('notas_clinicas', {
 export const transacciones = pgTable('transacciones', {
   id: uuid('id').primaryKey().defaultRandom(),
   tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
-  citaId: uuid('cita_id').references(() => citas.id), // NULLABLE para ventas directas de mostrador
+  citaId: uuid('cita_id').references(() => citas.id), // NULLABLE para ventas directas de mostrador o cobro de grupo
+  // Citas grupales: tag compartido cuando esta transacción cubre 2+ citas del mismo
+  // grupoReservaId en un solo checkout. citaId queda NULL en ese caso — cada cita del
+  // grupo se enlaza vía detallesTransaccion.citaId, no aquí (ver transacciones.service.ts).
+  grupoReservaId: uuid('grupo_reserva_id'),
   idempotencyKey: varchar('idempotency_key', { length: 255 }).notNull().unique(),
   metodoPago: metodoPagoEnum('metodo_pago').notNull(),
   totalFacturado: decimal('total_facturado', { precision: 10, scale: 2 }).notNull(),
@@ -280,6 +335,15 @@ export const detallesTransaccion = pgTable('detalles_transaccion', {
   tipoItem: tipoItemEnum('tipo_item').notNull(),
   servicioId: uuid('servicio_id').references(() => servicios.id),
   productoId: uuid('producto_id').references(() => productos.id),
+  // Qué cita generó esta línea de servicio — poblado siempre que se conoce la cita, no
+  // solo en cobro grupal: un combo genera varias líneas para la misma cita, y este campo
+  // permite deduplicarlas al contar citas en reportes.service.ts. NULL en líneas de producto.
+  citaId: uuid('cita_id').references(() => citas.id),
+  // Citas grupales (cobro conjunto): qué empleado realizó este servicio puntual, para
+  // atribuir comisión correctamente cuando el grupo tiene empleados distintos. NULL en
+  // transacciones de un solo empleado — los reportes usan este valor con fallback a
+  // cita.empleadoId (ver reportes.service.ts).
+  empleadoId: uuid('empleado_id').references(() => usuarios.id),
   cantidad: integer('cantidad').notNull().default(1),
   precioUnitario: decimal('precio_unitario', { precision: 10, scale: 2 }).notNull(),
   subtotal: decimal('subtotal', { precision: 10, scale: 2 }).notNull(),
@@ -441,8 +505,20 @@ export const citasRelations = relations(citas, ({ one }) => ({
   cliente: one(clientes, { fields: [citas.clienteId], references: [clientes.id] }),
   empleado: one(usuarios, { fields: [citas.empleadoId], references: [usuarios.id] }),
   servicio: one(servicios, { fields: [citas.servicioId], references: [servicios.id] }),
+  combo: one(combos, { fields: [citas.comboId], references: [combos.id] }),
   paciente: one(pacientes, { fields: [citas.pacienteId], references: [pacientes.id] }),
   transaccion: one(transacciones, { fields: [citas.id], references: [transacciones.citaId] }),
+}));
+
+export const combosRelations = relations(combos, ({ one, many }) => ({
+  barberia: one(barberias, { fields: [combos.tenantId], references: [barberias.id] }),
+  servicios: many(comboServicios),
+}));
+
+export const comboServiciosRelations = relations(comboServicios, ({ one }) => ({
+  barberia: one(barberias, { fields: [comboServicios.tenantId], references: [barberias.id] }),
+  combo: one(combos, { fields: [comboServicios.comboId], references: [combos.id] }),
+  servicio: one(servicios, { fields: [comboServicios.servicioId], references: [servicios.id] }),
 }));
 
 export const notasClinicasRelations = relations(notasClinicas, ({ one }) => ({
@@ -473,6 +549,8 @@ export const detallesTransaccionRelations = relations(detallesTransaccion, ({ on
   transaccion: one(transacciones, { fields: [detallesTransaccion.transaccionId], references: [transacciones.id] }),
   servicio: one(servicios, { fields: [detallesTransaccion.servicioId], references: [servicios.id] }),
   producto: one(productos, { fields: [detallesTransaccion.productoId], references: [productos.id] }),
+  cita: one(citas, { fields: [detallesTransaccion.citaId], references: [citas.id] }),
+  empleado: one(usuarios, { fields: [detallesTransaccion.empleadoId], references: [usuarios.id] }),
 }));
 
 // ============================================================================
