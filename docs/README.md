@@ -24,6 +24,7 @@ docs/
 ## 🗺️ Índice de Contenidos
 
 ### 📍 [01. Visión y Planificación](./01-vision-y-plan/)
+- [Auditoría: Metodología de Desarrollo Asistido por IA](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md) — Cumplimiento del flujo Planificar/Contexto real (MCP)/Verificar y anti-patrones, con hallazgos concretos (node_modules trackeado, tests boilerplate, sin spec.md/plan.md).
 - [Checklist Multi-Industria y Producción](./01-vision-y-plan/Checklist_Multi_Industria_y_Produccion.md) — Estado actual consolidado y próximos pasos hasta una plataforma multi-industria en producción.
 - [Checklist de Desarrollo SaaS](./01-vision-y-plan/Checklist_Desarrollo_SaaS.md) — Plan maestro de módulos e hitos.
 - [Roadmap Backend](./01-vision-y-plan/Roadmap_Backend.md) — Roadmap de arquitectura backend.
