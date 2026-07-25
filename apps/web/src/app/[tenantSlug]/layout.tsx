@@ -1,19 +1,12 @@
 import { ReactNode } from 'react';
 import { notFound } from 'next/navigation';
+import { API_URL } from '@/lib/api';
+import { TenantProvider, type TenantPublica } from '@/lib/tenant-context';
 
-async function getTenantConfig(slug: string) {
-  if (slug === 'barberia-carlos') {
-    return {
-      id: 'tenant-123',
-      name: 'Barbería Carlos',
-      color: '#ef4444', 
-    };
-  }
-  return {
-    id: slug,
-    name: slug,
-    color: '#ef4444',
-  };
+async function getTenantConfig(slug: string): Promise<TenantPublica | null> {
+  const res = await fetch(`${API_URL}/tenants/publico/${slug}`, { cache: 'no-store' });
+  if (!res.ok) return null;
+  return res.json();
 }
 
 export default async function TenantLayout({
@@ -33,9 +26,9 @@ export default async function TenantLayout({
   return (
     <div
       className="min-h-screen bg-background text-foreground w-full flex flex-col font-sans"
-      style={{ '--primary': tenant.color } as React.CSSProperties}
+      style={{ '--primary': tenant.colorPrimario || '#ef4444' } as React.CSSProperties}
     >
-      {children}
+      <TenantProvider tenant={tenant}>{children}</TenantProvider>
     </div>
   );
 }

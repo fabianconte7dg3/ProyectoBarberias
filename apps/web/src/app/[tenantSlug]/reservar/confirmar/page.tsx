@@ -11,6 +11,7 @@ import { BottomAction } from '@/components/ui/BottomAction';
 import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { reservaClienteSchema } from '@/lib/types';
 import { fetchPublic } from '@/lib/api';
+import { useTenant } from '@/lib/tenant-context';
 
 type FormStatus = 'idle' | 'loading' | 'error' | 'success';
 
@@ -19,6 +20,7 @@ function ConfirmarContent() {
   const params = useParams();
   const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
+  const tenant = useTenant();
   const isSuccessQuery = searchParams.get('status') === 'success';
   const isHydrated = useHydration();
 
@@ -147,8 +149,8 @@ function ConfirmarContent() {
 
         {/* Resumen de Servicio y Fecha */}
         <BookingSummary
-          servicioNombre="Servicio Seleccionado"
-          empleadoNombre="Empleado Asignado"
+          servicioNombre={`${tenant.terminologiaServicio} Seleccionado`}
+          empleadoNombre={`${tenant.terminologiaEmpleado} Asignado`}
           fecha={fecha || '2026-07-21'}
           hora={hora || '12:00'}
           precio="15.00"

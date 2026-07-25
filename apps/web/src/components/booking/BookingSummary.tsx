@@ -1,6 +1,8 @@
+'use client';
 import { Calendar, Clock, Scissors, User } from 'lucide-react';
 import { format, parse } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTenant } from '@/lib/tenant-context';
 
 interface Props {
   servicioNombre: string;
@@ -11,6 +13,7 @@ interface Props {
 }
 
 export function BookingSummary({ servicioNombre, empleadoNombre, fecha, hora, precio }: Props) {
+  const { terminologiaServicio, terminologiaEmpleado } = useTenant();
   const dateObj = parse(fecha, 'yyyy-MM-dd', new Date());
   const formattedDate = format(dateObj, "EEEE d 'de' MMMM", { locale: es });
   const timeObj = parse(hora, 'HH:mm', new Date());
@@ -44,7 +47,7 @@ export function BookingSummary({ servicioNombre, empleadoNombre, fecha, hora, pr
               <p className="font-medium text-gray-900">{servicioNombre}</p>
               <p className="font-bold text-primary">${precio}</p>
             </div>
-            <p className="text-sm text-gray-500">Servicio</p>
+            <p className="text-sm text-gray-500">{terminologiaServicio}</p>
           </div>
         </div>
 
@@ -52,7 +55,7 @@ export function BookingSummary({ servicioNombre, empleadoNombre, fecha, hora, pr
           <User className="w-5 h-5 mt-0.5 text-primary" />
           <div>
             <p className="font-medium text-gray-900">{empleadoNombre}</p>
-            <p className="text-sm text-gray-500">Empleado</p>
+            <p className="text-sm text-gray-500">{terminologiaEmpleado}</p>
           </div>
         </div>
       </div>

@@ -11,11 +11,13 @@ import { useRouter, useParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
 import { useHydration } from '@/hooks/useHydration';
 import { fetchPublic } from '@/lib/api';
+import { useTenant } from '@/lib/tenant-context';
 
 export default function ReservarPage() {
   const router = useRouter();
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
+  const tenant = useTenant();
   const isHydrated = useHydration();
   
   // Estado global
@@ -104,7 +106,7 @@ export default function ReservarPage() {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center gap-2 text-muted-foreground">
         <RefreshCw className="animate-spin text-primary" size={24} />
-        <span className="text-xs font-semibold">Cargando catálogo de la barbería...</span>
+        <span className="text-xs font-semibold">Cargando catálogo de {tenant.nombreComercial}...</span>
       </div>
     );
   }

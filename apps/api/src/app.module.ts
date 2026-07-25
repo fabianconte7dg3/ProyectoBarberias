@@ -23,6 +23,7 @@ import { ReportesModule } from './reportes/reportes.module';
 import { DatosModule } from './datos/datos.module';
 import { ImportacionesModule } from './importaciones/importaciones.module';
 import { SuperAdminModule } from './super-admin/super-admin.module';
+import { TenantsModule } from './tenants/tenants.module';
 
 import { BullModule } from '@nestjs/bullmq';
 import { QueueModule } from './queue/queue.module';
@@ -49,6 +50,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     DatabaseModule,
     AuditModule,
     AuthModule,
+    TenantsModule,
     UsuariosModule,
     ServiciosModule,
     ProductosModule,

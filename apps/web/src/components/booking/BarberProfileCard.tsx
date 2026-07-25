@@ -1,5 +1,6 @@
 'use client';
 import { Empleado } from '@/lib/types';
+import { useTenant } from '@/lib/tenant-context';
 import { Check, Scissors, Sparkles } from 'lucide-react';
 
 interface Props {
@@ -7,6 +8,7 @@ interface Props {
 }
 
 export function BarberProfileCard({ empleado }: Props) {
+  const { terminologiaEmpleado } = useTenant();
   const inicial = empleado.nombre.charAt(0).toUpperCase();
 
   return (
@@ -46,7 +48,7 @@ export function BarberProfileCard({ empleado }: Props) {
             <h3 className="text-base sm:text-lg font-extrabold text-foreground truncate">{empleado.nombre}</h3>
             <Sparkles size={14} className="text-amber-500 shrink-0" />
           </div>
-          <p className="text-xs text-muted-foreground font-medium">Empleado Profesional & Especialista</p>
+          <p className="text-xs text-muted-foreground font-medium">{terminologiaEmpleado} Profesional & Especialista</p>
           <div className="pt-1 flex items-center gap-2">
             <span className="text-[11px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-md inline-block">
               ✔ Seleccionado automáticamente

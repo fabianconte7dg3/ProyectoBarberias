@@ -119,10 +119,10 @@ para el detalle completo. Resumen de lo que pasó con cada ítem listado origina
 - ✅ **Renombrar `planes.limiteBarberos`** — hecho, junto con el rename general.
 - ✅ **Exponer `industria`/`terminologia_*` en la creación de tenants del SuperAdmin** — hecho
   (`CreateTenantDto`, `crearTenantManual`, `CrearBarberiaModal.tsx` con selector de industria).
-- 🔲 **Frontend: terminología dinámica real** (leer `tenant.terminologiaEmpleado`/`Servicio`/`Cliente`
-  desde el backend en vez de copy estático genérico) — sigue pendiente, requiere construir desde cero el
-  mecanismo de propagación de tenant (hoy no existe ninguno real, `getTenantConfig()` está mockeado).
-  Documentado como Fase 2-D en el doc de Fase 2.
+- ✅ **Frontend: terminología dinámica real** — hecho para el Portal de Reserva público (endpoint
+  `GET /tenants/publico/:slug` + `TenantProvider`/`useTenant()` vía React Context). Ver
+  [Multi-Industria — Fase 2-D](./Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md). Queda pendiente
+  extenderlo al panel de administración (`agenda`, `barberos`, `configuracion`, `dashboard`).
 - 🔲 **Posible rename físico** de la tabla `barberias` a un nombre neutral (`negocios`/`tenants`) —
   sigue diferido, no bloqueante.
 - 🔲 **`transacciones.comisionBarbero`/`propinaBarbero`** — excluido a propósito del rename por ser
