@@ -1,6 +1,12 @@
-#### <a id="_io9hk67lgumv"></a>__🔲 Wireframes: Las 9 Pantallas Clave a diseñar en Figma__
+> **✅ Construido — corregido 2026-07-24.** Las 9 pantallas que este documento planificaba ya están
+> implementadas y en uso real (`apps/web/src/app/[tenantSlug]/reservar/`,
+> `apps/web/src/app/[tenantSlug]/admin/`). Se conserva como referencia de la identidad visual (paleta,
+> tipografía) y del alcance original del MVP — para ver las pantallas reales, correr `apps/web` en vez de
+> imaginar estos mockups.
 
-Para no diseñar cosas innecesarias, un MVP \(Producto Mínimo Viable\) profesional debe concentrarse solo en las pantallas que generan valor\. Esta es tu lista de tareas para Figma:
+#### <a id="_io9hk67lgumv"></a>__Las 9 Pantallas Clave del MVP (ya construidas)__
+
+Para no diseñar cosas innecesarias, un MVP \(Producto Mínimo Viable\) profesional debe concentrarse solo en las pantallas que generan valor\. Esta fue la lista de alcance original para Figma:
 
 __📱 Pantallas del Barbero \(PWA\):__
 

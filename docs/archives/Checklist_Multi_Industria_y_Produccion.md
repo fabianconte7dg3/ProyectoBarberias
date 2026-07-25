@@ -1,3 +1,12 @@
+> **📦 Archivado 2026-07-24.** Consolidación intermedia entre el roadmap original
+> ([`Checklist_Desarrollo_SaaS.md`](./Checklist_Desarrollo_SaaS.md)) y el diseño detallado de Multi-Industria
+> que vino después. Todo lo que describía como pendiente ya se detalló y amplió en documentos de diseño
+> dedicados: [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](../02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md),
+> [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](../02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md),
+> [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](../02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md).
+> Roadmap vigente con todas las tareas consolidadas: [`docs/plan.md`](../plan.md). Se conserva como
+> registro histórico.
+
 # Checklist Completo: De SaaS de Barberías a Plataforma Multi-Industria
 
 > **Actualizado:** 2026-07-25

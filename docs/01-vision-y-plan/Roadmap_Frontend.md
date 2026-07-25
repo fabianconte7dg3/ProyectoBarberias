@@ -1,5 +1,14 @@
 # 🚀 Roadmap del Frontend: BarberOS
 
+> **✅ Completado — corregido 2026-07-24.** Los 4 hitos de este roadmap (portal de reserva, panel
+> administrativo, backoffice) están construidos y en uso. Dos afirmaciones de esta sección quedaron
+> desactualizadas por decisiones tomadas después: **TanStack Query nunca se adoptó** (se instaló pero
+> quedó sin uso en todo el proyecto — se eliminó en la auditoría de stack, ver
+> `Auditoria_Stack_Tecnologico.md`) y **Zod no se comparte con el backend** (el backend usa
+> `class-validator`; Zod solo valida el flujo de reserva pública en el frontend). Para el estado actual
+> completo, ver [`walkthrough.md`](../04-hitos-y-changelogs/walkthrough.md). Se conserva este documento
+> por su valor como registro histórico de la estrategia de orden de construcción.
+
 Este documento establece la estrategia y el orden de desarrollo para las interfaces gráficas del SaaS BarberOS (Construido como PWA usando React.js + Next.js).
 
 ## Punto de Partida Estratégico

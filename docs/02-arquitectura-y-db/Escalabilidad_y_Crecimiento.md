@@ -61,7 +61,7 @@ Margen: Muy saludable
 
 Cambios arquitectónicos:
   + Load Balancer con Health Checks
-  + Socket.io Redis Adapter (WebSockets multi-servidor)
+  + Redis Pub/Sub para SSE multi-servidor (ver corrección en sección 2.B — el mecanismo elegido es SSE, no Socket.io)
   + Particionamiento tabla `transacciones` por mes
   + Migración WhatsApp a Meta Cloud API
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -103,19 +103,24 @@ Todos los procesos pesados o diferidos deben correr fuera del ciclo de petición
 
 Sin BullMQ, todos estos procesos corren en el hilo principal de NestJS → el servidor se ahoga en horario pico.
 
-### B. WebSockets a Escala (Socket.io Redis Adapter)
+### B. Tiempo real a escala (planeado — el mecanismo cambió)
 
-La agenda del barbero se actualiza en tiempo real cuando un cliente reserva. Esto usa WebSockets. El problema:
+> **Corrección 2026-07-24:** la agenda **todavía no se actualiza en tiempo real** — hoy se recarga al
+> refrescar la página. El diseño real (ver
+> [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md))
+> eligió **Server-Sent Events** en vez de WebSockets/Socket.io — más simple para un flujo
+> servidor→cliente. El problema de multi-instancia de abajo sigue siendo válido igual con SSE: se
+> resuelve con Redis Pub/Sub en vez de un Adapter de Socket.io.
 
 ```
 Sin Redis:
-  Cliente reserva → WebSocket en Server A → 
-  Barbero conectado a Server B → ❌ No se entera
+  Cliente reserva → Evento SSE en Server A → 
+  Empleado conectado a Server B → ❌ No se entera
 
-Con Redis Adapter:
-  Cliente reserva → WebSocket en Server A → 
+Con Redis Pub/Sub:
+  Cliente reserva → Evento SSE en Server A → 
   Redis publica evento → Server B recibe → 
-  Barbero conectado a Server B → ✅ Ve la reserva al instante
+  Empleado conectado a Server B → ✅ Ve la reserva al instante
 ```
 
 ### C. Rate Limiting Distribuido

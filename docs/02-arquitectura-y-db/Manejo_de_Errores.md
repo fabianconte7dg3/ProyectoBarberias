@@ -1,3 +1,13 @@
+# Catálogo de 30 Casos Límite Operativos y su Solución
+
+> **Nota de encuadre (2026-07-24):** a pesar del nombre del archivo, esto **no es un estándar de códigos
+> de excepción HTTP** — es un catálogo de 30 casos límite de negocio reales (pagos, concurrencia,
+> errores humanos del staff, fallos de infraestructura) con la solución de diseño para cada uno. Muchos ya
+> están implementados en el código real: idempotencia (#12), bloqueo optimista de 3 min (#2), RLS/IDOR
+> (#29), tablas append-only (#6), kill-switch (#23), cierre ciego de caja (#30). Otros siguen siendo
+> aspiracionales (PITR, load balancer multi-región, geofencing con Cloudflare) — ver
+> [`docs/plan.md`](../plan.md) Fase 4 para el estado de esos.
+
 ### <a id="_t5ffr311yxsy"></a>__1\. El cliente paga por Yappy, el dinero entra al banco, pero cierra la web antes de validar el monto__
 
 - __El Problema:__ El cliente escanea el QR en la silla, realiza la transferencia con éxito en su App de Banco General, pero por apuro o distracción cierra el navegador web de la barbería antes de que el barbero valide manualmente el monto adeudado en la PWA\. El barbero no sabe si el dinero ingresó\.

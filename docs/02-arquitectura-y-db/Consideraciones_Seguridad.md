@@ -1,3 +1,12 @@
+# Seguridad de Aplicación (Auth, PWA, Perímetro)
+
+> **Nota de encuadre (2026-07-24):** este documento cubre seguridad a nivel de **aplicación** (login,
+> WebAuthn, enlaces tokenizados, protección perimetral) — no seguridad de datos a nivel de base de datos.
+> Para el aislamiento multi-tenant vía RLS, ver la sección "Multi-tenancy via Postgres RLS" en
+> [`CLAUDE.md`](../../CLAUDE.md). Nota sobre lo implementado vs lo planeado: en el código real, el login
+> de staff usa PIN de 4 dígitos (no WebAuthn/biometría, que quedó como idea no construida); Cloudflare /
+> geofencing tampoco está implementado — el proyecto corre en Docker local, sin CDN todavía.
+
 ### <a id="_tz83fyr51c9f"></a>__🌐 Seguridad en la Opción 2: Web App Progresiva \- PWA \(Nuestra Elección\)__
 
 - __La Realidad:__ Al ser una aplicación web, tendrá una dirección \(ejemplo: app\.tusaas\.com\)\. Sí, cualquiera en el mundo puede teclear esa dirección, __PERO__ se toparán con un "muro de acero" criptográfico\.

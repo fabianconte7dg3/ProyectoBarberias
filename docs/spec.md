@@ -23,7 +23,7 @@ base de datos, no solo de aplicación.
 - **Activo hoy (Go-To-Market):** barberías y salones de belleza en Panamá.
 - **Soportado a nivel de esquema, sin UI/flujo de captura de datos propio todavía** (ver hallazgo en
   [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
-  y Fase 3 de [`Checklist_Multi_Industria_y_Produccion.md`](./01-vision-y-plan/Checklist_Multi_Industria_y_Produccion.md)):
+  y [`plan.md`](./plan.md) Fase 2.4):
   spa/masajes, veterinaria, clínica médica, taller mecánico, espacios de alquiler (canchas/salas). El
   enum `industria_negocio` y las columnas `terminologia_empleado/servicio/cliente` ya existen; lo que
   falta es capturar dato específico del vertical (`clientes.datos_adicionales`, `citas.notas` — hoy sin
@@ -73,7 +73,7 @@ base de datos, no solo de aplicación.
 - **Integridad financiera** — transacciones ACID, proceso de "Cierre Ciego de Caja" (el conteo físico se
   declara antes de ver el esperado, forzando honestidad operativa).
 - **Disponibilidad** — objetivo de despliegue en VPS (Hetzner/DigitalOcean), respaldos automáticos y
-  balanceo de carga — **no implementado todavía**, ver Fase 5 de `Checklist_Multi_Industria_y_Produccion.md`.
+  balanceo de carga — **no implementado todavía**, ver [`plan.md`](./plan.md) Fase 4.
 
 ## 6. Casos límite ya resueltos (evidencia: código + hitos documentados)
 

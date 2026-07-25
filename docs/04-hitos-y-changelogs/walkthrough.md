@@ -1,8 +1,9 @@
 # Walkthrough — Entender el proyecto en 15 minutos
 
-> Objetivo (tomado literalmente de
-> [`Checklist_Desarrollo_SaaS.md`](../01-vision-y-plan/Checklist_Desarrollo_SaaS.md): *"si un programador
-> nuevo entra, debe entender la arquitectura en 15 minutos"*): este documento es ese recorrido. Describe
+> Objetivo (tomado literalmente del roadmap original del proyecto,
+> [`archives/Checklist_Desarrollo_SaaS.md`](../archives/Checklist_Desarrollo_SaaS.md): *"si un
+> programador nuevo entra, debe entender la arquitectura en 15 minutos"*): este documento es ese
+> recorrido. Describe
 > el estado **actual** del código — hoy la marca sigue siendo **BarberOS**; el rebrand a "Volumetrix" es
 > un plan propuesto y no ejecutado, ver [`plan.md`](../plan.md) Fase 1.
 

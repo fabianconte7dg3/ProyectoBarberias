@@ -38,10 +38,18 @@ Este es el *Stack* \(conjunto de tecnologías\) que usan hoy en día gigantes co
 
 __3\. Capa de Cache y Colas: Redis \+ BullMQ__
 
+> **Corrección 2026-07-24:** el punto de WebSockets/Socket.io de abajo era un plan que **nunca se
+> implementó** — hoy no existe ningún mecanismo de tiempo real en el proyecto, la agenda se actualiza al
+> recargar la página. Cuando se diseñó la solución real (ver
+> `Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`), se eligió **Server-Sent Events** en vez de
+> Socket.io — más simple, sin dependencia nueva, suficiente porque el flujo es servidor→cliente, no
+> bidireccional. El punto de Redis Pub/Sub como bus entre instancias sigue siendo válido y aplicaría
+> igual con SSE si se escala a múltiples instancias de `apps/api`.
+
 - __Decisión:__ Se incorpora **Redis** como componente obligatorio desde el día 1 del MVP, junto con **BullMQ** como gestor de colas de trabajos sobre Redis\.
 - __Justificación — Tres razones críticas:__
   - __Cola de Trabajos \(Jobs\):__ Todos los procesos diferidos o pesados \(recordatorios de WhatsApp 24h antes, reintentos de factura DGI, cierre automático de citas vencidas, reportes de cierre de día\) deben ejecutarse fuera del ciclo principal de petición\-respuesta del servidor\. Sin BullMQ, estos procesos corren en el hilo principal de NestJS y ahogarían el servidor en horas pico \(sábados de quincena\)\.
-  - __WebSockets a Escala \(Socket\.io Redis Adapter\):__ La actualización en tiempo real de la agenda del barbero usa WebSockets\. Cuando se agregan múltiples instancias de NestJS \(escalado horizontal\), Redis actúa como bus de eventos entre servidores, garantizando que todos los barberos vean los cambios al instante sin importar a qué servidor estén conectados\.
+  - __Tiempo real a escala \(planeado, no implementado\):__ La actualización en vivo de la agenda todavía no existe. El diseño elegido usa Server-Sent Events en vez de WebSockets/Socket.io — ver la corrección arriba.
   - __Rate Limiting Distribuido:__ Los contadores de límite de peticiones por tenant deben ser compartidos entre todas las instancias del servidor\. Redis centraliza estos contadores\.
 
 __4\. Integraciones Externas Confirmadas__

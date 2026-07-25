@@ -7,8 +7,9 @@ Esta documentación está organizada de forma modular en categorías claras para
 ## 🚀 Empezar aquí
 
 - [`spec.md`](./spec.md) — especificación de producto completa (verticales, actores, módulos, casos límite, integraciones, estado de tests).
-- [`plan.md`](./plan.md) — roadmap en tareas chicas tachables, fase por fase (incluye el plan de rebrand a Volumetrix, pendiente de decisión).
+- [`plan.md`](./plan.md) — roadmap en tareas chicas tachables, fase por fase (fuente única de verdad de qué falta — no hay otro roadmap "vivo" en el repo).
 - [`04-hitos-y-changelogs/walkthrough.md`](./04-hitos-y-changelogs/walkthrough.md) — recorrido de 15 minutos por la arquitectura y todo lo construido hasta hoy.
+- [`../CLAUDE.md`](../CLAUDE.md) — guía de arquitectura, comandos y convenciones para trabajar en el código.
 
 ---
 
@@ -16,69 +17,82 @@ Esta documentación está organizada de forma modular en categorías claras para
 
 ```
 docs/
-├── 01-vision-y-plan/           # Planificación de producto, roadmap, checklist y modelos de negocio
-├── 02-arquitectura-y-db/       # Arquitectura técnica, diseño ERD, aislamiento RLS y stack
+├── 01-vision-y-plan/           # Planificación de producto, roadmap y modelos de negocio vigentes
+├── 02-arquitectura-y-db/       # Arquitectura técnica, diseño relacional, RLS, stack, diseño multi-industria
 ├── 03-integraciones/           # Documentación de APIs e integraciones de terceros (Yappy, WhatsApp)
 ├── 04-hitos-y-changelogs/      # Historial de desarrollo, resúmenes de entregables y walkthroughs
-├── 05-diseno-y-ux/             # Wireframes, estructuras CRM y flujos operativos
-├── 06-referencias-tecnicas/    # Ejemplos y esquemas técnicos de referencia
-└── archives/                   # Archivos históricos y respaldos comprimidos
+├── 05-diseno-y-ux/             # Identidad visual y flujos operativos
+├── 06-referencias-tecnicas/    # Guías técnicas y credenciales de QA
+└── archives/                   # Documentos superados/históricos — ver sección al final de este índice
 ```
+
+> **Nota sobre esta reorganización (2026-07-24):** varios documentos que existían antes se movieron a
+> `archives/` por estar duplicados entre sí o superados por versiones más nuevas y precisas (un ERD que
+> documentaba 12 tablas cuando hay 19 reales, 3 roadmaps distintos apuntándose entre sí, docs de ideación
+> que recomendaban Supabase — nunca usado). Cada archivo movido tiene un banner al inicio explicando qué
+> lo reemplaza. Si buscas algo que solía estar en `01-vision-y-plan/` o `02-arquitectura-y-db/` y no
+> aparece en el índice de abajo, probablemente está en `archives/`.
 
 ---
 
-## 🗺️ Índice de Contenidos
+## 🗺️ Índice de Contenidos (documentos vigentes)
 
 ### 📍 [01. Visión y Planificación](./01-vision-y-plan/)
-- [Auditoría: Metodología de Desarrollo Asistido por IA](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md) — Cumplimiento del flujo Planificar/Contexto real (MCP)/Verificar y anti-patrones; re-verificada tras la limpieza de `node_modules`/`.env` y el nuevo `.agents/AGENTS.md` (segundo revisor + convenciones de commits).
-- [Checklist Multi-Industria y Producción](./01-vision-y-plan/Checklist_Multi_Industria_y_Produccion.md) — Estado actual consolidado y próximos pasos hasta una plataforma multi-industria en producción.
-- [Checklist de Desarrollo SaaS](./01-vision-y-plan/Checklist_Desarrollo_SaaS.md) — Plan maestro de módulos e hitos.
-- [Roadmap Backend](./01-vision-y-plan/Roadmap_Backend.md) — Roadmap de arquitectura backend.
-- [Roadmap Frontend](./01-vision-y-plan/Roadmap_Frontend.md) — Roadmap de desarrollo frontend.
-- [Visión Multi-Industria](./01-vision-y-plan/Vision_Multi_Industria.md) — Estrategia de expansión.
-- [Ideas Futuras: Expansión & Barbero Solo-preneur](./01-vision-y-plan/IDEAS_FUTURAS_EXPANSION_Y_SOLO_PRENEUR.md) — Adaptación a barbero independiente y nuevas verticales.
-- [Estrategia de Precios](./01-vision-y-plan/Estrategia_Precios.md) — Planes (Básico vs Premium).
-- [SaaS Barberías Panamá](./01-vision-y-plan/SaaS_Barberias_Panama.md) — Especificaciones para el mercado local.
+- [Auditoría: Metodología de Desarrollo Asistido por IA](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md) — Cumplimiento del flujo Planificar/Contexto real (MCP)/Verificar y anti-patrones.
+- [Roadmap Backend](./01-vision-y-plan/Roadmap_Backend.md) — Completo, 7/7 hitos. Registro histórico del orden de construcción del backend.
+- [Roadmap Frontend](./01-vision-y-plan/Roadmap_Frontend.md) — Completo, 4/4 hitos. Registro histórico del orden de construcción del frontend.
+- [Visión Multi-Industria](./01-vision-y-plan/Vision_Multi_Industria.md) — Por qué la arquitectura permite pivotar a otros verticales sin reescribir el motor.
+- [Ideas Futuras: Expansión & Empleado Solo-preneur](./01-vision-y-plan/IDEAS_FUTURAS_EXPANSION_Y_SOLO_PRENEUR.md) — Adaptación a profesional independiente y nuevas verticales.
+- [Estrategia de Precios](./01-vision-y-plan/Estrategia_Precios.md) — Estrategia comercial oficial (anula pricing de documentos anteriores).
 
 ### 📍 [02. Arquitectura & Base de Datos](./02-arquitectura-y-db/)
-- [Modelo ERD & Diccionario de Tablas](./02-arquitectura-y-db/Modelo_Base_Datos_ERD.md) — Especificación relacional completa.
-- [Modelo de Base de Datos General](./02-arquitectura-y-db/Modelo_Base_Datos_General.md) — Descripción del esquema.
-- [Motor de Base de Datos](./02-arquitectura-y-db/Motor_Base_Datos.md) — Configuración de PostgreSQL y Drizzle ORM.
-- [Consideraciones de Seguridad & RLS](./02-arquitectura-y-db/Consideraciones_Seguridad.md) — Aislamiento multi-tenant.
-- [Manejo de Errores](./02-arquitectura-y-db/Manejo_de_Errores.md) — Estándar de excepciones HTTP.
-- [Infraestructura Híbrida](./02-arquitectura-y-db/Infraestructura_Hibrida.md) — Despliegue en VPS y contenedores.
-- [Stack Web](./02-arquitectura-y-db/Stack_Web.md) — Tecnologías clave (NestJS, Next.js, BullMQ, Tailwind).
-- [Escalabilidad y Crecimiento](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md) — Estrategia de escalado.
-- [Auditoría del Stack Tecnológico](./02-arquitectura-y-db/Auditoria_Stack_Tecnologico.md) — 56 vulnerabilidades encontradas y remediadas (39→0 backend, 17→6 frontend), Next.js parchado, dependencias muertas eliminadas, todo verificado en vivo (no solo `npm audit`).
-- [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`.
-- [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend + SuperAdmin conectado a industria/terminología.
-- [Multi-Industria — Fase 2-D: Terminología Dinámica Real](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md) — Endpoint público de tenant + Context de React conectado en el portal de reserva y el panel de administración.
-- [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Diseño acordado (entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados) — aún no implementado.
-- [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Diseño acordado (combos de servicios con comisión itemizada, citas de acompañante, widgets configurables por vertical) — aún no implementado.
-- [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Diseño acordado (calendario en tiempo real vía SSE, confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias con fechas, importación de citas históricas). Incluye el hallazgo de que el recordatorio de WhatsApp promete una confirmación que el webhook no cumple hoy.
+- [Modelo de Datos — Panorama Relacional](./02-arquitectura-y-db/Modelo_Base_Datos_ERD.md) — Las 19 tablas reales, propósito y relaciones (no un diccionario de campos — eso vive en `schema.ts`).
+- [Consideraciones de Seguridad de Aplicación](./02-arquitectura-y-db/Consideraciones_Seguridad.md) — Auth, PWA, enlaces tokenizados (no RLS — eso está en `CLAUDE.md`).
+- [Catálogo de 30 Casos Límite Operativos](./02-arquitectura-y-db/Manejo_de_Errores.md) — Casos de negocio reales (pagos, concurrencia, errores humanos) y su solución de diseño.
+- [Stack Web](./02-arquitectura-y-db/Stack_Web.md) — Elección de tecnologías (NestJS, Next.js, BullMQ, Tailwind) con correcciones sobre qué se adoptó realmente.
+- [Escalabilidad y Crecimiento](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md) — Hoja de ruta de escalado por fases, con costos y umbrales.
+- [Auditoría del Stack Tecnológico](./02-arquitectura-y-db/Auditoria_Stack_Tecnologico.md) — 56 vulnerabilidades encontradas y remediadas (39→0 backend, 17→6 residuales de bajo riesgo), dependencias muertas eliminadas, todo verificado en vivo.
+- [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`. ✅ Implementado.
+- [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend. ✅ Implementado.
+- [Multi-Industria — Fase 2-D: Terminología Dinámica Real](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md) — Endpoint público de tenant + Context de React. ✅ Implementado.
+- [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados. 🔲 Diseño aprobado, no implementado.
+- [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Combos con comisión itemizada, citas de acompañante, widgets configurables por vertical. 🔲 Diseño aprobado, no implementado.
+- [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Calendario en tiempo real (SSE), confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias, importación de citas históricas. 🔲 Diseño aprobado, no implementado.
 
 ### 📍 [03. Integraciones Externas](./03-integraciones/)
-- [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC.
-- [WhatsApp (Evolution API)](./03-integraciones/WhatsApp_Evolution_API.md) — Mensajería asíncrona y recordatorios.
+- [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC. ✅ Implementado.
+- [WhatsApp (Evolution API)](./03-integraciones/WhatsApp_Evolution_API.md) — Mensajería asíncrona y recordatorios. ✅ Implementado, con un hallazgo pendiente de corregir (webhook de confirmación).
 
 ### 📍 [04. Hitos Completados & Changelogs](./04-hitos-y-changelogs/)
 - [Walkthrough (15 minutos)](./04-hitos-y-changelogs/walkthrough.md) — Recorrido completo de arquitectura y estado actual para alguien que entra nuevo al proyecto.
-- [Resumen de Hitos y Flujos completos](./04-hitos-y-changelogs/RESUMEN_HITOS_Y_FLUJOS.md) — Resumen actualizado de Hitos 1 a 9.
-- [CHANGELOG Frontend Hito 2](./04-hitos-y-changelogs/CHANGELOG_Frontend_Hito2.md) — Log de interfaz inicial.
-- [CHANGELOG Hito 5](./04-hitos-y-changelogs/CHANGELOG_Hito5.md) — Log del módulo financiero y Yappy.
-- [Walkthrough de Productos & Dashboards](./04-hitos-y-changelogs/WALKTHROUGH_PRODUCTOS_BARBEROS_Y_DASHBOARDS.md) — Guía visual.
+- [Resumen de Hitos y Flujos completos](./04-hitos-y-changelogs/RESUMEN_HITOS_Y_FLUJOS.md) — Resumen de Hitos 1 a 9 del backend.
+- [CHANGELOG Frontend Hito 2](./04-hitos-y-changelogs/CHANGELOG_Frontend_Hito2.md) — Log histórico del MVP del portal de reservas.
+- [CHANGELOG Hito 5](./04-hitos-y-changelogs/CHANGELOG_Hito5.md) — Log histórico del módulo financiero y Yappy.
+- [Avances: Productos, Staff y Dashboards](./04-hitos-y-changelogs/WALKTHROUGH_PRODUCTOS_BARBEROS_Y_DASHBOARDS.md) — Log histórico de analítica, inventario y auditoría.
 
 ### 📍 [05. Diseño & UX](./05-diseno-y-ux/)
-- [Perfil Operativo & Flujo](./05-diseno-y-ux/Perfil_Operativo_Flujo.md) — Experiencia del barbero en tablet/terminal.
-- [Estructura del CRM](./05-diseno-y-ux/Estructura_CRM.md) — Organización de clientes y VIPs.
-- [Wireframes UI](./05-diseno-y-ux/Wireframes_UI.md) — Diseños de pantallas.
-- [Pantallas Figma](./05-diseno-y-ux/Pantallas_Figma.md) — Especificación de componentes de diseño.
+- [Perfil Operativo & Flujo](./05-diseno-y-ux/Perfil_Operativo_Flujo.md) — Experiencia operativa del staff y del cliente.
+- [Estructura del CRM](./05-diseno-y-ux/Estructura_CRM.md) — Cómo funciona el CRM silencioso en la práctica.
+- [Pantallas del MVP](./05-diseno-y-ux/Pantallas_Figma.md) — Las 9 pantallas del MVP y la identidad visual (paleta, tipografía) — ya construidas.
 
 ### 📍 [06. Referencias Técnicas](./06-referencias-tecnicas/)
-- [README Arquitectura de Datos](./06-referencias-tecnicas/README_Arquitectura_Datos.md) — Guía de parches de migración RLS.
+- [Arquitectura de Datos — Guía de Setup](./06-referencias-tecnicas/README_Arquitectura_Datos.md) — Cómo dejar el patrón RLS/Drizzle funcionando en un entorno nuevo (corregido: ya no instruye usar `drizzle-kit`, prohibido en este proyecto).
 - [Credenciales de Prueba (QA Local)](./06-referencias-tecnicas/Credenciales_QA_Local.md) — Tenant y usuarios de prueba dedicados con credenciales fijas, para no tocar cuentas de dev reales.
 - [Políticas SQL RLS (0001_rls_policies.sql)](./06-referencias-tecnicas/0001_rls_policies.sql) — Referencia del script de políticas.
 
 ---
 
-*Última actualización: Julio 2026 — Proyecto Barberías SaaS*
+## 📦 Archivados (`archives/`)
+
+Documentos superados, conservados como registro histórico — cada uno tiene un banner explicando qué lo
+reemplaza:
+
+- `Idea_SaaS_Barberias.md`, `SaaS_Barberias_Panama.md` — ideación temprana (recomendaban Supabase, nunca usado).
+- `Modelo_Base_Datos_General.md`, `Motor_Base_Datos.md` — narrativas de justificación de RLS, duplicadas entre sí, superadas por `CLAUDE.md`.
+- `Infraestructura_Hibrida.md` — narrativa de infraestructura, superada por `Escalabilidad_y_Crecimiento.md`.
+- `Wireframes_UI.md` — mockups con imágenes rotas (ruta local de otra herramienta), pantallas ya construidas.
+- `Checklist_Desarrollo_SaaS.md`, `Checklist_Multi_Industria_y_Produccion.md` — roadmaps anteriores, consolidados en `plan.md`.
+
+---
+
+*Última actualización: 2026-07-24 — Proyecto Barberías SaaS*

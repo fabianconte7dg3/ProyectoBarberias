@@ -1,5 +1,13 @@
 # 🚀 Roadmap del Backend: BarberOS
 
+> **✅ Completado — corregido 2026-07-24.** Los 7 hitos de este roadmap están terminados, incluyendo el
+> Hito 7 (auditoría/kill-switch), que quedaba marcado como pendiente por error — ver
+> [`RESUMEN_HITOS_Y_FLUJOS.md`](../04-hitos-y-changelogs/RESUMEN_HITOS_Y_FLUJOS.md) Hito 7 y el
+> `kill-switch.guard.ts` real en el código. El backend siguió creciendo después de este roadmap original
+> (SuperAdmin, observabilidad, multi-industria) — para el estado actual completo, ver
+> [`walkthrough.md`](../04-hitos-y-changelogs/walkthrough.md). Se conserva este documento por su valor
+> como registro histórico del orden de construcción original.
+
 Este es el plan de acción estructurado para el desarrollo del backend. Seguir este orden garantiza que las dependencias lógicas estén resueltas antes de avanzar (ej. no podemos crear citas sin antes tener usuarios y base de datos).
 
 ## Hito 1: Cimientos e Infraestructura (En progreso)
@@ -54,11 +62,11 @@ Liberar el hilo principal y enviar notificaciones.
 ## Hito 7: Auditoría y Seguridad Final
 Blindar las finanzas y crear logs.
 
-- `[ ]` Asegurar que todos los intentos de alteración financiera se graben en `audit_logs` usando el `accionAuditEnum`.
-- `[ ]` Probar el "Kill Switch" temporal (para frenar operaciones en caso de emergencia).
+- `[x]` Asegurar que todos los intentos de alteración financiera se graben en `audit_logs` usando el `accionAuditEnum`.
+- `[x]` Probar el "Kill Switch" temporal (para frenar operaciones en caso de emergencia).
 
 ---
 
 > [!NOTE]
-> **Siguiente Acción Sugerida:**
-> Iniciar el **Hito 7**, que comprende la capa final de seguridad: Auditoría financiera inmutable (`audit_logs`) y el sistema de emergencia "Kill Switch". ¿Quieres que prepare el plan de implementación para este hito?
+> **Roadmap completo.** El desarrollo continuó más allá de estos 7 hitos (SuperAdmin, observabilidad,
+> multi-industria) — ver [`docs/plan.md`](../plan.md) para las tareas activas actuales.

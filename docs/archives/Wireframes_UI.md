@@ -1,3 +1,10 @@
+> **📦 Archivado 2026-07-24.** Las imágenes del carrusel apuntan a una ruta local de otra herramienta
+> (`/home/fabianc/.gemini/antigravity-cli/brain/...`) y no cargan para nadie más — están rotas desde
+> antes de este archivado. Las 9 pantallas que describe ya están construidas y en producción; para verlas
+> de verdad, correr la app (`apps/web`) en vez de leer estos mockups. La paleta de color/tipografía que
+> describe sigue siendo la identidad visual real del proyecto. Lista de pantallas equivalente, sin
+> imágenes rotas: [`Pantallas_Figma.md`](../05-diseno-y-ux/Pantallas_Figma.md).
+
 # Wireframes y Diseño UI (Fase 3)
 
 Este documento contiene los mockups visuales de las 9 pantallas principales de la aplicación BarberOS, diseñados con un enfoque *mobile-first*, tema oscuro (premium) y acentos en color ámbar/dorado.

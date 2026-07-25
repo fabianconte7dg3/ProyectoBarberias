@@ -1,3 +1,9 @@
+> **📦 Archivado 2026-07-24.** Roadmap original del producto (pre-multi-industria). Las Fases 1-3 y 5 ya
+> se completaron (ver [`docs/04-hitos-y-changelogs/walkthrough.md`](../04-hitos-y-changelogs/walkthrough.md)
+> para el estado real). Los pendientes de las Fases 4/6/7/8 (dominios/SSL, CI-CD, backups, PgBouncer,
+> load balancer) ya están incorporados en [`docs/plan.md`](../plan.md), Fase 4. Roadmap vigente:
+> [`docs/plan.md`](../plan.md). Se conserva como registro histórico.
+
 ## <a id="_9gjb8ljg2ndh"></a>__📋 Checklist Completa de Desarrollo SaaS \(Actualizada\)__
 
 ### <a id="_cixe2s7n0qmk"></a>__Fase 1: Definición del Producto y Flujos \(Product Discovery\)__

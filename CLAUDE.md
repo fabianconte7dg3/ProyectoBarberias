@@ -52,7 +52,7 @@ Preview/dev servers should be launched via `.claude/launch.json` configs (`api`,
 
 `apps/api/src/database/migrations/` contains ~13 SQL files. **Do not run `drizzle-kit generate` or
 `drizzle-kit push`** against this database — the `meta/_journal.json` history is desynced from the real
-schema (only 4 journal entries exist for 20 real tables), so those commands would try to reconcile
+schema (only 4 journal entries exist for 19 real tables), so those commands would try to reconcile
 accumulated drift instead of just your change. The established team convention is:
 
 1. Hand-edit `apps/api/src/database/schema/schema.ts` first.

@@ -1,66 +1,8 @@
-## <a id="_xf3siyq8l0d8"></a>__🗄️ Estructura de la Base de Datos \(Tabla: Clientes\)__
-
-Esta estructura está diseñada para alimentar tanto la operación del barbero como los reportes financieros del dueño, cumpliendo con la Ley 81 de Protección de Datos de Panamá\.
-
-__Campo \(Database Field\)__
-
-__Tipo de Dato__
-
-__Descripción y Uso Operativo__
-
-id\_cliente
-
-UUID
-
-Identificador único y encriptado generado automáticamente por el sistema\.
-
-telefono\_whatsapp
-
-String
-
-Número celular\. Es la "llave" principal del usuario ya que la reserva nace en WhatsApp\.
-
-nombre\_completo
-
-String
-
-El nombre que el cliente proporciona en su primera interacción con el bot\.
-
-barbero\_frecuente
-
-Relación \(FK\)
-
-El sistema calcula automáticamente con qué barbero se atiende más veces y lo sugiere por defecto\.
-
-notas\_preferencia
-
-Texto Libre
-
-Información cualitativa escrita por el barbero \(ej\. "Corte Fade, usa cera mate, no le gusta charlar mucho"\)\.
-
-total\_asistencias
-
-Entero
-
-Contador automático que suma \+1 cada vez que el barbero presiona "Cobrar" y confirma el pago\.
-
-ausencias\_strikes
-
-Entero
-
-Suma \+1 si el cliente no se presenta\. Permite al sistema bloquear o aplicar reglas a clientes problemáticos\.
-
-total\_gastado
-
-Decimal
-
-Acumulado del dinero que el cliente ha dejado en el local\. Permite al dueño saber quiénes son sus clientes VIP\.
-
-email\_facturacion
-
-String
-
-Correo del cliente \(opcional\) para recibir la factura electrónica de la DGI tras el cobro ágil\.
+> **Corregido 2026-07-24:** este documento tenía un diccionario de campos de la tabla `clientes`
+> duplicado (y desincronizado) del que ya vive en
+> [`Modelo_Base_Datos_ERD.md`](../02-arquitectura-y-db/Modelo_Base_Datos_ERD.md). Se removió para no
+> mantener dos copias — ver ese documento, o `schema.ts`, para los campos exactos. Este documento se
+> queda solo con el flujo operativo, que es contenido que no está en ningún otro lado.
 
 ## <a id="_njhhfnn5e3re"></a>__⚙️ Cómo Funciona Profesionalmente en la Práctica__
 

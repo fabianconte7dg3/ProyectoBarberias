@@ -1,3 +1,9 @@
+> **📦 Archivado 2026-07-24.** Documento narrativo de justificación de infraestructura. Plan concreto y
+> vigente de escalado por fases (con costos y umbrales):
+> [`Escalabilidad_y_Crecimiento.md`](../02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md). Comandos
+> reales de Docker Compose vigentes en [`CLAUDE.md`](../../CLAUDE.md). Se conserva solo como registro
+> histórico del razonamiento original.
+
 ### <a id="_oc55kylz7p57"></a>__✅ Infraestructura de Servidores: Modelo Híbrido \(Local y Nube VPS\)__
 
 __1\. Estrategia de Despliegue \(El Enfoque Híbrido\)__ Para maximizar los recursos actuales sin comprometer la estabilidad comercial de las barberías, la plataforma adoptará un modelo de infraestructura híbrido: __Desarrollo Local y Producción en la Nube__\. La infraestructura física propia \(On\-Premise\) se utilizará estrictamente como el __Entorno de Desarrollo y Pruebas \(Staging\)__\. Por otro lado, el __Entorno de Producción__ \(el que usarán los clientes reales\) estará alojado desde el día uno en servidores virtuales privados \(VPS\) económicos de alto rendimiento, como Hetzner o DigitalOcean\.

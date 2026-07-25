@@ -1,3 +1,8 @@
+> **📦 Archivado 2026-07-24.** Documento narrativo de justificación de arquitectura, casi duplicado de
+> [`Modelo_Base_Datos_General.md`](./Modelo_Base_Datos_General.md) en esta misma carpeta. Referencia
+> técnica vigente: sección "Multi-tenancy via Postgres RLS" en [`CLAUDE.md`](../../CLAUDE.md). Se
+> conserva solo como registro histórico del razonamiento original.
+
 ### <a id="_mbsjcx1i0r03"></a>__✅ Motor de Base de Datos: PostgreSQL con Row Level Security \(RLS\)__
 
 __1\. Concepto Tecnológico__ El núcleo de almacenamiento y gestión de información de nuestra plataforma estará respaldado por __PostgreSQL__, uno de los motores de bases de datos relacionales de código abierto más avanzados y robustos del mundo\. Como pilar central de nuestra arquitectura, implementaremos una característica de seguridad avanzada nativa de este motor llamada __Row Level Security \(RLS\)__\. __2\. ¿Por qué PostgreSQL para este SaaS?__

@@ -1,3 +1,8 @@
+> **📦 Archivado 2026-07-24.** Documento narrativo de justificación de arquitectura (por qué multi-tenant
+> con RLS), casi duplicado de [`Motor_Base_Datos.md`](./Motor_Base_Datos.md) en esta misma carpeta.
+> Referencia técnica vigente y concisa: sección "Multi-tenancy via Postgres RLS" en
+> [`CLAUDE.md`](../../CLAUDE.md). Se conserva solo como registro histórico del razonamiento original.
+
 ### <a id="_czesqe983bb3"></a>__1\. Concepto Arquitectónico El sistema utilizará un modelo Multi\-tenant \(Multi\-inquilino\) con base de datos compartida\. Bajo este esquema, todas las barberías \(inquilinos\) operan sobre la misma infraestructura de servidores y comparten una única base de datos física\. La separación de los datos es puramente lógica: cada tabla del sistema cuenta con una columna obligatoria e invisible para el usuario llamada tenant\_id, la cual etiqueta y aísla a qué barbería le pertenece cada registro \(ej\. tenant\_id = 1 para Barbería A, tenant\_id = 2 para Barbería B\)\.__
 
 ### <a id="_czesqe983bb3"></a>__2\. Ventajas Competitivas para el Negocio__

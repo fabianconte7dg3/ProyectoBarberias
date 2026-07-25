@@ -117,11 +117,15 @@ Para evitar que actores maliciosos envíen webhooks falsos simulando pagos confi
 
 ---
 
-## 7. Próximos Pasos
+## 7. Estado de implementación
 
-- [ ] Escribir a `botondepagoyappy@bgeneral.com` solicitando acceso al sandbox.
-- [ ] Leer la documentación técnica oficial de la nueva API.
-- [ ] Diseñar el `YappyModule` en NestJS con sus tres servicios.
-- [ ] Agregar los campos `yappy_*` a la migración de la tabla `transacciones`.
-- [ ] Probar el flujo completo de pago en sandbox antes del MVP.
-- [ ] Documentar el proceso de validación del webhook.
+> **Actualizado 2026-07-24:** todo lo de esta sección ya está construido. `YappyModule` existe en
+> `apps/api/src/yappy/` con validación de firma del webhook; los campos `yappy_*` están en `transacciones`
+> desde la migración `0003_financiero.sql`; hay una tabla dedicada `yappy_config` por tenant (credenciales
+> y llaves de firma). Detalle de la verificación end-to-end:
+> [`CHANGELOG_Hito5.md`](../04-hitos-y-changelogs/CHANGELOG_Hito5.md).
+
+- [x] Diseñar el `YappyModule` en NestJS con sus servicios.
+- [x] Agregar los campos `yappy_*` a la tabla `transacciones`.
+- [x] Validación de la firma del webhook.
+- [x] Probar el flujo completo de pago (ver `CHANGELOG_Hito5.md`, pruebas end-to-end).

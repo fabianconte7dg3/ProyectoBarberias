@@ -113,10 +113,19 @@ Cuando el SaaS supere los **300–500 clientes activos** o cuando los ingresos l
 
 ---
 
-## 6. Próximos Pasos
+## 6. Estado de implementación
 
-- [ ] Instalar Evolution API en el VPS de Hetzner junto con Docker.
-- [ ] Crear el `WhatsappModule` en NestJS con sus 4 componentes.
-- [ ] Configurar BullMQ + Redis para la cola de recordatorios.
-- [ ] Conectar el número de WhatsApp de la barbería piloto #1.
-- [ ] Probar los 6 flujos automatizados antes del lanzamiento piloto.
+> **Actualizado 2026-07-24:** `WhatsappModule` existe en `apps/api/src/whatsapp/`, con el webhook entrante
+> (`POST /whatsapp/webhook/:tenantId`) y la cola de recordatorios vía BullMQ (`queue/citas.processor.ts`).
+>
+> ⚠️ **Hallazgo real, no solo checklist:** el recordatorio de 24h ya le pide al cliente "responde 1 para
+> Confirmar" — pero el webhook actual **no distingue esa respuesta** de un mensaje nuevo al bot (cualquier
+> "1" se interpreta como "quiero agendar"). Es una función que el mensaje promete y el código no cumple
+> todavía — corrección diseñada en
+> [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](../02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md),
+> tarea pendiente en [`docs/plan.md`](../plan.md) §2.3.
+
+- [x] Crear el `WhatsappModule` en NestJS.
+- [x] Configurar BullMQ + Redis para la cola de recordatorios.
+- [ ] Conectar el número de WhatsApp de una barbería piloto real (sigue en Evolution API de desarrollo).
+- [ ] Corregir el webhook de confirmación (ver hallazgo arriba).

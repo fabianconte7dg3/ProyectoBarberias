@@ -19,6 +19,11 @@ Ya ejecutado y verificado en sesiones anteriores. Detalle completo en cada doc e
 - [x] `node_modules`/`dist`/`.env` sacados del control de versiones (47.890 → 329 archivos trackeados) —
       [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
 - [x] Convención de segundo revisor + reglas de commits documentadas en `.agents/AGENTS.md`
+- [x] 56 vulnerabilidades de dependencias remediadas (39→0 backend, 17→6 residuales de bajo riesgo) —
+      [`Auditoria_Stack_Tecnologico.md`](./02-arquitectura-y-db/Auditoria_Stack_Tecnologico.md)
+- [x] Reorganización de `docs/`: documentos de ideación temprana y roadmaps duplicados archivados,
+      referencias obsoletas corregidas (ERD de 12→19 tablas, instrucciones de `drizzle-kit` que
+      contradecían la política del proyecto, etc.) — ver el propio historial de commits de esta fecha
 
 ## Fase 1 — Rebrand: BarberOS → Volumetrix 🔲 Propuesto, no iniciado
 
@@ -206,22 +211,47 @@ cd apps/web && npx tsc --noEmit
       confirmación) por ser fechas pasadas
 - [ ] Definir si suman a `clientes.totalAsistencias`/`totalGastado`
 
-### 2.4 Resto de Fase 3 (ya en el checklist previo)
+### 2.4 Resto de Multi-Industria Funcional
 
-Ver [`Checklist_Multi_Industria_y_Produccion.md`](./01-vision-y-plan/Checklist_Multi_Industria_y_Produccion.md),
-Fase 3 — piloto de vertical no-barbería de punta a punta, banner de kill-switch en el portal público,
-decisión sobre `transacciones.comisionBarbero`/`propinaBarbero`.
+- [ ] Piloto de un vertical no-barbería de punta a punta: tenant real de veterinaria, agendar, cobrar,
+      ver reportes con datos reales — no solo probar que el texto cambia
+- [ ] Banner de "Reserva Pausada" en el portal público durante kill-switch (documentado como esperado en
+      `matriz-permisos-y-bloqueos.md`, nunca construido)
+- [ ] Decidir si renombrar `transacciones.comisionBarbero`/`propinaBarbero` — columnas append-only de un
+      libro fiscal, requieren revisión dedicada aparte (excluido a propósito de la Fase 2/rename)
 
 ## Fase 3 — Calidad y Mantenimiento 🔲 Pendiente
 
-Ver el mismo checklist, Fase 4 — tests automatizados reales (hoy cobertura cero, ver `spec.md` §10),
-docs desactualizados, deuda menor de `ProfileSelector.tsx`.
+- [ ] Suite de tests automatizados real — hoy los 13 `*.spec.ts` de `apps/api` y el único
+      `*.e2e-spec.ts` son boilerplate sin personalizar de `nest generate` (cobertura real cero, ver
+      `spec.md` §10); `apps/web` tiene Vitest instalado sin un solo archivo `*.test.tsx`. Empezar por los
+      módulos críticos: RLS/tenant scoping, cálculo de comisiones, idempotencia de `crearCita`
+- [ ] Deuda menor: `ProfileSelector.tsx` muestra el valor crudo del rol (`"empleado"`) en vez de la
+      terminología del tenant
 
 ## Fase 4 — Infraestructura de Producción 🔲 Pendiente
 
-Ver el mismo checklist, Fase 5 — dominio/SSL, staging vs producción, CI/CD, backups, PgBouncer, monitoreo.
+> Hoy todo corre en Docker local, sin CI/CD ni entorno separado de staging. Plan de escalado por fases
+> (costos, umbrales, cuándo agregar cada pieza):
+> [`Escalabilidad_y_Crecimiento.md`](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md).
+
+- [ ] Dominio, DNS por tenant y SSL/TLS
+- [ ] Entornos separados: staging vs producción
+- [ ] CI/CD con GitHub Actions (correr `tsc --noEmit` + tests en cada PR — hoy no hay ni ramas de feature,
+      todo el desarrollo ocurre directo sobre `master`)
+- [ ] Backups automáticos con Point-in-Time Recovery
+- [ ] PgBouncer para connection pooling — **verificar antes de activarlo** que el driver de Drizzle
+      (`node-postgres`) no use prepared statements con nombre, que sí tienen problemas conocidos con el
+      modo *transaction pooling* de PgBouncer (el patrón `SET LOCAL` que ya usa `TenantInterceptor` sí es
+      compatible, eso ya está bien resuelto — ver `README_Arquitectura_Datos.md`)
+- [ ] Monitoreo y alertas de disponibilidad
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 
-Ver el mismo checklist, Fase 6 — elegir primer vertical piloto, validar pricing, estrategia de
-lanzamiento del segundo vertical.
+> No es código, pero define hacia dónde apunta el código.
+
+- [ ] Elegir el primer vertical piloto no-barbería — veterinaria es la mejor candidata según
+      [`IDEAS_FUTURAS_EXPANSION_Y_SOLO_PRENEUR.md`](./01-vision-y-plan/IDEAS_FUTURAS_EXPANSION_Y_SOLO_PRENEUR.md)
+- [ ] Validar que el modelo de precios (por cantidad de empleados, ver
+      [`Estrategia_Precios.md`](./01-vision-y-plan/Estrategia_Precios.md)) funciona igual en otros verticales
+- [ ] Definir la estrategia de lanzamiento del segundo vertical

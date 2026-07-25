@@ -1,3 +1,8 @@
+> **📦 Archivado 2026-07-24.** Documento de ideación temprana, casi duplicado de
+> [`Idea_SaaS_Barberias.md`](./Idea_SaaS_Barberias.md) en esta misma carpeta. Recomienda Supabase (nunca
+> usado) y precios ya superados por [`Estrategia_Precios.md`](../01-vision-y-plan/Estrategia_Precios.md).
+> Se conserva solo como registro histórico.
+
 # <a id="_vc9wpbjg391a"></a>__SaaS para Barberías y Salones en Panamá__
 
 ## <a id="_62lqf2dd6p9v"></a>__Plataforma de Gestión, Cobros y Automatización Local__

@@ -1,3 +1,8 @@
+> **📦 Archivado 2026-07-24.** Documento de ideación temprana (pre-arquitectura). Recomienda Supabase,
+> que nunca se usó (el proyecto real usa NestJS + Drizzle + PostgreSQL directo). Precios superados por
+> [`Estrategia_Precios.md`](../01-vision-y-plan/Estrategia_Precios.md). Visión y stack vigentes:
+> [`docs/spec.md`](../spec.md) y [`CLAUDE.md`](../../CLAUDE.md). Se conserva solo como registro histórico.
+
 ## <a id="_hob5qog5299c"></a>__Idea 1: SaaS para Barberías y Salones de Belleza__
 
 __Enfoque:__ Automatización de reservas, pagos locales y cálculo de comisiones\.
