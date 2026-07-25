@@ -1,3 +1,10 @@
+// ARCHIVADO (Fase 2.4, 2026-07-25): snapshot congelado de schema.ts de un commit muy temprano
+// (292 líneas, ~13 tablas) — encontrado sin uso en docs/06-referencias-tecnicas/ mientras se
+// renombraban transacciones.comisionBarbero/propinaBarbero, no referenciado desde ningún doc
+// activo ni desde README.md. La fuente real y viva del esquema es siempre
+// apps/api/src/database/schema/schema.ts (20 tablas) — este archivo puede estar muy
+// desactualizado, no lo uses como referencia.
+
 import {
   pgTable,
   pgEnum,
