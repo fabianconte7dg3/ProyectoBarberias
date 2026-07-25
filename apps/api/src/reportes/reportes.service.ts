@@ -1,8 +1,8 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
-import { citas, transacciones, usuarios, clientes, servicios, productos, detallesTransaccion } from '../database/schema';
-import { and, eq, gte, lte, desc, sql, inArray } from 'drizzle-orm';
-import { startOfMonth, endOfDay, differenceInDays, subDays, format } from 'date-fns';
+import { citas, transacciones, usuarios, clientes, servicios, productos, detallesTransaccion, pacientes, notasClinicas } from '../database/schema';
+import { and, eq, gte, lte, desc, sql, inArray, count } from 'drizzle-orm';
+import { startOfMonth, endOfDay, differenceInDays, subDays, addDays, format } from 'date-fns';
 
 @Injectable()
 export class ReportesService {
@@ -36,6 +36,7 @@ export class ReportesService {
           with: {
             servicio: true,
             producto: true,
+            empleado: true,
           }
         }
       }
@@ -155,47 +156,88 @@ export class ReportesService {
       });
     }
 
+    // Atribución línea por línea (detallesTransaccion), no por transacción completa: un
+    // cobro grupal (Fase 2.2, ver Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §3)
+    // puede cubrir citas de empleados distintos en una sola transacción. Cada línea trae
+    // su propio empleadoId (con fallback a tx.cita?.empleadoId para transacciones legacy
+    // previas a esta migración, donde detallesTransaccion.empleadoId es NULL).
+    const citasContadasPorEmpleado = new Map<string, Set<string>>();
+
     for (const tx of txsPeriodo) {
-      const bId = tx.cita?.empleado?.id;
-      if (bId) {
-        let stats = rendimientoEmpleadosMap.get(bId);
-        if (!stats && tx.cita?.empleado) {
-          stats = {
-            empleadoId: bId,
-            nombreCompleto: tx.cita.empleado.nombreCompleto,
-            porcentajeComision: Number(tx.cita.empleado.porcentajeComision || 0),
-            porcentajeComisionProducto: Number(tx.cita.empleado.porcentajeComisionProducto || 0),
-            totalCitas: 0,
-            facturadoServicios: 0,
-            facturadoProductos: 0,
-            totalFacturado: 0,
-            comisionTotal: 0,
-            propinaTotal: 0,
-          };
-          rendimientoEmpleadosMap.set(bId, stats);
-        }
+      const propinaTx = Number(tx.propinaBarbero || 0);
+      const empleadosDeEstaTx = new Set<string>();
 
-        if (stats) {
-          const montoTx = Number(tx.totalFacturado || 0);
-          const propinaTx = Number(tx.propinaBarbero || 0);
-          const comisionTx = Number(tx.comisionBarbero || 0);
+      if (tx.detalles && tx.detalles.length > 0) {
+        for (const det of tx.detalles) {
+          const bId = det.empleadoId || tx.cita?.empleadoId;
+          if (!bId) continue;
+          empleadosDeEstaTx.add(bId);
 
-          stats.totalCitas += tx.cita ? 1 : 0;
-          stats.totalFacturado += montoTx;
-          stats.comisionTotal += comisionTx;
-          stats.propinaTotal += propinaTx;
+          let stats = rendimientoEmpleadosMap.get(bId);
+          if (!stats) {
+            const info = (det as any).empleado || tx.cita?.empleado;
+            if (!info) continue;
+            stats = {
+              empleadoId: bId,
+              nombreCompleto: info.nombreCompleto,
+              porcentajeComision: Number(info.porcentajeComision || 0),
+              porcentajeComisionProducto: Number(info.porcentajeComisionProducto || 0),
+              totalCitas: 0,
+              facturadoServicios: 0,
+              facturadoProductos: 0,
+              totalFacturado: 0,
+              comisionTotal: 0,
+              propinaTotal: 0,
+            };
+            rendimientoEmpleadosMap.set(bId, stats);
+          }
 
-          if (tx.detalles && tx.detalles.length > 0) {
-            for (const det of tx.detalles) {
-              const sub = Number(det.subtotal || 0);
-              if (det.tipoItem === 'servicio') stats.facturadoServicios += sub;
-              else if (det.tipoItem === 'producto') stats.facturadoProductos += sub;
+          const sub = Number(det.subtotal || 0);
+          stats.totalFacturado += sub;
+          stats.comisionTotal += Number(det.comisionAplicada || 0);
+          if (det.tipoItem === 'servicio') {
+            stats.facturadoServicios += sub;
+            const cId = det.citaId || tx.citaId;
+            if (cId) {
+              let set = citasContadasPorEmpleado.get(bId);
+              if (!set) { set = new Set(); citasContadasPorEmpleado.set(bId, set); }
+              set.add(cId);
             }
-          } else {
-            stats.facturadoServicios += montoTx;
+          } else if (det.tipoItem === 'producto') {
+            stats.facturadoProductos += sub;
           }
         }
+      } else if (tx.cita?.empleado) {
+        // Fallback para transacciones anteriores sin tabla de detalles
+        const bId = tx.cita.empleado.id;
+        empleadosDeEstaTx.add(bId);
+        let stats = rendimientoEmpleadosMap.get(bId);
+        if (stats) {
+          const montoTx = Number(tx.totalFacturado || 0);
+          stats.totalFacturado += montoTx;
+          stats.comisionTotal += Number(tx.comisionBarbero || 0);
+          stats.facturadoServicios += montoTx;
+          let set = citasContadasPorEmpleado.get(bId);
+          if (!set) { set = new Set(); citasContadasPorEmpleado.set(bId, set); }
+          set.add(tx.cita.id);
+        }
       }
+
+      // Propina: un solo empleado en la transacción → la recibe completa (comportamiento
+      // sin cambios). Cobro grupal con varios empleados → se reparte en partes iguales; no
+      // hay forma automática de saber a cuál de ellos iba dirigida.
+      if (propinaTx > 0 && empleadosDeEstaTx.size > 0) {
+        const propinaPorEmpleado = propinaTx / empleadosDeEstaTx.size;
+        for (const bId of empleadosDeEstaTx) {
+          const stats = rendimientoEmpleadosMap.get(bId);
+          if (stats) stats.propinaTotal += propinaPorEmpleado;
+        }
+      }
+    }
+
+    for (const [bId, citasSet] of citasContadasPorEmpleado) {
+      const stats = rendimientoEmpleadosMap.get(bId);
+      if (stats) stats.totalCitas = citasSet.size;
     }
 
     // 3. Clientes con ausencias/strikes
@@ -234,6 +276,24 @@ export class ReportesService {
     const topProductos = Array.from(productosMap.values()).sort((a, b) => b.totalRecaudado - a.totalRecaudado);
     const tendenciaDiaria = Array.from(tendenciaDiariaMap.values()).sort((a, b) => a.fecha.localeCompare(b.fecha));
 
+    // 5. Métricas de vertical (widgets `pacientes_activos`/`revisiones_proximas` — solo
+    // tienen datos en veterinaria/clínica, pero se calculan siempre: son 2 COUNT baratos
+    // y así el widget no necesita un endpoint aparte, ver Plan_Multi_Industria_Fase4_
+    // CombosGruposTemplates.md §1).
+    const [{ total: pacientesActivosCount }] = await db
+      .select({ total: count() })
+      .from(pacientes)
+      .where(eq(pacientes.activo, true));
+
+    const en7Dias = addDays(new Date(), 7);
+    const [{ total: proximasRevisionesCount }] = await db
+      .select({ total: count() })
+      .from(notasClinicas)
+      .where(and(
+        gte(notasClinicas.proximaRevisionEn, format(new Date(), 'yyyy-MM-dd')),
+        lte(notasClinicas.proximaRevisionEn, format(en7Dias, 'yyyy-MM-dd'))
+      ));
+
     return {
       rangoFechas: { desde, hasta },
       ingresosTotales,
@@ -253,6 +313,8 @@ export class ReportesService {
         stockMinimo: p.stockMinimo,
       })),
       rendimientoEmpleados: Array.from(rendimientoEmpleadosMap.values()),
+      pacientesActivosCount,
+      proximasRevisionesCount,
       clientesStrikes: clientesStrikes.map((c: any) => ({
         id: c.id,
         nombreCompleto: c.nombreCompleto,
@@ -311,13 +373,11 @@ export class ReportesService {
           with: {
             servicio: true,
             producto: true,
+            empleado: true,
           }
         }
       }
     });
-
-    // Filtrar solo transacciones donde el empleado es el asignado
-    const txsFiltradas = txsEmpleado.filter((tx: any) => tx.cita?.empleadoId === empleadoId);
 
     let totalCitas = 0;
     let totalFacturado = 0;
@@ -339,12 +399,29 @@ export class ReportesService {
 
     const esSoloPreneurODueno = empleado.rol === 'admin' || Number(empleado.porcentajeComision || 0) === 0;
 
-    for (const tx of txsFiltradas) {
-      const montoTx = Number(tx.totalFacturado || 0);
-      const comisionTx = esSoloPreneurODueno ? montoTx : Number(tx.comisionBarbero || 0);
-      const propinaTx = Number(tx.propinaBarbero || 0);
+    for (const tx of txsEmpleado) {
+      // Solo las líneas de ESTE empleado en la transacción — en un cobro grupal
+      // multi-empleado cada quien ve únicamente su propio corte, nunca el total del
+      // grupo (ver Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §3).
+      const misLineas = (tx.detalles || []).filter((det: any) => (det.empleadoId || tx.cita?.empleadoId) === empleadoId);
+      const esLegacySinDetalles = (!tx.detalles || tx.detalles.length === 0) && tx.cita?.empleadoId === empleadoId;
 
-      totalCitas += tx.cita ? 1 : 0;
+      if (misLineas.length === 0 && !esLegacySinDetalles) continue;
+
+      const montoTx = esLegacySinDetalles
+        ? Number(tx.totalFacturado || 0)
+        : misLineas.reduce((s: number, d: any) => s + Number(d.subtotal || 0), 0);
+
+      const comisionTx = esSoloPreneurODueno
+        ? montoTx
+        : (esLegacySinDetalles ? Number(tx.comisionBarbero || 0) : misLineas.reduce((s: number, d: any) => s + Number(d.comisionAplicada || 0), 0));
+
+      const empleadosDistintosEnTx = new Set((tx.detalles || []).map((d: any) => d.empleadoId || tx.cita?.empleadoId).filter(Boolean));
+      const totalPropinaTx = Number(tx.propinaBarbero || 0);
+      const propinaTx = empleadosDistintosEnTx.size > 1 ? totalPropinaTx / empleadosDistintosEnTx.size : totalPropinaTx;
+
+      const citasEnEstaTx = new Set(misLineas.filter((d: any) => d.tipoItem === 'servicio').map((d: any) => d.citaId || tx.citaId).filter(Boolean));
+      totalCitas += citasEnEstaTx.size || (esLegacySinDetalles ? 1 : 0);
       totalFacturado += montoTx;
       comisionTotal += comisionTx;
       propinaTotal += propinaTx;
@@ -355,13 +432,13 @@ export class ReportesService {
         p = { fecha: ymd, label: format(new Date(tx.createdAt), 'd MMM'), citas: 0, facturado: 0, comision: 0, propina: 0 };
         resumenDiarioMap.set(ymd, p);
       }
-      p.citas += tx.cita ? 1 : 0;
+      p.citas += citasEnEstaTx.size || (esLegacySinDetalles ? 1 : 0);
       p.facturado += montoTx;
       p.comision += comisionTx;
       p.propina += propinaTx;
 
-      if (tx.detalles && tx.detalles.length > 0) {
-        for (const det of tx.detalles) {
+      if (misLineas.length > 0) {
+        for (const det of misLineas) {
           const comDet = esSoloPreneurODueno ? Number(det.subtotal || 0) : Number(det.comisionAplicada || 0);
           if (det.tipoItem === 'servicio') comisionServicios += comDet;
           else if (det.tipoItem === 'producto') comisionProductos += comDet;

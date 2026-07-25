@@ -228,6 +228,9 @@ export class DatosService {
             cliente: true,
             servicio: true,
           }
+        },
+        detalles: {
+          with: { empleado: true }
         }
       }
     });
@@ -236,6 +239,18 @@ export class DatosService {
     const rows = [headers.join(',')];
 
     for (const tx of txs) {
+      // Grano de esta exportación es 1 fila por transacción — para un cobro grupal (Fase
+      // 2.2) con empleados distintos, "Empleado" lista todos los involucrados en vez de
+      // uno solo, para no atribuir el cobro completo a la persona equivocada.
+      const nombresEmpleados = Array.from(new Set(
+        (tx.detalles || [])
+          .map((d: any) => d.empleado?.nombreCompleto)
+          .filter(Boolean)
+      ));
+      const empleadoCell = nombresEmpleados.length > 0
+        ? nombresEmpleados.join('; ')
+        : (tx.cita?.empleado?.nombreCompleto || 'Staff');
+
       const fila = [
         sanitizeCsvCell(tx.id),
         sanitizeCsvCell(format(new Date(tx.createdAt), 'yyyy-MM-dd HH:mm')),
@@ -243,7 +258,7 @@ export class DatosService {
         sanitizeCsvCell(tx.totalFacturado),
         sanitizeCsvCell(tx.comisionBarbero),
         sanitizeCsvCell(tx.propinaBarbero),
-        sanitizeCsvCell(tx.cita?.empleado?.nombreCompleto || 'Staff'),
+        sanitizeCsvCell(empleadoCell),
         sanitizeCsvCell(tx.cita?.cliente?.telefonoWhatsapp || 'Sin Teléfono'),
       ];
       rows.push(fila.join(','));
@@ -306,36 +321,58 @@ export class DatosService {
             empleado: true,
           }
         },
-        detalles: true
+        detalles: {
+          with: { empleado: true }
+        }
       }
     });
 
-    // Agrupar por empleado usando la comisión congelada en detallesTransaccion
+    // Agrupar por empleado usando la comisión congelada en detallesTransaccion. Línea por
+    // línea, no por transacción: un cobro grupal (Fase 2.2) puede tener empleados
+    // distintos en una sola transacción — atribuir todo a uno solo pagaría de más a una
+    // persona y de menos a otra. Fallback a tx.cita?.empleadoId para transacciones
+    // anteriores a esta migración, donde detallesTransaccion.empleadoId es NULL.
     const nominaMap = new Map<string, { nombre: string; totalServicios: number; totalProductos: number; comisionAcumulada: number; propinas: number }>();
 
     for (const tx of txs) {
-      const bId = tx.cita?.empleado?.id;
-      const bNombre = tx.cita?.empleado?.nombreCompleto || 'Staff General';
-      if (!bId) continue;
-
-      let entry = nominaMap.get(bId) || { nombre: bNombre, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
-
-      entry.propinas += Number(tx.propinaBarbero || 0);
+      const empleadosDeEstaTx = new Set<string>();
 
       if (tx.detalles && tx.detalles.length > 0) {
         for (const det of tx.detalles) {
+          const bId = det.empleadoId || tx.cita?.empleadoId;
+          if (!bId) continue;
+          empleadosDeEstaTx.add(bId);
+
+          const bNombre = (det as any).empleado?.nombreCompleto || tx.cita?.empleado?.nombreCompleto || 'Staff General';
+          let entry = nominaMap.get(bId) || { nombre: bNombre, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
+
           const sub = Number(det.subtotal || 0);
           const comCongelada = Number(det.comisionAplicada || 0);
           if (det.tipoItem === 'servicio') entry.totalServicios += sub;
           else if (det.tipoItem === 'producto') entry.totalProductos += sub;
           entry.comisionAcumulada += comCongelada;
+
+          nominaMap.set(bId, entry);
         }
-      } else {
+      } else if (tx.cita?.empleado) {
+        const bId = tx.cita.empleado.id;
+        empleadosDeEstaTx.add(bId);
+        let entry = nominaMap.get(bId) || { nombre: tx.cita.empleado.nombreCompleto, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
         entry.totalServicios += Number(tx.totalFacturado || 0);
         entry.comisionAcumulada += Number(tx.comisionBarbero || 0);
+        nominaMap.set(bId, entry);
       }
 
-      nominaMap.set(bId, entry);
+      // Propina: un empleado en la transacción → completa; varios (cobro grupal) → se
+      // reparte en partes iguales, mismo criterio que reportes.service.ts.
+      const propinaTx = Number(tx.propinaBarbero || 0);
+      if (propinaTx > 0 && empleadosDeEstaTx.size > 0) {
+        const porEmpleado = propinaTx / empleadosDeEstaTx.size;
+        for (const bId of empleadosDeEstaTx) {
+          const entry = nominaMap.get(bId);
+          if (entry) entry.propinas += porEmpleado;
+        }
+      }
     }
 
     const headers = ['Empleado', 'Facturado_Servicios', 'Facturado_Productos', 'Comision_Neto_Congelada', 'Propinas', 'Total_Pagar'];

@@ -28,6 +28,21 @@ export class TransaccionesController {
     return result;
   }
 
+  @Post('citas/grupo/:grupoReservaId/cobrar')
+  @Roles('admin', 'recepcion', 'empleado')
+  async cobrarGrupo(
+    @Request() req: any,
+    @Param('grupoReservaId') grupoReservaId: string,
+    @Body() cobrarCitaDto: CobrarCitaDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.transaccionesService.cobrarGrupo(grupoReservaId, cobrarCitaDto, req.user);
+    if (result.idempotent) {
+      res.status(HttpStatus.OK);
+    }
+    return result;
+  }
+
   @Post('transacciones/mostrador')
   @Roles('admin', 'recepcion', 'empleado')
   async ventaMostrador(

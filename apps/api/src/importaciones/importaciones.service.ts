@@ -3,7 +3,8 @@ import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
-import { eq, and, gte, lte } from 'drizzle-orm';
+import { eq, and, gte, lte, sql } from 'drizzle-orm';
+import { alias } from 'drizzle-orm/pg-core';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { ParserService } from './parser.service';
@@ -86,6 +87,18 @@ export class ImportacionesService {
       throw new BadRequestException('El rango de fechas no puede exceder 1 año.');
     }
 
+    // "Empleado" se resuelve preferentemente desde detalles_transaccion.empleado_id
+    // (poblado por línea desde Fase 2.2 — soporta cobro grupal con empleados distintos
+    // en una sola transacción, listándolos separados por "; "), con fallback al empleado
+    // de la cita para filas legado previas a esa migración.
+    const empleadosSubquery = sql<string | null>`COALESCE(
+      (SELECT string_agg(DISTINCT u2.nombre_completo, '; ')
+         FROM detalles_transaccion dt2
+         JOIN usuarios u2 ON u2.id = dt2.empleado_id
+        WHERE dt2.transaccion_id = ${schema.transacciones.id}),
+      ${schema.usuarios.nombreCompleto}
+    )`;
+
     const txs = await db
       .select({
         id: schema.transacciones.id,
@@ -93,7 +106,7 @@ export class ImportacionesService {
         metodoPago: schema.transacciones.metodoPago,
         totalFacturado: schema.transacciones.totalFacturado,
         comisionBarbero: schema.transacciones.comisionBarbero,
-        empleadoNombre: schema.usuarios.nombreCompleto,
+        empleadoNombre: empleadosSubquery,
         clienteNombre: schema.clientes.nombreCompleto,
       })
       .from(schema.transacciones)
@@ -140,20 +153,26 @@ export class ImportacionesService {
     const desde = desdeStr ? new Date(desdeStr + 'T00:00:00') : new Date(Date.now() - 30 * 86400000);
     const hasta = hastaStr ? new Date(hastaStr + 'T23:59:59') : new Date();
 
-    // Sumar detalles_transaccion.comisionAplicada (el valor congelado al momento del cobro)
+    // Sumar detalles_transaccion.comisionAplicada (el valor congelado al momento del cobro).
+    // Atribución por línea, con empleadoId propio de detalles_transaccion como fuente
+    // primaria (soporta cobro grupal con empleados distintos en una sola transacción,
+    // Fase 2.2) y fallback al empleado de la cita para filas legado sin ese campo poblado.
+    const empleadoDeDetalle = alias(schema.usuarios, 'empleado_de_detalle');
+    const empleadoDeCita = alias(schema.usuarios, 'empleado_de_cita');
+
     const detalles = await db
       .select({
-        empleadoId: schema.citas.empleadoId,
-        empleadoNombre: schema.usuarios.nombreCompleto,
+        empleadoId: sql<string | null>`COALESCE(${schema.detallesTransaccion.empleadoId}, ${schema.citas.empleadoId})`,
+        empleadoNombre: sql<string | null>`COALESCE(${empleadoDeDetalle.nombreCompleto}, ${empleadoDeCita.nombreCompleto})`,
         comisionAplicada: schema.detallesTransaccion.comisionAplicada,
         subtotal: schema.detallesTransaccion.subtotal,
-        propina: schema.transacciones.propinaBarbero,
         fecha: schema.transacciones.createdAt,
       })
       .from(schema.detallesTransaccion)
       .innerJoin(schema.transacciones, eq(schema.detallesTransaccion.transaccionId, schema.transacciones.id))
       .leftJoin(schema.citas, eq(schema.transacciones.citaId, schema.citas.id))
-      .leftJoin(schema.usuarios, eq(schema.citas.empleadoId, schema.usuarios.id))
+      .leftJoin(empleadoDeDetalle, eq(schema.detallesTransaccion.empleadoId, empleadoDeDetalle.id))
+      .leftJoin(empleadoDeCita, eq(schema.citas.empleadoId, empleadoDeCita.id))
       .where(and(
         gte(schema.transacciones.createdAt, desde),
         lte(schema.transacciones.createdAt, hasta)
@@ -163,12 +182,13 @@ export class ImportacionesService {
     const resumenNomina = new Map<string, { empleadoNombre: string; totalComision: number; totalVentas: number }>();
 
     for (const d of detalles) {
+      const clave = d.empleadoId || 'sin_asignar';
       const nombre = d.empleadoNombre || 'Sin Asignar';
-      const prev = resumenNomina.get(nombre) || { empleadoNombre: nombre, totalComision: 0, totalVentas: 0 };
-      
+      const prev = resumenNomina.get(clave) || { empleadoNombre: nombre, totalComision: 0, totalVentas: 0 };
+
       prev.totalComision += Number(d.comisionAplicada || 0);
       prev.totalVentas += Number(d.subtotal || 0);
-      resumenNomina.set(nombre, prev);
+      resumenNomina.set(clave, prev);
     }
 
     const workbook = new ExcelJS.Workbook();
