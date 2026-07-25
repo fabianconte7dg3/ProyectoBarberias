@@ -1,5 +1,6 @@
 import React from 'react';
 import { UserCircle2 } from 'lucide-react';
+import { useTenant } from '@/lib/tenant-context';
 
 interface StaffMember {
   id: string;
@@ -13,6 +14,16 @@ interface ProfileSelectorProps {
 }
 
 export function ProfileSelector({ staff, onSelect }: ProfileSelectorProps) {
+  const tenant = useTenant();
+
+  // 'admin'/'recepcion' son roles de plataforma, no del vertical de negocio — no tienen
+  // terminología dinámica propia (a diferencia de 'empleado', ver terminologiaEmpleado).
+  function etiquetaRol(rol: StaffMember['rol']): string {
+    if (rol === 'empleado') return tenant.terminologiaEmpleado;
+    if (rol === 'recepcion') return 'Recepción';
+    return 'Administrador';
+  }
+
   return (
     <div className="w-full max-w-xl mx-auto space-y-6">
       <div className="text-center space-y-1">
@@ -38,7 +49,7 @@ export function ProfileSelector({ staff, onSelect }: ProfileSelectorProps) {
               {member.nombreCompleto}
             </span>
             <span className="text-[11px] uppercase font-bold text-muted-foreground mt-1 px-2 py-0.5 rounded bg-secondary">
-              {member.rol}
+              {etiquetaRol(member.rol)}
             </span>
           </button>
         ))}
