@@ -13,6 +13,7 @@ import { ProductosModule } from './productos/productos.module';
 import { ClientesModule } from './clientes/clientes.module';
 import { PacientesModule } from './pacientes/pacientes.module';
 import { NotasClinicasModule } from './notas-clinicas/notas-clinicas.module';
+import { CombosModule } from './combos/combos.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -59,6 +60,7 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     ClientesModule,
     PacientesModule,
     NotasClinicasModule,
+    CombosModule,
     HorariosModule,
     CitasModule,
     TransaccionesModule,

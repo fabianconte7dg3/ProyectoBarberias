@@ -2,6 +2,7 @@ import { Controller, Post, Body, Headers, Patch, Param, Get, Query, Req, Unautho
 import type { Response, Request } from 'express';
 import { CitasService } from './citas.service';
 import { CreateCitaDto } from './dto/create-cita.dto';
+import { CreateCitasGrupalesDto } from './dto/create-citas-grupales.dto';
 import { BloquearTurnoDto } from './dto/bloquear-turno.dto';
 import { UpdateEstadoCitaDto } from './dto/update-estado.dto';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -63,6 +64,50 @@ export class CitasController {
     }
     
     return result.cita;
+  }
+
+  @Public()
+  @Post('grupo/publica')
+  async crearCitasGrupalesPublica(
+    @Body() data: CreateCitasGrupalesDto,
+    @Headers('idempotency-key') idempotencyKey: string,
+    @Headers('x-tenant-slug') tenantSlug: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!idempotencyKey) {
+      idempotencyKey = `pub_grupo_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    }
+
+    const tenantResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${tenantSlug || 'barberia-carlos'})`);
+    const tenantId = tenantResult.rows[0]?.id as string;
+    if (!tenantId) throw new NotFoundException('Negocio no encontrado');
+
+    return runInTenantScope(this.db, tenantId, async () => {
+      const result = await this.citasService.crearCitasGrupales(data, idempotencyKey);
+      if (result.isExisting) {
+        res.status(HttpStatus.OK);
+      }
+      return result;
+    });
+  }
+
+  @Roles('admin', 'recepcion', 'empleado')
+  @Post('grupo')
+  async crearCitasGrupales(
+    @Body() data: CreateCitasGrupalesDto,
+    @Headers('idempotency-key') idempotencyKey: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (!idempotencyKey) {
+      idempotencyKey = crypto.randomUUID();
+    }
+    const result = await this.citasService.crearCitasGrupales(data, idempotencyKey);
+
+    if (result.isExisting) {
+      res.status(HttpStatus.OK);
+    }
+
+    return result;
   }
 
   @Roles('admin', 'recepcion', 'empleado')
