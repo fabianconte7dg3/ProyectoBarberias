@@ -42,7 +42,7 @@ excluyó a propósito, verificación) en
 - [x] Verificado en navegador real: login admin QA → `/admin/empleados` carga con datos reales, login
       SuperAdmin muestra "Volumetrix SaaS Platform", redirect 308 confirmado por `curl -I`
 
-## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1-2.3 completos, 2.4 pendiente)
+## Fase 2 — Multi-Industria Funcional ✅ Completo (2.1-2.4)
 
 > **Diseño acordado con el usuario (2026-07-24, vía entrevista) — ver
 > [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
@@ -215,14 +215,60 @@ rondas de entrevista) en
       `SAVEPOINT`/`ROLLBACK TO SAVEPOINT` por fila) y verificados deliberadamente provocando un choque de
       horario en medio de un lote de 2 filas — la fila siguiente se siguió procesando
 
-### 2.4 Resto de Multi-Industria Funcional
+### 2.4 Resto de Multi-Industria Funcional ✅ Completo
 
-- [ ] Piloto de un vertical no-barbería de punta a punta: tenant real de veterinaria, agendar, cobrar,
-      ver reportes con datos reales — no solo probar que el texto cambia
-- [ ] Banner de "Reserva Pausada" en el portal público durante kill-switch (documentado como esperado en
-      `matriz-permisos-y-bloqueos.md`, nunca construido)
-- [ ] Decidir si renombrar `transacciones.comisionBarbero`/`propinaBarbero` — columnas append-only de un
-      libro fiscal, requieren revisión dedicada aparte (excluido a propósito de la Fase 2/rename)
+Ejecutado y verificado el 2026-07-25. Verificación mixta: navegador real (login, portal público con
+terminología dinámica, dashboard con widgets reales) + `curl` directo (casos límite de kill-switch,
+cobro, comisión, confidencialidad de notas clínicas — más preciso que clickear un formulario N veces).
+
+- [x] **Piloto de un vertical no-barbería de punta a punta.** Nuevo tenant dedicado `veterinaria-piloto`
+      (no se reutilizó `qa-test` — ver `Credenciales_QA_Local.md`, que documenta que ese tenant debe
+      arrancar siempre en `industria='barberia'` para no romper otras verificaciones futuras). Seed nuevo
+      `seed-veterinaria-piloto.sql` (mismo patrón que `seed-qa-test.sql`) que simula exactamente lo que
+      `crearTenantManual` generaría para un alta real: plantillas de `configCamposPersonalizados`
+      (especie/raza/peso/alergias) y `configWidgetsDestacados` ya aplicadas, horario real del veterinario
+      (para que la disponibilidad de la Fase 2.3 tenga algo que mostrar). Flujo verificado con datos
+      reales, no simulados: cliente (dueño de mascota) → paciente "Firulais" con campos personalizados →
+      reserva pública con terminología dinámica ("Elige a tu veterinario", "Motivo de la visita") →
+      cobro → nota clínica capturada por el veterinario asignado → confidencialidad confirmada (admin
+      recibe `403` al intentar leer el contenido completo, solo ve metadata) → dashboard con widgets
+      reales ("Pacientes Activos: 1", "Próximas Revisiones (7 días): 0", "Top Veterinarios") → "Mi
+      Desempeño" del veterinario con comisión correcta.
+  - **Bug real encontrado (exactamente el tipo que este piloto buscaba atrapar):** `SuccessView.tsx`
+    (pantalla de éxito tras reservar) tenía hardcodeado "Te esperamos en la barbería" sin importar el
+    tenant/industria — nunca se había notado porque nadie había probado el flujo público completo con un
+    tenant no-barbería de punta a punta. Corregido para usar `tenant.nombreComercial` dinámico.
+  - **Gap encontrado, documentado pero no corregido (amplía el alcance de este fix):** el botón "Avisar
+    por WhatsApp" de esa misma pantalla usa un número de teléfono simulado/hardcodeado
+    (`"50761234567"`), no el número real del negocio — el perfil público del tenant no expone hoy un
+    campo de WhatsApp. Requiere decidir qué campo exponer (¿`telefonoNegocio`? ¿el número de
+    `whatsapp_config`?) y si es información sensible del negocio antes de corregirlo — ver gap nuevo en
+    `spec.md` §7.
+- [x] **Banner de "Reserva Pausada" en el portal público durante kill-switch.**
+  - **Gap real encontrado (más profundo que "falta el banner"):** `KillSwitchGuard` solo resolvía el
+    tenant desde `request.user.tenantId`/`request.params.tenantId` — ninguno de los dos existe en rutas
+    `@Public()` (`/citas/publica`, `/clientes/publico`, etc., que resuelven el tenant por
+    `x-tenant-slug` dentro del propio controller). Resultado: la Pausa de Auto-Servicio
+    (`killSwitchActivo`) **nunca bloqueaba nada** en la Reserva Pública Web pese a estar documentado como
+    "🛑 PAUSADO" en `matriz-permisos-y-bloqueos.md` §2 — no era solo que faltara la UI, la propia
+    enforcement de backend no existía para ese camino. Corregido: el guard ahora resuelve el tenant por
+    slug como fallback. Verificado con `curl`: `POST /citas/publica` con `killSwitchActivo=true` → `503`.
+  - De paso se agregó el chequeo de `bloqueadoPorPlataforma` (bloqueo más severo, a nivel SuperAdmin) al
+    mismo guard — tampoco se chequeaba ahí antes. A diferencia de `killSwitchActivo`, este **sí** aplica
+    incluso al propio admin del tenant (un admin con sesión JWT ya emitida antes del bloqueo podía seguir
+    mutando datos; `auth.service.ts` ya lo corta en el login, pero no había nada que lo cortara por
+    request). Verificado con `curl`: admin autenticado + `bloqueadoPorPlataforma=true` → `503` también.
+  - `GET /tenants/publico/:slug` expone `killSwitchActivo`; `reservar/layout.tsx` bloquea el wizard
+    completo con un banner ("Reservas pausadas temporalmente") en vez de dejar que el cliente recorra
+    todos los pasos solo para toparse con el error al final. Verificado visualmente en navegador.
+- [x] **Decisión tomada: renombrar `transacciones.comisionBarbero`/`propinaBarbero` →
+      `comisionEmpleado`/`propinaEmpleado`.** Confirmado antes de decidir que son puramente internas (sin
+      conexión con el módulo DGI ni ningún contrato externo) — 8 archivos backend + 1 frontend
+      (`CobrarCitaModal.tsx`, que también manda el campo `propinaBarbero` en el payload de cobro).
+      Migración `ALTER TABLE RENAME COLUMN` (no toca datos existentes, solo el nombre). Headers de
+      exportación CSV (`datos.service.ts`) actualizados de `Comision_Barbero`/`Propina_Barbero` a
+      `Comision_Empleado`/`Propina_Empleado` por consistencia. Verificado con `curl`: un cobro real
+      devuelve `comisionEmpleado`/`propinaEmpleado` en la respuesta con el monto correcto.
 
 ## Fase 3 — Calidad y Mantenimiento 🔲 Pendiente
 

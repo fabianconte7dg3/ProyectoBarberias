@@ -54,8 +54,9 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
   seguros — cero downtime, cero breaking change.
 - **Fase 2 (rename):** `barbero` → `empleado` en 51 archivos (backend + DB + frontend), guiado por el
   compilador (`tsc --noEmit` como checklist de errores), no por grep-and-pray. Las columnas fiscales
-  `comisionBarbero`/`propinaBarbero` quedaron **intencionalmente** sin tocar (libro contable append-only,
-  requiere revisión propia).
+  `comisionBarbero`/`propinaBarbero` (libro contable append-only) se dejaron fuera de este pase a
+  propósito, para revisarlas aparte con más cuidado — renombradas después, en la Fase 2.4, tras confirmar
+  que no tienen conexión con el módulo DGI ni ningún contrato externo.
 - **Fase 2-D (terminología dinámica real):** nuevo endpoint público `GET /tenants/publico/:slug` +
   `TenantProvider`/`useTenant()` en React Context, conectado tanto en el Portal de Reserva como en las 8
   páginas del Panel de Administración. Verificado en navegador real, incluyendo un cambio de industria

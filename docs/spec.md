@@ -110,6 +110,12 @@ base de datos, no solo de aplicación.
   real del cliente. Calendario público desactualizado tras una reserva de otro cliente → stream SSE
   (`GET /horarios/disponibilidad/stream`) empuja un aviso al navegador para refrescar sin recargar. Ver
   [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md).
+- Dueño de negocio pausa el auto-servicio (`killSwitchActivo`) para una emergencia → el portal público
+  muestra un banner bloqueante ("Reservas pausadas temporalmente") y el backend rechaza cualquier
+  `POST`/`PUT`/`PATCH`/`DELETE` público con `503`, sin excepción para el propio admin. SuperAdmin bloquea
+  la plataforma completa de un tenant (`bloqueadoPorPlataforma`, nivel más severo) → se rechaza incluso al
+  admin autenticado con una sesión ya emitida, no solo en el próximo login. Piloto de vertical no-barbería
+  (veterinaria) de punta a punta con datos reales, no solo terminología — ver `plan.md` §2.4.
 
 ## 7. Casos límite / gaps conocidos, aún sin resolver
 
@@ -120,14 +126,16 @@ base de datos, no solo de aplicación.
   §1. "Agregar acompañante" también quedó implementado solo en el flujo de recepción/admin
   (`QuickWalkInModal`), no en el wizard de reserva pública — ver §7.3 del mismo documento para el
   porqué de esa desviación de alcance.
-- Banner de "Reserva Pausada" en el portal público cuando el kill-switch está activo — documentado como
-  esperado, nunca implementado en frontend.
 - **Portal de reserva pública sin selector de fecha por rango largo / vista mensual** — el `DaySelector`
   del wizard muestra solo un carrusel corto de días, no un calendario mensual completo. No bloqueante,
   fuera del alcance de la Fase 2.3 (que se centró en anti-abuso y tiempo real, no en UX de selección de
   fecha).
-- `transacciones.comisionBarbero`/`propinaBarbero` — columnas fiscales append-only, deliberadamente no
-  renombradas junto con el resto del rename `barbero`→`empleado`; requieren revisión dedicada.
+- **Botón "Avisar por WhatsApp" de la pantalla de éxito de reserva usa un número simulado.** Encontrado en
+  el piloto de vertical no-barbería (Fase 2.4): `SuccessView.tsx` arma el deep-link de WhatsApp con un
+  teléfono hardcodeado (`"50761234567"`), no el número real del negocio — el perfil público del tenant
+  (`GET /tenants/publico/:slug`) no expone hoy ningún campo de WhatsApp/contacto. Requiere decidir qué
+  campo exponer (¿`telefonoNegocio`? ¿el número de `whatsapp_config`?) y si es información sensible del
+  negocio antes de corregirlo.
 
 ## 8. Arquitectura y stack tecnológico
 

@@ -80,7 +80,7 @@ Leer [CLAUDE.md](../CLAUDE.md) para la guía completa. Puntos críticos:
 - **Migraciones:** Hand-written SQL en `apps/api/src/database/migrations/`. **No usar `drizzle-kit generate` ni `drizzle-kit push`** — el journal está desincronizado.
 - **RLS Multi-Tenant:** Todo acceso a datos debe pasar por `TenantContext.getDb()` o `runInTenantScope()`. Nunca bypassear con queries sin contexto.
 - **Terminología Dinámica:** UI copy de roles/servicios/clientes debe leer de `useTenant()`, nunca hardcoded como `"Barbero"` o `"Servicio"`.
-- **Rename `barbero` → `empleado`:** Completado. Las columnas fiscales `comisionBarbero`/`propinaBarbero` en `transacciones` fueron excluidas intencionalmente del rename; no renombrarlas.
+- **Rename `barbero` → `empleado`:** Completado, incluidas las columnas fiscales de `transacciones` (`comisionEmpleado`/`propinaEmpleado`, renombradas en la Fase 2.4 tras confirmar que no tienen conexión con el módulo DGI). No queda ningún `Barbero` en el código.
 
 ---
 

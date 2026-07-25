@@ -51,6 +51,33 @@ Recargar la página del navegador (o navegar dentro de la app) y el panel de adm
 reserva público van a mostrar la terminología nueva de inmediato — así se verificó la
 [Fase 2-D](../02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md).
 
+## Tenant dedicado para pilotos multi-industria: `veterinaria-piloto`
+
+`qa-test` debe seguir arrancando siempre en `industria='barberia'` (ver sección anterior) — para probar
+un vertical no-barbería de punta a punta con datos reales y persistentes (no un toggle temporal de
+`industria` que hay que revertir), existe un segundo tenant dedicado:
+
+```bash
+docker exec -i volumetrix_postgres psql -U postgres -d volumetrix \
+  -f - < apps/api/src/database/seeds/seed-veterinaria-piloto.sql
+```
+
+Mismas contraseñas/PIN que `qa-test` (`QaTest1234!` / `1234`), mismo patrón idempotente.
+
+| Campo | Valor |
+|---|---|
+| Tenant (slug) | `veterinaria-piloto` |
+| URL local | `http://localhost:3000/veterinaria-piloto/...` |
+| Industria | `veterinaria` (Veterinario / Consulta / Dueño de mascota) |
+| **Admin** — email | `vet-admin@test.local` |
+| **Admin** — contraseña | `QaTest1234!` |
+| **Veterinario** — nombre | `Vet Empleado` |
+| **Veterinario** — PIN | `1234` |
+
+Ya trae horario (lunes a viernes 09:00-17:00), 2 servicios ("Consulta General", "Vacunación"), y las
+plantillas de `configCamposPersonalizados`/`configWidgetsDestacados` de veterinaria aplicadas — usado
+para verificar la Fase 2.4 de punta a punta (ver `docs/plan.md` §2.4).
+
 ## Nota histórica: bug de recarga dura ya corregido
 
 Hasta el 2026-07-25, navegar directo por URL (recarga dura) a una página protegida como

@@ -131,14 +131,18 @@ further structural changes.
 `'barberia'`/`'Barbero'`/`'Servicio'`/`'Cliente'`). UI copy that names a role/service/client should read
 these via `useTenant()` rather than hardcoding "Barbero"/"Servicio" — that's the mechanism that lets a
 non-barbershop tenant (e.g. veterinary) see its own vocabulary without a rebuild. `clientes` also has a
-`datos_adicionales` (jsonb) column and `citas` has `notas` (text) intended for vertical-specific data
-capture (pet breed, medical notes, etc.) — as of the last audit these have zero UI/API wiring yet, so
-don't assume they're populated anywhere.
+`datos_adicionales` (jsonb) column intended for vertical-specific data capture — as of the last audit
+this still has zero UI/API wiring, so don't assume it's populated anywhere. `citas.notas` (motivo of the
+visit), by contrast, is wired end-to-end since Fase 2.3: required at the application level for
+`industria` in `veterinaria`/`clinica_medica`, surfaced in both the public booking wizard and the admin
+walk-in modal.
 
 Naming note: the staff role and related columns were renamed `barbero` → `empleado` throughout (backend,
-DB, frontend) in a dedicated pass. `transacciones.comisionBarbero`/`propinaBarbero` were **deliberately
-excluded** from that rename (append-only fiscal/DGI-reporting columns) and still use the old name —
-don't rename them as a drive-by.
+DB, frontend) in a dedicated pass. `transacciones.comisionBarbero`/`propinaBarbero` were initially
+excluded from that rename (append-only fiscal columns, handled with extra care) but were renamed to
+`comisionEmpleado`/`propinaEmpleado` in a dedicated Fase 2.4 pass after confirming they have no
+connection to the DGI module or any external contract — the whole codebase is consistent now, nothing
+still uses the old `Barbero` names.
 
 ### Workflow — read before starting non-trivial work
 
