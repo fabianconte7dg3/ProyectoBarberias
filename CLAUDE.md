@@ -139,10 +139,32 @@ DB, frontend) in a dedicated pass. `transacciones.comisionBarbero`/`propinaBarbe
 excluded** from that rename (append-only fiscal/DGI-reporting columns) and still use the old name —
 don't rename them as a drive-by.
 
+### Workflow — read before starting non-trivial work
+
+@.agents/AGENTS.md
+
+That file defines the Planificar → Ejecutar → Verificar flow, commit conventions, and the second-reviewer
+role. In short: check [`docs/plan.md`](docs/plan.md) first — it is the **single live source of truth**
+for what's done and what's next (phased, checkbox tasks). Don't start a new roadmap doc or re-derive the
+plan from scratch; update `docs/plan.md` in place instead, so it doesn't drift into needing another
+reorg like the one on 2026-07-24 (see `docs/README.md` for what that fixed).
+
 ### Docs
 
 `docs/` is organized by numbered category (`01-vision-y-plan`, `02-arquitectura-y-db`,
 `03-integraciones`, `04-hitos-y-changelogs`, `05-diseno-y-ux`, `06-referencias-tecnicas`) with an index at
-`docs/README.md`. Check `docs/02-arquitectura-y-db/` before making schema or RLS changes, and
+[`docs/README.md`](docs/README.md) — start there for anything not covered below. Three docs matter most:
+
+- [`docs/spec.md`](docs/spec.md) — product spec (verticals, actors, modules, known gaps, test status).
+- [`docs/plan.md`](docs/plan.md) — the living roadmap (see Workflow above).
+- [`docs/04-hitos-y-changelogs/walkthrough.md`](docs/04-hitos-y-changelogs/walkthrough.md) — 15-minute
+  tour of the architecture and what's actually built, for onboarding into a cold context.
+
+Superseded/historical docs live in `docs/archives/` (each has a banner naming its replacement) — if
+something you remember reading isn't in the active index anymore, check there before assuming it's gone.
+
+Check `docs/02-arquitectura-y-db/` before making schema or RLS changes (in particular the
+`Plan_Multi_Industria_Fase*.md` and `Plan_Sistema_Agenda_*.md` docs — several approved-but-unimplemented
+designs already exist there; don't redesign from scratch without checking first), and
 `docs/06-referencias-tecnicas/Credenciales_QA_Local.md` for a dedicated QA tenant/credentials to use for
 manual testing instead of touching real dev accounts.

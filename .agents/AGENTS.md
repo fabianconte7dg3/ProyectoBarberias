@@ -28,7 +28,7 @@ Antigravity debe:
 
 | Regla | Detalle |
 |---|---|
-| **Sin emojis** | 0 emojis en el subject del commit. El historial de 105 commits cumple esto; mantenerlo. |
+| **Sin emojis** | 0 emojis en el subject del commit (verificable con `git log --format='%s'`). Mantenerlo. |
 | **Conventional Commits** | Prefijo obligatorio: `feat:`, `fix:`, `docs:`, `chore:`, `refactor:`, `perf:`, `test:` |
 | **Commits pequeños y atómicos** | Preferir 1 a 10 archivos por commit. Cambios de naturaleza diferente van en commits separados. |
 | **Renames mecánicos en commits aislados** | Si se renombra un símbolo en > 20 archivos (ej. `barbero` → `empleado`), separar: (1) cambio de schema/BD, (2) cambio de código consumidor. Nunca mezclar con lógica de negocio. |
@@ -84,15 +84,18 @@ Leer [CLAUDE.md](../CLAUDE.md) para la guía completa. Puntos críticos:
 
 ---
 
-## 🔴 Deuda Técnica Conocida (Pendientes de Decisión)
+## 🔴 Deuda Técnica Conocida
 
-| # | Hallazgo | Riesgo | Prioridad |
-|---|---|---|---|
-| 1 | ~~`apps/api/node_modules/` y `apps/api/dist/` trackeados en git~~ | — | ✅ Resuelto (`0f52ba55`, `ac27f95e`, 2026-07-24) |
-| 2 | ~~`apps/api/.env` trackeado (credenciales de dev local)~~ | — | ✅ Resuelto (`0f52ba55`, 2026-07-24) |
-| 3 | 13 `*.spec.ts` son boilerplate sin tocar de `nest generate` (cobertura real = 0) | Alto (regresiones silenciosas) | Media |
-| 4 | No hay archivos `*.test.tsx` en `apps/web` a pesar de Vitest+Testing Library instalados | Alto | Media |
-| 5 | No existen `spec.md`/`implementation_plan.md`/`walkthrough.md` pese a estar mencionados como parte del flujo esperado en este archivo | Medio (convención documentada pero no seguida aún) | Media |
+> **Esta tabla es un resumen corto.** El detalle completo y las tareas ejecutables viven en
+> [`docs/plan.md`](../docs/plan.md), Fase 3 — no dupliques aquí lo que ya está ahí, actualiza ese archivo.
+
+| # | Hallazgo | Estado |
+|---|---|---|
+| 1 | `node_modules`/`dist`/`.env` trackeados en git | ✅ Resuelto (`0f52ba55`, `ac27f95e`, 2026-07-24) |
+| 2 | 56 vulnerabilidades de dependencias (39 backend, 17 frontend) | ✅ Resuelto — 39→0 backend, 17→6 residuales de bajo riesgo (ver `Auditoria_Stack_Tecnologico.md`) |
+| 3 | `spec.md`/`plan.md`/`walkthrough.md` no existían | ✅ Resuelto — los tres existen y son la fuente viva (ver sección "Flujo de Trabajo" arriba) |
+| 4 | 13 `*.spec.ts` de `apps/api` y 0 `*.test.tsx` de `apps/web` son boilerplate sin tocar (cobertura real = 0) | 🔲 Pendiente — ver `docs/plan.md` Fase 3 |
+| 5 | Sin CI/CD, sin entorno de staging, todo el desarrollo directo sobre `master` | 🔲 Pendiente — ver `docs/plan.md` Fase 4 |
 
 > Nota post-resolución de 1: `git rm --cached` no borra del disco, pero en este repo `apps/api/node_modules/`
 > terminó eliminado físicamente igual — cualquier clon nuevo (o si te pasa a ti) necesita `npm install`
