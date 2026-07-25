@@ -1,7 +1,7 @@
 # AGENTS.md — Convenciones de Desarrollo Asistido por IA · ProyectoBarberias
 
-Este archivo es leído automáticamente por Antigravity al iniciar cualquier sesión en este repositorio.
-Define el rol del agente, las reglas de flujo de trabajo y las convenciones esperadas.
+Este archivo es leído automáticamente por Antigravity y Claude al iniciar cualquier sesión en este repositorio.
+Define el rol del agente, las reglas de flujo de trabajo y las convenciones esperadas. 
 
 ---
 
