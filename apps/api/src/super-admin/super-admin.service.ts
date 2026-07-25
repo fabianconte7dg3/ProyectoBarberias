@@ -34,7 +34,7 @@ export class SuperAdminService {
       throw new BadRequestException('El setup inicial del SuperAdmin ya fue completado.');
     }
     const totpSecret = generarSecretBase32();
-    const otpauthUrl = `otpauth://totp/BarberOS%20SaaS:SuperAdmin?secret=${totpSecret}&issuer=BarberOS`;
+    const otpauthUrl = `otpauth://totp/Volumetrix%20SaaS:SuperAdmin?secret=${totpSecret}&issuer=Volumetrix`;
     return { totpSecret, otpauthUrl };
   }
 
@@ -75,7 +75,7 @@ export class SuperAdminService {
     const accessToken = this.jwtService.sign(payload, { expiresIn: '12h' });
 
     return {
-      message: 'Setup inicial del SuperAdmin completado con éxito. ¡Bienvenido a BarberOS SaaS!',
+      message: 'Setup inicial del SuperAdmin completado con éxito. ¡Bienvenido a Volumetrix SaaS!',
       usuario: { id: nuevoAdmin.id, email: nuevoAdmin.email, rol: 'superadmin' },
       accessToken,
     };

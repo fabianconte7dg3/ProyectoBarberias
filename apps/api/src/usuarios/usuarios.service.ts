@@ -82,7 +82,7 @@ export class UsuariosService {
       .where(eq(schema.barberias.id, tenantId));
 
     if (!barberiaActual) {
-      throw new NotFoundException('Barbería no encontrada.');
+      throw new NotFoundException('Negocio no encontrado.');
     }
 
     if (barberiaActual.killSwitchActivo === activo) {

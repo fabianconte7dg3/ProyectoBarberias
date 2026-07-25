@@ -26,7 +26,7 @@ export class ClientesController {
     const slug = tenantSlug || 'barberia-demo';
     const tenantResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${slug})`);
     const tenantId = tenantResult.rows[0]?.id as string;
-    if (!tenantId) throw new NotFoundException('Barbería no encontrada');
+    if (!tenantId) throw new NotFoundException('Negocio no encontrado');
 
     return runInTenantScope(this.db, tenantId, async () => {
       try {

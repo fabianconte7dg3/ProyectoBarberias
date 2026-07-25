@@ -21,7 +21,7 @@ import { relations, sql } from 'drizzle-orm';
 // ============================================================================
 
 export const planSuscripcionEnum = pgEnum('plan_suscripcion', ['independiente', 'basico', 'premium']);
-export const estadoBarberiaEnum = pgEnum('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
+export const estadoTenantEnum = pgEnum('estado_barberia', ['activo', 'suspendido_pago', 'cancelado']);
 export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'empleado', 'recepcion']);
 export const diaSemanaEnum = pgEnum('dia_semana', [
   'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
@@ -80,7 +80,7 @@ export const barberias = pgTable('barberias', {
   telefonoNegocio: varchar('telefono_negocio', { length: 30 }),
   planSuscripcion: planSuscripcionEnum('plan_suscripcion').notNull().default('basico'),
   planId: varchar('plan_id', { length: 50 }).references(() => planes.id).default('basico'),
-  estado: estadoBarberiaEnum('estado').notNull().default('activo'),
+  estado: estadoTenantEnum('estado').notNull().default('activo'),
   slug: varchar('slug', { length: 255 }).notNull().unique(),
   killSwitchActivo: boolean('kill_switch_activo').notNull().default(false),
   bloqueadoPorPlataforma: boolean('bloqueado_por_plataforma').notNull().default(false),
