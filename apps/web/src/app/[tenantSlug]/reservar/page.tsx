@@ -111,11 +111,17 @@ export default function ReservarPage() {
   const handleContinue = () => {
     if (!isValid || empleadoId === undefined) return;
 
-    // Guardamos en estado global
+    // Guardamos en estado global (incluyendo la duración real, necesaria para
+    // calcular los horarios disponibles en el siguiente paso)
     if (comboId) {
-      setComboYEmpleado(comboId, empleadoId);
+      const combo = combosList.find((c) => c.id === comboId);
+      const duracion = combo?.duracionAjustadaMinutos
+        ?? combo?.servicios.reduce((total, cs) => total + cs.servicio.duracionMinutos, 0)
+        ?? 30;
+      setComboYEmpleado(comboId, empleadoId, duracion);
     } else if (servicioId) {
-      setServicioYEmpleado(servicioId, empleadoId);
+      const servicio = serviciosList.find((s) => s.id === servicioId);
+      setServicioYEmpleado(servicioId, empleadoId, servicio?.duracionMinutos ?? 30);
     } else {
       return;
     }

@@ -12,6 +12,7 @@ import { ArrowLeft, Loader2, AlertCircle } from 'lucide-react';
 import { reservaClienteSchema } from '@/lib/types';
 import { fetchPublic } from '@/lib/api';
 import { useTenant } from '@/lib/tenant-context';
+import { requiereMotivo } from '@/lib/industrias';
 
 type FormStatus = 'idle' | 'loading' | 'error' | 'success';
 
@@ -30,8 +31,11 @@ function ConfirmarContent() {
   // Local State
   const [nombre, setNombre] = useState('');
   const [telefono, setTelefono] = useState('');
+  const [motivo, setMotivo] = useState('');
   const [status, setStatus] = useState<FormStatus>(isSuccessQuery ? 'success' : 'idle');
   const [errorMessage, setErrorMessage] = useState('');
+
+  const motivoRequerido = requiereMotivo(tenant.industria);
 
   // Protección de ruta (Si faltan datos y no estamos en success)
   useEffect(() => {
@@ -42,7 +46,7 @@ function ConfirmarContent() {
     }
   }, [isHydrated, status, servicioId, comboId, fecha, hora, router, tenantSlug]);
 
-  const isValid = reservaClienteSchema.safeParse({ nombre, telefono }).success;
+  const isValid = reservaClienteSchema.safeParse({ nombre, telefono }).success && (!motivoRequerido || motivo.trim().length > 0);
 
   const handleConfirm = async () => {
     if (!isValid || status === 'loading') return;
@@ -77,6 +81,7 @@ function ConfirmarContent() {
         clienteId,
         inicioEstimado,
         origen: 'web_publica',
+        ...(motivo.trim() && { notas: motivo.trim() }),
       };
       // Solo incluir empleadoId si es un UUID válido.
       // Para Solo-preneur el backend auto-asigna al único empleado activo.
@@ -162,6 +167,24 @@ function ConfirmarContent() {
           telefono={telefono}
           onChange={handleFormChange}
         />
+
+        {/* Motivo de la visita — requerido solo en veterinaria/clínica (ver
+            Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §6) */}
+        {motivoRequerido && (
+          <div>
+            <label htmlFor="motivo" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
+              Motivo de la visita
+            </label>
+            <textarea
+              id="motivo"
+              value={motivo}
+              onChange={(e) => setMotivo(e.target.value)}
+              placeholder={`Ej. Chequeo de rutina, vacunación, síntoma que presenta...`}
+              rows={3}
+              className="w-full p-4 bg-white border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors resize-none"
+            />
+          </div>
+        )}
       </main>
 
       {/* Acción fija inferior */}
