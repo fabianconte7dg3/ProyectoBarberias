@@ -3,6 +3,7 @@
 import { ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import { useTenant } from '@/lib/tenant-context';
+import { PauseCircle } from 'lucide-react';
 
 export default function ReservarLayout({ children }: { children: ReactNode }) {
   const params = useParams();
@@ -29,14 +30,42 @@ export default function ReservarLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="hidden sm:flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary-foreground/15 text-xs font-semibold text-primary-foreground border border-primary-foreground/20">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-            <span>Agenda Abierta</span>
+            {tenant.killSwitchActivo ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                <span>Reserva Pausada</span>
+              </>
+            ) : (
+              <>
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span>Agenda Abierta</span>
+              </>
+            )}
           </div>
         </header>
 
-        {/* Contenido Dinámico de Reserva */}
+        {/* Contenido Dinámico de Reserva — bloqueado por completo mientras la Pausa de
+            Auto-Servicio esté activa (ver matriz-permisos-y-bloqueos.md §2). El backend
+            ya rechaza cualquier POST público con 503 en este estado (KillSwitchGuard);
+            este banner evita que el cliente recorra todo el wizard solo para toparse
+            con ese error al final. */}
         <main className="flex-1 p-4 sm:p-6 md:p-8 pb-28 sm:pb-8">
-          {children}
+          {tenant.killSwitchActivo ? (
+            <div className="flex flex-col items-center justify-center text-center gap-4 py-16 px-4">
+              <div className="w-16 h-16 rounded-full bg-amber-500/10 flex items-center justify-center">
+                <PauseCircle className="w-9 h-9 text-amber-500" />
+              </div>
+              <div className="space-y-1.5 max-w-sm">
+                <h2 className="text-lg font-extrabold text-foreground">Reservas pausadas temporalmente</h2>
+                <p className="text-sm text-muted-foreground">
+                  {nombreBarberia} no está aceptando reservas en línea en este momento. Por favor
+                  contáctanos directamente o intenta de nuevo más tarde.
+                </p>
+              </div>
+            </div>
+          ) : (
+            children
+          )}
         </main>
       </div>
 

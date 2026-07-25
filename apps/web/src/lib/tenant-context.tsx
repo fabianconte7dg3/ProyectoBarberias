@@ -21,6 +21,9 @@ export interface TenantPublica {
   terminologiaCliente: string;
   configCamposPersonalizados: CampoPersonalizado[];
   configWidgetsDestacados: string[];
+  // Pausa de Auto-Servicio (ver matriz-permisos-y-bloqueos.md §2) — el portal de
+  // reserva pública muestra un banner bloqueante cuando está activa.
+  killSwitchActivo: boolean;
 }
 
 const TenantContext = createContext<TenantPublica | null>(null);

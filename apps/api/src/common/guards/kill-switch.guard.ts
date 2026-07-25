@@ -19,18 +19,28 @@ export class KillSwitchGuard implements CanActivate {
       return true;
     }
 
-    // Los administradores NUNCA quedan bloqueados por el Kill Switch
-    if (request.user?.rol === 'admin') {
-      return true;
-    }
-
     // Excluir el endpoint que desactiva el kill switch!
     const route = request.route?.path;
     if (route && route.includes('/configuracion/kill-switch')) {
       return true;
     }
 
-    const tenantId = request.user?.tenantId || request.params?.tenantId;
+    let tenantId = request.user?.tenantId || request.params?.tenantId;
+
+    // Endpoints públicos (@Public(), ej. /citas/publica, /clientes/publico) no traen
+    // request.user ni un :tenantId de ruta — resuelven el tenant por slug en el header
+    // x-tenant-slug, el mismo mecanismo que usan sus propios controllers. Sin esto, la
+    // Pausa de Auto-Servicio (killSwitchActivo) no bloqueaba nada en la Reserva Pública
+    // Web pese a estar documentado en matriz-permisos-y-bloqueos.md §2 — gap real
+    // encontrado y corregido en la Fase 2.4.
+    if (!tenantId) {
+      const tenantSlug = request.headers?.['x-tenant-slug'];
+      if (tenantSlug) {
+        const slugResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${tenantSlug})`);
+        tenantId = slugResult.rows[0]?.id as string | undefined;
+      }
+    }
+
     console.log(`[KillSwitchGuard] Method: ${method}, tenantId: ${tenantId}`);
 
     if (!tenantId) {
@@ -42,13 +52,32 @@ export class KillSwitchGuard implements CanActivate {
       const txDb = TenantContext.getDb();
       const currentTenantRes = await txDb.execute(sql`SELECT current_setting('app.current_tenant_id', true) as ct`);
       console.log(`[KillSwitchGuard] Inside runInTenantScope, app.current_tenant_id = ${currentTenantRes.rows[0].ct}`);
-      return await txDb.select({ killSwitchActivo: schema.barberias.killSwitchActivo })
+      return await txDb.select({
+        killSwitchActivo: schema.barberias.killSwitchActivo,
+        bloqueadoPorPlataforma: schema.barberias.bloqueadoPorPlataforma,
+      })
         .from(schema.barberias)
         .where(eq(schema.barberias.id, tenantId))
         .limit(1);
     });
 
-    console.log(`[KillSwitchGuard] barberia killSwitchActivo: ${barberia?.killSwitchActivo}`);
+    console.log(`[KillSwitchGuard] barberia killSwitchActivo: ${barberia?.killSwitchActivo}, bloqueadoPorPlataforma: ${barberia?.bloqueadoPorPlataforma}`);
+
+    // Bloqueo por Plataforma (SuperAdmin SaaS) — nivel de severidad mayor que la pausa
+    // del dueño, sin excepción para admin (ver matriz-permisos-y-bloqueos.md §2). Se
+    // chequea primero: si el tenant está bloqueado por la plataforma, ni el propio
+    // admin puede seguir mutando datos aunque siga con una sesión JWT válida de antes
+    // del bloqueo (auth.service.ts ya lo corta en el login, esto lo corta por request).
+    if (barberia?.bloqueadoPorPlataforma) {
+      console.log(`[KillSwitchGuard] Bloqueando request por bloqueo de plataforma`);
+      throw new ServiceUnavailableException('Este negocio no está disponible en este momento.');
+    }
+
+    // Los administradores NUNCA quedan bloqueados por su propia Pausa de Auto-Servicio
+    // (necesitan poder seguir operando y desactivarla).
+    if (request.user?.rol === 'admin') {
+      return true;
+    }
 
     if (barberia?.killSwitchActivo) {
       console.log(`[KillSwitchGuard] Bloqueando request`);

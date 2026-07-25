@@ -30,6 +30,9 @@ export class TenantsService {
           terminologiaCliente: true,
           configCamposPersonalizados: true,
           configWidgetsDestacados: true,
+          // Pausa de Auto-Servicio (ver matriz-permisos-y-bloqueos.md §2) — el frontend
+          // la usa para mostrar el banner de "Reserva Pausada" en el portal público.
+          killSwitchActivo: true,
         },
       });
       if (!tenant) throw new NotFoundException('Negocio no encontrado');
