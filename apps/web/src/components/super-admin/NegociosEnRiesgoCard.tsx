@@ -22,7 +22,7 @@ export interface BusinessMetrics {
   }>;
 }
 
-export default function BarberiasEnRiesgoCard() {
+export default function NegociosEnRiesgoCard() {
   const [metrics, setMetrics] = useState<BusinessMetrics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -107,19 +107,19 @@ export default function BarberiasEnRiesgoCard() {
         </div>
       </div>
 
-      {/* 2. Card de Barberías en Riesgo */}
+      {/* 2. Card de Negocios en Riesgo */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl lg:col-span-2">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider flex items-center gap-2">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            Barberías en Riesgo de Churn ({metrics.barberiasEnRiesgo.length})
+            Negocios en Riesgo de Churn ({metrics.barberiasEnRiesgo.length})
           </h3>
           <span className="text-xs text-zinc-500">Inactividad &gt; 7 días o WhatsApp Desconectado</span>
         </div>
 
         {metrics.barberiasEnRiesgo.length === 0 ? (
           <div className="py-8 text-center text-zinc-500 text-xs bg-zinc-950/40 rounded-lg border border-zinc-800">
-            ✅ No hay barberías en riesgo inmediato. Todas están activas y operando.
+            ✅ No hay negocios en riesgo inmediato. Todas están activas y operando.
           </div>
         ) : (
           <div className="space-y-3 max-h-56 overflow-y-auto pr-1">

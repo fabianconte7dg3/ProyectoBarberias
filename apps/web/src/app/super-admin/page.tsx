@@ -47,9 +47,9 @@ interface TenantSummary {
   totalFacturadoMes: number;
 }
 
-import CrearBarberiaModal from '@/components/super-admin/CrearBarberiaModal';
+import CrearNegocioModal from '@/components/super-admin/CrearNegocioModal';
 import AlertasSeguridadPanel from '@/components/super-admin/AlertasSeguridadPanel';
-import BarberiasEnRiesgoCard from '@/components/super-admin/BarberiasEnRiesgoCard';
+import NegociosEnRiesgoCard from '@/components/super-admin/NegociosEnRiesgoCard';
 
 export default function SuperAdminDashboard() {
   const router = useRouter();
@@ -169,7 +169,7 @@ export default function SuperAdminDashboard() {
           </div>
           <div>
             <h1 className="text-base font-extrabold text-white tracking-tight flex items-center gap-2">
-              <span>BarberOS SaaS Platform</span>
+              <span>Volumetrix SaaS Platform</span>
               <span className="px-2 py-0.5 bg-blue-500/10 border border-blue-500/30 text-blue-400 text-[10px] font-bold rounded-full uppercase tracking-wider">
                 Super Admin
               </span>
@@ -271,7 +271,7 @@ export default function SuperAdminDashboard() {
 
         {/* COMPONENTES DE OBSERVABILIDAD Y RIESGO DE NEGOCIO */}
         <AlertasSeguridadPanel />
-        <BarberiasEnRiesgoCard />
+        <NegociosEnRiesgoCard />
 
         {/* CONTROLES DE FILTRO Y BÚSQUEDA */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col md:flex-row gap-4 items-center justify-between">
@@ -464,7 +464,7 @@ export default function SuperAdminDashboard() {
 
       </main>
 
-      <CrearBarberiaModal
+      <CrearNegocioModal
         isOpen={modalCrearOpen}
         onClose={() => setModalCrearOpen(false)}
         onSuccess={loadData}

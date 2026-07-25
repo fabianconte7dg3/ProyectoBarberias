@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { fetchApi } from '@/lib/api';
 import { Store, User, Mail, Link as LinkIcon, Check, Copy, AlertTriangle, X } from 'lucide-react';
 
-interface CrearBarberiaModalProps {
+interface CrearNegocioModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -23,7 +23,7 @@ const TERMINOLOGIA_POR_INDUSTRIA: Record<Industria, { empleado: string; servicio
   otro: { empleado: 'Empleado', servicio: 'Servicio', cliente: 'Cliente', label: 'Otro' },
 };
 
-export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: CrearBarberiaModalProps) {
+export default function CrearNegocioModal({ isOpen, onClose, onSuccess }: CrearNegocioModalProps) {
   const [nombreComercial, setNombreComercial] = useState('');
   const [slug, setSlug] = useState('');
   const [adminNombre, setAdminNombre] = useState('');
@@ -82,8 +82,8 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
       setActivationUrl(res.activationUrl);
       onSuccess();
     } catch (err: any) {
-      console.error('Error al crear barbería:', err);
-      setError(err.message || 'Error al crear la barbería.');
+      console.error('Error al crear negocio:', err);
+      setError(err.message || 'Error al crear el negocio.');
     } finally {
       setLoading(false);
     }
@@ -105,7 +105,7 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
               <Store size={20} />
             </div>
             <div>
-              <h2 className="text-base font-extrabold text-white">Onboarding Asistido de Barbería</h2>
+              <h2 className="text-base font-extrabold text-white">Onboarding Asistido de Negocio</h2>
               <p className="text-xs text-slate-400">Crear tenant y generar enlace seguro de activación</p>
             </div>
           </div>
@@ -126,10 +126,10 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
             <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-300 text-xs space-y-2">
               <div className="font-extrabold flex items-center gap-2 text-sm text-emerald-400">
                 <Check size={18} />
-                <span>¡Barbería Creada Exitosamente!</span>
+                <span>¡Negocio Creado Exitosamente!</span>
               </div>
               <p>
-                Envía este enlace de activación al dueño de la barbería para que configure su contraseña privada.
+                Envía este enlace de activación al dueño del negocio para que configure su contraseña privada.
               </p>
             </div>
 
@@ -315,7 +315,7 @@ export default function CrearBarberiaModal({ isOpen, onClose, onSuccess }: Crear
                 disabled={loading || !nombreComercial || !slug || !adminEmail}
                 className="w-2/3 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-xl transition-all shadow-lg shadow-blue-600/20 disabled:opacity-50"
               >
-                {loading ? 'Creando Barbería...' : 'Generar Enlace de Activación'}
+                {loading ? 'Creando Negocio...' : 'Generar Enlace de Activación'}
               </button>
             </div>
           </form>

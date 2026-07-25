@@ -126,7 +126,7 @@ export default function SuperAdminSetupPage() {
           <div className="w-14 h-14 bg-blue-600/10 border border-blue-500/30 text-blue-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
             <ShieldCheck size={30} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">Instalación Inicial — BarberOS SaaS</h1>
+          <h1 className="text-2xl font-black tracking-tight text-white">Instalación Inicial — Volumetrix SaaS</h1>
           <p className="text-xs text-slate-400 font-medium">
             Configura tu Cuenta de Propietario de Plataforma (Paso {step} de 3)
           </p>

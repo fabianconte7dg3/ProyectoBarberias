@@ -390,7 +390,7 @@ export default function AdminDatosPage() {
             <div>
               <span className="font-bold text-foreground block">Nota sobre Protección de Datos Personales (Ley 81 de Panamá):</span>
               <p>
-                Al exportar la base de clientes para campañas comerciales, BarberOS filtra automáticamente únicamente a aquellos usuarios que han dado su consentimiento explícito. Como responsable del tratamiento de datos, asegúrate de mantener tus comunicaciones alineadas a la normativa vigente.
+                Al exportar la base de clientes para campañas comerciales, Volumetrix filtra automáticamente únicamente a aquellos usuarios que han dado su consentimiento explícito. Como responsable del tratamiento de datos, asegúrate de mantener tus comunicaciones alineadas a la normativa vigente.
               </p>
             </div>
           </div>

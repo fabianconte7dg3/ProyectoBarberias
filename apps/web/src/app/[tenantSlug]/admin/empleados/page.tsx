@@ -23,7 +23,7 @@ interface UsuarioStaff {
   tokenActivacion?: string;
 }
 
-export default function AdminBarberosPage() {
+export default function AdminEmpleadosPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;

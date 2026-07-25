@@ -50,7 +50,7 @@ export function AdminHeader({
   const navLinks = [
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isAdmin ? [
-      { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/barberos`, icon: Users },
+      { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/empleados`, icon: Users },
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },
@@ -73,7 +73,7 @@ export function AdminHeader({
               {tenantSlug}
             </span>
             <h1 className="text-base sm:text-lg font-extrabold tracking-tight text-foreground flex items-center gap-1.5">
-              <span>BarberOS</span>
+              <span>Volumetrix</span>
             </h1>
           </div>
 

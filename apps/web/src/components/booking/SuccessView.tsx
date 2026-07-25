@@ -12,7 +12,7 @@ interface Props {
 export function SuccessView({ tenantSlug }: Props) {
   // Simulamos un teléfono fijo del local para el deep link
   const localWhatsApp = "50761234567";
-  const whatsappMsg = encodeURIComponent("¡Hola! Acabo de hacer una reserva mediante BarberOS.");
+  const whatsappMsg = encodeURIComponent("¡Hola! Acabo de hacer una reserva mediante Volumetrix.");
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in zoom-in-95 duration-500 fade-in">

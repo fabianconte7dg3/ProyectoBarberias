@@ -97,7 +97,7 @@ export default function SuperAdminLoginPage() {
           <div className="w-14 h-14 bg-blue-600/10 border border-blue-500/30 text-blue-400 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
             <ShieldCheck size={30} />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-white">BarberOS SaaS Platform</h1>
+          <h1 className="text-2xl font-black tracking-tight text-white">Volumetrix SaaS Platform</h1>
           <p className="text-xs text-slate-400 font-medium">
             {step === 1 ? 'Consola Super Admin — Paso 1 de 2' : 'Verificación 2FA Obligatoria — Paso 2 de 2'}
           </p>
