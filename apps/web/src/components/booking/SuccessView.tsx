@@ -3,6 +3,7 @@ import { CheckCircle2, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { parse, format } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { useTenant } from '@/lib/tenant-context';
 
 interface Props {
   tenantSlug: string;
@@ -10,7 +11,12 @@ interface Props {
 }
 
 export function SuccessView({ tenantSlug }: Props) {
-  // Simulamos un teléfono fijo del local para el deep link
+  const tenant = useTenant();
+  // Simulamos un teléfono fijo del local para el deep link — el perfil público
+  // del tenant no expone hoy un número de WhatsApp real (gap encontrado en la
+  // Fase 2.4, documentado en spec.md, no corregido acá por ampliar el alcance
+  // de este fix — requiere decidir qué campo exponer y si es información
+  // sensible del negocio).
   const localWhatsApp = "50761234567";
   const whatsappMsg = encodeURIComponent("¡Hola! Acabo de hacer una reserva mediante Volumetrix.");
 
@@ -19,10 +25,10 @@ export function SuccessView({ tenantSlug }: Props) {
       <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
         <CheckCircle2 size={40} className="text-green-600" />
       </div>
-      
+
       <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Reserva Confirmada!</h2>
       <p className="text-gray-500 mb-8 max-w-[280px]">
-        Te esperamos en la barbería. Si necesitas cancelar, por favor avísanos con tiempo.
+        Te esperamos en {tenant.nombreComercial}. Si necesitas cancelar, por favor avísanos con tiempo.
       </p>
 
       <div className="space-y-3 w-full">
