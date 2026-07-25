@@ -61,6 +61,7 @@ docs/
 - [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados. ✅ Implementado y verificado (2026-07-25).
 - [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Combos con comisión itemizada, citas de acompañante, widgets configurables por vertical. ✅ Implementado y verificado (2026-07-25).
 - [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Calendario en tiempo real (SSE), confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias, importación de citas históricas. ✅ Implementado y verificado (2026-07-25).
+- [Fase 3: Suite de Tests Automatizados Real](./02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) — DB de test dedicada, integration tests reales de RLS/idempotencia/comisiones, Vitest en frontend. ✅ Implementado (2026-07-25, alcance acordado — ver plan.md).
 
 ### 📍 [03. Integraciones Externas](./03-integraciones/)
 - [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC. ✅ Implementado.

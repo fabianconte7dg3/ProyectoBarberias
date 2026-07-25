@@ -156,12 +156,20 @@ Ver [`docs/03-integraciones/`](./03-integraciones/) para el detalle de cada una.
 
 ## 10. Estado de calidad y tests
 
-**Honesto, no aspiracional:** los 13 archivos `*.spec.ts` de `apps/api` y el único `*.e2e-spec.ts` son
-boilerplate de `nest generate` sin personalizar (prueban `"Hello World!"`, no lógica de negocio real).
-`apps/web` tiene Vitest + Testing Library instalados pero cero archivos `*.test.tsx`. Cobertura real de
-tests automatizados: **cero**. Ver
+**Honesto, no aspiracional.** Desde la Fase 3 (2026-07-25) los 3 módulos más críticos tienen
+cobertura real: aislamiento RLS multi-tenant, idempotencia de `crearCita`/`crearCitasGrupales`, y
+cálculo de comisiones de `cobrarCita`/`cobrarGrupo` — 13 integration tests en `apps/api` que corren
+contra una base de datos de test dedicada (`volumetrix_test`, mismo contenedor Docker) vía
+`npm run test:integration`, más 8 tests en `apps/web` (`npm test`) para `calcularSlotsDisponibles` y
+`ProfileSelector`. Detalle completo del diseño (por qué integration tests reales y no mocks para RLS)
+en [`Plan_Fase3_Suite_Tests.md`](./02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md).
+
+Lo que **no** se tocó: los 13 archivos `*.spec.ts` originales de `apps/api` y el único `*.e2e-spec.ts`
+siguen siendo boilerplate de `nest generate` sin personalizar — y de hecho están rotos hoy (`npm test`
+falla en 12 de los 13, ver `plan.md` Fase 3): los controllers ya requieren providers reales
+(`DRIZZLE_POOL_DB`, `Queue`, etc.) que el boilerplate nunca registró. Ver
 [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
-para el detalle completo y `plan.md` para la tarea de remediación.
+para el detalle histórico y `plan.md` para lo que queda pendiente.
 
 ## 11. Documentos relacionados
 

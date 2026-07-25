@@ -270,14 +270,46 @@ cobro, comisión, confidencialidad de notas clínicas — más preciso que click
       `Comision_Empleado`/`Propina_Empleado` por consistencia. Verificado con `curl`: un cobro real
       devuelve `comisionEmpleado`/`propinaEmpleado` en la respuesta con el monto correcto.
 
-## Fase 3 — Calidad y Mantenimiento 🔲 Pendiente
+## Fase 3 — Calidad y Mantenimiento ✅ Completo (alcance acordado — ver nota de cierre)
 
-- [ ] Suite de tests automatizados real — hoy los 13 `*.spec.ts` de `apps/api` y el único
-      `*.e2e-spec.ts` son boilerplate sin personalizar de `nest generate` (cobertura real cero, ver
-      `spec.md` §10); `apps/web` tiene Vitest instalado sin un solo archivo `*.test.tsx`. Empezar por los
-      módulos críticos: RLS/tenant scoping, cálculo de comisiones, idempotencia de `crearCita`
-- [ ] Deuda menor: `ProfileSelector.tsx` muestra el valor crudo del rol (`"empleado"`) en vez de la
-      terminología del tenant
+Ejecutado y verificado el 2026-07-25. Detalle completo del diseño (DB de test dedicada, por qué
+integration tests reales en vez de mocks para RLS/idempotencia/comisiones, cada ajuste de drift
+encontrado) en
+[`Plan_Fase3_Suite_Tests.md`](./02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md).
+
+- [x] **Suite de tests automatizados real, empezando por los módulos críticos** (RLS/tenant scoping,
+      cálculo de comisiones, idempotencia de `crearCita`).
+  - Backend: DB de test dedicada `volumetrix_test` (mismo contenedor Docker) + script de bootstrap
+    (`apps/api/test/integration/bootstrap-test-db.sh`) que reproduce las 21 migraciones reales en un
+    orden explícito (no alfabético — no es confiable en este repo). Encontró y documentó drift real no
+    capturado en ningún archivo de migración: una dependencia circular entre 2 migraciones (resuelta
+    pre-creando una función), una columna duplicada entre otras 2, y **2 tablas completas**
+    (`detalles_transaccion`, `productos`) más **4 columnas sueltas** (`clientes.acepta_marketing`,
+    `usuarios.porcentaje_comision_producto`, `transacciones.idempotency_key`,
+    `transacciones.cita_id` nullable) que existen en `volumetrix` real sin ninguna migración que las
+    cree — confirmado con un diff completo de `information_schema.columns` entre ambas bases.
+  - Backend: 13 integration tests reales en 3 archivos (`test/integration/*.integration-spec.ts`),
+    corriendo contra Postgres real vía `npm run test:integration` — aislamiento RLS multi-tenant
+    (cross-tenant SELECT/INSERT rechazados por Postgres, no por la app), idempotencia de
+    `crearCita`/`crearCitasGrupales` (misma `idempotencyKey`, choque real de horario vía `EXCLUDE`
+    constraint), y cálculo de comisiones de `cobrarCita`/`cobrarGrupo` (servicio simple, combo, cobro
+    grupal multi-empleado con atribución por línea).
+  - Frontend: `vitest.config.ts` + scripts `test`/`test:watch` (Vitest, `@testing-library/react` y
+    `@testing-library/dom` ya estaban instalados, solo sin config ni un solo archivo de test). 8 tests
+    en 2 archivos: `calcularSlotsDisponibles` (lógica pura de disponibilidad — jornada, almuerzo,
+    ocupados, slots pasados con reloj mockeado) y `ProfileSelector` (ver siguiente punto).
+  - **Fuera de esta pasada, documentado no resuelto:** los 13 `*.spec.ts` boilerplate de `apps/api`
+    (uno por controller/service de `nest generate`) y el `app.e2e-spec.ts` genérico. **Hallazgo real al
+    correr `npm test` (confirmado con `git stash` que no es algo que esta fase haya roto): 12 de los 13
+    fallan hoy** — `Test.createTestingModule({ controllers: [XController] })` no registra los providers
+    reales que cada controller ya requiere (`DRIZZLE_POOL_DB`, `Queue`, etc.), así que ni siquiera logran
+    instanciar el módulo. No es solo "cobertura cero", es una suite en rojo — la prioridad de esta fase
+    fue RLS/idempotencia/comisiones, no reparar boilerplate; queda como la continuación natural de esta
+    misma fase en una sesión futura.
+- [x] **Fix + test de regresión: `ProfileSelector.tsx`** mostraba el valor crudo del rol (`"empleado"`)
+      en vez de la terminología del tenant. Corregido para usar `useTenant()` y mapear
+      `'empleado' → terminologiaEmpleado`; `admin`/`recepcion` no tienen término dinámico en el esquema
+      (roles de plataforma, no del vertical) así que quedan como "Administrador"/"Recepción" genérico.
 
 ## Fase 4 — Infraestructura de Producción 🔲 Pendiente
 

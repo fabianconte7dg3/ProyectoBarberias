@@ -79,7 +79,12 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
   [`spec.md`](../spec.md) §7.
 - **Marca:** "Volumetrix" en código y UI (rebrand ejecutado 2026-07-25) — ver [`plan.md`](../plan.md)
   Fase 1.
-- **Tests automatizados:** cobertura real cero (boilerplate sin personalizar) — ver
+- **Tests automatizados:** cobertura real en los módulos críticos desde la Fase 3 (2026-07-25) — RLS
+  multi-tenant, idempotencia de citas, cálculo de comisiones (`apps/api`, integration tests contra
+  Postgres real vía `npm run test:integration`) y `calcularSlotsDisponibles`/`ProfileSelector`
+  (`apps/web`, `npm test`). Los 13 `*.spec.ts` boilerplate originales de `apps/api` siguen sin tocar y
+  de hecho están rotos (`npm test` normal falla 12/13) — ver
+  [`Plan_Fase3_Suite_Tests.md`](../02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) y
   [`spec.md`](../spec.md) §10.
 - **Infraestructura:** todo corre en Docker local; nada de dominio/SSL/CI-CD/staging todavía.
 

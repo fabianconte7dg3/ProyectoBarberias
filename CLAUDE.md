@@ -32,9 +32,12 @@ npm run start:dev      # nest start --watch, port 4000
 npm run build           # nest build
 npm run lint             # eslint --fix
 npx tsc --noEmit          # type-check only, no test compilation needed for this
-npm test                   # jest unit tests (*.spec.ts)
+npm test                   # jest unit tests (*.spec.ts) — currently red, see docs/plan.md Fase 3
 npm test -- citas.service  # run a single spec by name pattern
 npm run test:e2e             # jest against test/jest-e2e.json
+npm run test:integration       # real integration tests (RLS, idempotencia, comisiones) against a
+                                 # dedicated volumetrix_test DB — auto-bootstraps it first, needs Docker
+                                 # up. See docs/02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md
 ```
 
 Frontend (`apps/web`):
@@ -43,7 +46,8 @@ npm run dev       # next dev --webpack, port 3000
 npm run build       # next build
 npm run lint          # eslint
 npx tsc --noEmit        # type-check
-npx vitest              # unit tests (vitest + @testing-library/react + jsdom)
+npm test                 # vitest run — unit tests (vitest + @testing-library/react + jsdom)
+npm run test:watch          # vitest watch mode
 ```
 
 Preview/dev servers should be launched via `.claude/launch.json` configs (`api`, `web`) rather than raw
@@ -51,9 +55,9 @@ Preview/dev servers should be launched via `.claude/launch.json` configs (`api`,
 
 ### Database migrations — hand-written SQL, not drizzle-kit
 
-`apps/api/src/database/migrations/` contains ~13 SQL files. **Do not run `drizzle-kit generate` or
+`apps/api/src/database/migrations/` contains 21 SQL files. **Do not run `drizzle-kit generate` or
 `drizzle-kit push`** against this database — the `meta/_journal.json` history is desynced from the real
-schema (only 4 journal entries exist for 19 real tables), so those commands would try to reconcile
+schema (only 4 journal entries exist for 24 real tables), so those commands would try to reconcile
 accumulated drift instead of just your change. The established team convention is:
 
 1. Hand-edit `apps/api/src/database/schema/schema.ts` first.
@@ -64,7 +68,11 @@ accumulated drift instead of just your change. The established team convention i
    docker exec -i volumetrix_postgres psql -U postgres -d volumetrix -f - < apps/api/src/database/migrations/NNNN_description.sql
    ```
 4. Verify with `psql` (`\d table_name`, `enum_range`) — don't trust `schema.ts` alone, since declared
-   indexes/constraints sometimes were never actually materialized in the live DB.
+   indexes/constraints sometimes were never actually materialized in the live DB. The inverse also
+   happens: `detalles_transaccion`, `productos`, and a handful of columns (`clientes.acepta_marketing`,
+   `transacciones.idempotency_key`, etc.) exist in the live `volumetrix` DB with **no migration file at
+   all** — found while building a from-scratch test DB, see
+   [`Plan_Fase3_Suite_Tests.md`](./docs/02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md).
 
 One-off idempotent data seeds (not schema changes) live separately in
 `apps/api/src/database/seeds/*.sql` (`ON CONFLICT ... DO UPDATE`), applied the same way via `psql`.
