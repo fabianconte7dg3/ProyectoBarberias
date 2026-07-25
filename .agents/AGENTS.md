@@ -84,10 +84,14 @@ Leer [CLAUDE.md](../CLAUDE.md) para la guía completa. Puntos críticos:
 
 | # | Hallazgo | Riesgo | Prioridad |
 |---|---|---|---|
-| 1 | `apps/api/node_modules/` y `apps/api/dist/` trackeados en git (98.7% del repo) | Medio (tamaño, CI lento) | Alta |
-| 2 | `apps/api/.env` trackeado (credenciales de dev local) | Medio (si escala a prod) | Alta |
+| 1 | ~~`apps/api/node_modules/` y `apps/api/dist/` trackeados en git~~ | — | ✅ Resuelto (`0f52ba55`, `ac27f95e`, 2026-07-24) |
+| 2 | ~~`apps/api/.env` trackeado (credenciales de dev local)~~ | — | ✅ Resuelto (`0f52ba55`, 2026-07-24) |
 | 3 | 13 `*.spec.ts` son boilerplate sin tocar de `nest generate` (cobertura real = 0) | Alto (regresiones silenciosas) | Media |
 | 4 | No hay archivos `*.test.tsx` en `apps/web` a pesar de Vitest+Testing Library instalados | Alto | Media |
+| 5 | No existen `spec.md`/`implementation_plan.md`/`walkthrough.md` pese a estar mencionados como parte del flujo esperado en este archivo | Medio (convención documentada pero no seguida aún) | Media |
 
-> Para resolver 1 y 2: `git rm -r --cached apps/api/node_modules apps/api/dist apps/api/.env`
-> seguido de un commit dedicado. Bajo riesgo técnico, alto impacto en tamaño de repo.
+> Nota post-resolución de 1: `git rm --cached` no borra del disco, pero en este repo `apps/api/node_modules/`
+> terminó eliminado físicamente igual — cualquier clon nuevo (o si te pasa a ti) necesita `npm install`
+> en `apps/api` antes de poder correr `start:dev`. Ver
+> [Auditoria_Metodologia_Desarrollo_IA.md](../docs/01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
+> para el detalle completo de la re-verificación.

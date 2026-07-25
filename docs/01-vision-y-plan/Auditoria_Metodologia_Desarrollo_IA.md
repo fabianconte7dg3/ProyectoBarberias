@@ -1,30 +1,75 @@
 # Auditoría: Metodología de Desarrollo Asistido por IA
 
-> **Fecha:** 2026-07-24
+> **Fecha:** 2026-07-24 (auditoría inicial) · **Re-verificado:** 2026-07-24, tras las actualizaciones del
+> usuario (commits `cb5a499c`…`83245162`).
 > **Qué es esto:** el usuario definió un marco de trabajo de 3 pasos (Planificar → Contexto real →
 > Verificar) más una lista de anti-patrones para el desarrollo asistido por IA en este proyecto, y pidió
-> auditar si `ProyectoBarberias` lo cumple. Este documento es el resultado de esa auditoría: qué se
-> cumple, qué no, con evidencia concreta (no impresiones), y qué falta. **No se hicieron cambios de
-> código a partir de esta auditoría** — es un diagnóstico para decidir a propósito, no una ejecución
-> automática.
+> auditar si `ProyectoBarberias` lo cumple. Este documento es el resultado de esa auditoría, re-verificada
+> después de que el usuario aplicara varias de las recomendaciones.
+
+## ⚠️ Hallazgo de la re-verificación: el fix de `node_modules` dejó `apps/api` sin poder arrancar
+
+El commit `0f52ba55` dice en su mensaje *"Los archivos siguen presentes en disco local, solo se sacan del
+tracking de git"* — pero al re-verificar, `apps/api/node_modules/` **no existía físicamente en disco**
+(`git rm --cached` no debería borrar del disco, así que algo adicional los eliminó — posiblemente un
+`git clean` posterior, o una limpieza manual). Confirmado corriendo `npm run start:dev` en `apps/api`:
+`sh: línea 1: nest: orden no encontrada`. Se corrigió en el momento como parte de esta re-verificación
+con `npm install` en `apps/api` (866 paquetes reinstalados) — no requiere una decisión del usuario, es
+restaurar el estado esperado post-clonado, y quedó confirmado con `git status --ignored` que
+`node_modules/` vuelve a estar presente en disco pero correctamente ignorado por git. `npx tsc --noEmit`
+en `apps/api` corre limpio (0 errores) después de la reinstalación.
+
+**Lección para el propio flujo de "Verificar" de este proyecto:** después de un `git rm --cached` masivo,
+correr `npm install` y arrancar la app antes de dar por cerrada la tarea — el árbol de trabajo limpio en
+`git status` no garantiza que la app siga corriendo.
 
 ## Resumen de cumplimiento
 
-| # | Criterio | Estado | Evidencia |
-|---|---|---|---|
-| 1a | Interview-first (la IA entrevista antes de programar) | 🟡 Parcial | Se usa el modo plan de Claude Code puntualmente, pero no es una regla documentada/exigida del repo |
-| 1b | `spec.md` compilando especificación, casos límite, arquitectura, tests | 🔴 No existe | Ningún archivo `spec.md` en el repo (verificado con `find`) |
-| 1c | `plan.md` con tareas chicas tachables | 🔴 No existe como archivo del repo | Existen checklists de producto (ver abajo) pero no un `plan.md` de tareas de implementación |
-| 2 | Contexto real vía MCP (tools/resources/prompts conectados al proyecto) | 🔴 No configurado | No hay `.mcp.json` ni servidor MCP propio del proyecto — `.claude/` solo tiene `launch.json` y `settings.local.json` |
-| 3a | VCS como puntos de guardado | 🟢 Cumple | 105 commits, historial limpio, sin force-push destructivo |
-| 3b | Commits pequeños | 🟡 Parcial | La mayoría son pequeños (1-4 archivos), pero hay 2 commits masivos de ~60-79 archivos (renames mecánicos) |
-| 3c | Revisión por un segundo modelo | 🔴 No se usa | Existe la herramienta (`/code-review ultra`) pero no hay evidencia de uso ni está documentada como paso obligatorio |
-| Anti | Emojis en commits | 🟢 Cumple | 0 commits con emoji en 105 (`git log` + regex de rango Unicode) |
-| Anti | Tests unitarios reales | 🔴 No cumple | Los 13 `*.spec.ts` + el único `*.e2e-spec.ts` son 100% boilerplate sin tocar de `nest new` (`"Hello World!"`) — **ya coincide** con lo señalado en `Checklist_Multi_Industria_y_Produccion.md`, Fase 4 |
-| Anti | Deuda técnica: `node_modules` en git | 🔴 No cumple (grave) | 47.282 de 47.890 archivos trackeados (98.7%) son `node_modules`; ya estaba señalado en el checklist previo pero sin cuantificar la causa raíz |
-| Anti | Secretos/credenciales en git | 🟡 Hallazgo nuevo | `apps/api/.env` está trackeado (contiene `DATABASE_URL`, `REDIS_HOST/PORT` de dev local) |
-| Anti | Código basura / nombres genéricos | 🟢 Sin evidencia de violación | Spot-check de patrones típicos (`foo`, `temp2`, `data2`, etc.) sin resultados |
-| Anti | Comentarios que no explican nada | 🟢 Sin evidencia de violación | Spot-check de comentarios existentes: explican el *porqué* (ej. "Log inmutable de auditoría"), no el *qué* |
+| # | Criterio | Estado inicial | Estado re-verificado | Evidencia |
+|---|---|---|---|---|
+| 1a | Interview-first (la IA entrevista antes de programar) | 🟡 Parcial | 🟡 Parcial (sin cambios) | `.agents/AGENTS.md` ahora documenta un flujo de 3 pasos (Planificar/Ejecutar/Verificar), pero sigue sin exigir una entrevista estructurada antes de programar |
+| 1b | `spec.md` compilando especificación, casos límite, arquitectura, tests | 🔴 No existe | 🔴 Sigue sin existir | `find` no encuentra `spec.md`; `.agents/AGENTS.md` menciona `implementation_plan.md` como nombre esperado, pero tampoco existe ningún archivo con ese nombre en el repo todavía |
+| 1c | `plan.md` con tareas chicas tachables | 🔴 No existe | 🔴 Sigue sin existir | Mismo hallazgo — `.agents/AGENTS.md` menciona `walkthrough.md` como destino de actualización, tampoco existe aún |
+| 2 | Contexto real vía MCP (tools/resources/prompts conectados al proyecto) | 🔴 No configurado | 🔴 Sigue sin configurar | No hay `.mcp.json` en el repo (verificado de nuevo) |
+| 3a | VCS como puntos de guardado | 🟢 Cumple | 🟢 Cumple | 109 commits ahora, historial limpio |
+| 3b | Commits pequeños | 🟡 Parcial | 🟢 Mejorado | Los 4 commits nuevos son de 1 archivo cada uno; además `.agents/AGENTS.md` ahora **documenta la regla explícita** de 1-10 archivos por commit y de aislar renames mecánicos — pasa de práctica implícita a convención escrita |
+| 3c | Revisión por un segundo modelo | 🔴 No se usa | 🟡 Mejorado (documentado, no aún ejercido) | `.agents/AGENTS.md` ahora define a **Antigravity como segundo revisor obligatorio** (revisión semántica, seguridad, `tsc --noEmit`, commit+push) para cada cambio, con `/code-review ultra` reservado a cambios >20 archivos. Sigue sin evidencia en el historial de que ese paso se haya ejecutado todavía — es una convención nueva, aún no probada en la práctica |
+| Anti | Emojis en commits | 🟢 Cumple | 🟢 Cumple | 0 emojis en 109 commits; ahora también es una regla escrita en `.agents/AGENTS.md` |
+| Anti | Tests unitarios reales | 🔴 No cumple | 🔴 Sin cambios | Sigue siendo boilerplate sin tocar — no era el foco de esta ronda de cambios |
+| Anti | Deuda técnica: `node_modules`/`dist`/`.env` en git | 🔴 No cumple (grave) | 🟢 **Resuelto** | Ver detalle abajo — de 47.890 a 329 archivos trackeados |
+| Anti | Secretos/credenciales en git | 🟡 Hallazgo nuevo | 🟢 **Resuelto** | `apps/api/.env` sacado del tracking (`git rm --cached`), sigue en disco local para desarrollo |
+| Anti | Código basura / nombres genéricos | 🟢 Sin evidencia de violación | 🟢 Sin cambios | No aplicó a esta ronda |
+| Anti | Comentarios que no explican nada | 🟢 Sin evidencia de violación | 🟢 Sin cambios | No aplicó a esta ronda |
+
+## Qué cambió en esta ronda (commits `cb5a499c`…`83245162`)
+
+1. **`cb5a499c` / `83245162` — nuevo `.agents/AGENTS.md`.** Define el rol de **Antigravity como segundo
+   revisor obligatorio** (revisión semántica + seguridad + `tsc --noEmit` + commit/push), convenciones de
+   commits (Conventional Commits en español, sin emojis, 1-10 archivos, renames mecánicos aislados), y un
+   flujo Planificar/Ejecutar/Verificar de 3 pasos. Es leído automáticamente por Antigravity y (según su
+   propio texto, actualizado en `83245162`) por Claude. Responde directamente a los criterios 3c
+   (segundo revisor) y a la convención de commits pequeños de 3b.
+2. **`0f52ba55` — `chore: eliminar node_modules, dist y .env del control de versiones`.** `git rm --cached`
+   sobre `apps/api/node_modules/` (44.869 archivos), `apps/api/dist/` (316 archivos), `node_modules/` raíz
+   (2.413 archivos) y `apps/api/.env`. Referencia explícitamente esta misma auditoría como causa raíz
+   documentada — el flujo de "leer el hallazgo → decidir → ejecutar" funcionó como se esperaría.
+3. **`ac27f95e` — nuevo `apps/api/.gitignore`.** El que faltaba desde el inicio del proyecto (causa raíz
+   identificada en la auditoría original). Sigue el mismo patrón que el `.gitignore` de `apps/web`.
+4. **Nuevo `.gitignore` en la raíz** (visto en el árbol de trabajo, no en un commit separado — probablemente
+   incluido en `0f52ba55`).
+
+**Resultado medido:** de 47.890 a **329 archivos trackeados** (-99.3%), 0 archivos de `node_modules`
+trackeados (antes 47.282), 0 archivos `.env` trackeados (antes 1).
+
+**Efecto secundario encontrado y corregido en esta re-verificación:** `apps/api` quedó sin
+`node_modules/` en disco (ver sección de arriba) — restaurado con `npm install`.
+
+**Deuda documentada pero aún desactualizada:** la tabla "Deuda Técnica Conocida" del propio
+`.agents/AGENTS.md` (líneas 83-93) todavía lista los ítems 1 (`node_modules`/`dist` trackeados) y 2
+(`.env` trackeado) como pendientes — quedaron obsoletos por los commits `0f52ba55`/`ac27f95e` del mismo
+día. Se corrige como parte de esta re-verificación (ver commit de esta sesión) para no dejar un documento
+del propio repo contradiciendo el estado real, que es justo el tipo de inconsistencia que esta auditoría
+busca detectar.
 
 ## Detalle por sección
 
@@ -136,25 +181,30 @@ historial reciente), así que no hay ni siquiera el punto natural — un PR — 
   misma sección) es consistente con el espíritu de "revisarle el trabajo a un junior" más que con
   aceptar el output sin revisión.
 
-## Recomendaciones (no ejecutadas — pendientes de decisión del usuario)
+## Recomendaciones — estado actualizado
 
 En orden de impacto/costo:
 
-1. **Agregar `.gitignore` en la raíz y en `apps/api`** (patrón de `apps/web/.gitignore`, que ya
-   funciona bien) y sacar `node_modules`/`dist`/`.env` del control de versiones con
-   `git rm -r --cached`. Es el hallazgo de mayor impacto — reduce el repo en ~98% de sus archivos
-   trackeados y elimina el riesgo de secretos. Bajo riesgo técnico, alto en tamaño de diff (un commit
-   dedicado, sin mezclar con otro cambio).
-2. **Escribir un `spec.md` y un `plan.md` reales en el repo** para la próxima iniciativa grande (ej. la
-   Fase 3 de `Checklist_Multi_Industria_y_Produccion.md` — wiring de `datos_adicionales`/`notas`), en vez
-   de dejar el plan solo en `~/.claude/plans/`. Formalizar la plantilla (casos límite, requisitos,
-   arquitectura, tecnología, tests) como parte del proceso, no solo para esta iniciativa.
-3. **Escribir al menos un test unitario real** por módulo crítico (RLS/tenant scoping, cálculo de
-   comisiones, idempotencia de `crearCita`) antes de seguir agregando funcionalidad — hoy un regresión
+1. ~~Agregar `.gitignore` en la raíz y en `apps/api`, sacar `node_modules`/`dist`/`.env` del control de
+   versiones.~~ **✅ Resuelto** (`0f52ba55`, `ac27f95e`) — ver sección "Qué cambió en esta ronda". Único
+   pendiente relacionado: correr `npm install` en cualquier clon nuevo del repo (ya no viene con
+   `node_modules` versionado) — trivial, pero vale la pena una nota en un futuro `README.md` de setup si
+   no existe todavía uno con pasos de instalación explícitos.
+2. **Ejercer el rol de "segundo revisor" que ya quedó documentado en `.agents/AGENTS.md`.** La convención
+   existe desde `cb5a499c`, pero todavía no hay un commit en el historial donde se pueda confirmar que
+   ese paso 3 (revisión semántica + seguridad + `tsc --noEmit` antes de commitear) efectivamente ocurrió
+   como un paso distinto, en vez de ser parte implícita del mismo flujo de siempre. Vale la pena, en la
+   próxima sesión de trabajo, dejar rastro explícito (ej. en el mensaje de commit o en un doc) de que el
+   segundo revisor corrió y qué encontró — aunque sea "nada que reportar" — para que la convención se
+   pueda auditar objetivamente en vez de confiar en que se siguió.
+3. **Escribir un `spec.md` / `implementation_plan.md` / `walkthrough.md` reales en el repo** para la
+   próxima iniciativa grande (ej. la Fase 3 de `Checklist_Multi_Industria_y_Produccion.md` — wiring de
+   `datos_adicionales`/`notas`). `.agents/AGENTS.md` ya *menciona* estos nombres de archivo como parte del
+   flujo esperado, pero ninguno existe todavía en el repo — es la brecha más grande que queda entre lo que
+   dice la convención y lo que hay en disco.
+4. **Escribir al menos un test unitario real** por módulo crítico (RLS/tenant scoping, cálculo de
+   comisiones, idempotencia de `crearCita`) antes de seguir agregando funcionalidad — hoy una regresión
    silenciosa no la detectaría nada automatizado.
-4. **Documentar `/code-review ultra` como paso esperado** antes de mergear cambios grandes a `master`
-   (o adoptar un flujo de PRs para tener dónde dispararlo), y evitar repetir commits de 60-79 archivos —
-   partir renames mecánicos grandes en commits más chicos cuando sea razonable.
 5. **Evaluar un MCP propio del proyecto** (ej. introspección de schema de Postgres) si el costo de
    "leer el estado real de la base a mano" se vuelve recurrente — hoy es manejable porque el equipo es
    una sola persona con este mismo Claude Code, pero escala mal si el equipo crece.
