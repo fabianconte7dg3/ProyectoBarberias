@@ -66,23 +66,29 @@ export function useAdminAuth({
     if (sessionChecked.current) return;
     sessionChecked.current = true;
 
-    // Sin sesión local → ir al login
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    // Verificar rol requerido (sin llamada al servidor)
-    if (requiredRole === 'admin' && currentUser.rol !== 'admin') {
+    // Fast path: si el store de Zustand YA tiene el usuario (caso normal de
+    // navegación dentro de la app), resolvemos el chequeo de rol al instante
+    // sin esperar la red.
+    if (currentUser && requiredRole && currentUser.rol !== requiredRole) {
       router.push(`/${tenantSlug}/admin/agenda`);
       return;
     }
 
-    // Validar que la cookie sigue siendo válida en el servidor.
-    // Solo cerramos sesión en 401 explícito; ignoramos errores de red/CORS/500
-    // para no desconectar al empleado por problemas temporales o actividad en
-    // otras pestañas del navegador.
-    fetchApi('/auth/me')
+    // IMPORTANTE: nunca redirigimos a login solo porque `currentUser` sea
+    // null. El store de Zustand (persistido en localStorage) es apenas una
+    // caché visual de "quién se ve logueado" — la única fuente de verdad
+    // real de la sesión es la cookie httpOnly, validada aquí contra el
+    // servidor. En una recarga dura (F5 o navegación directa por URL),
+    // `currentUser` puede llegar momentáneamente en null porque Zustand
+    // todavía no terminó de rehidratar desde localStorage cuando este efecto
+    // corre; redirigir en ese instante cerraba sesiones válidas por una
+    // carrera de hidratación, no por falta de sesión real.
+    fetchApi<{ userId: string; tenantId: string; rol: string }>('/auth/me')
+      .then((me) => {
+        if (requiredRole && me.rol !== requiredRole) {
+          router.push(`/${tenantSlug}/admin/agenda`);
+        }
+      })
       .catch((err: Error) => {
         const msg = err?.message?.toLowerCase() || '';
         const is401 =

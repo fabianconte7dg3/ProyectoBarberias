@@ -126,9 +126,11 @@ se creó `apps/api/src/database/seeds/seed-qa-test.sql` — un tenant y usuarios
 credenciales fijas y documentadas, para no volver a tocar cuentas de dev reales. Con eso, y separando
 cada clic en su propia llamada a la herramienta del navegador (permitiendo que React re-renderice entre
 cada dígito del PIN), sí se completó el login real y la navegación dentro de la app (que preserva la
-hidratación de Zustand; una recarga dura del navegador a una ruta de admin protegida sí puede rebotar a
-`/login` por una carrera de hidratación — ver nota en el doc de credenciales, no es un bug introducido
-por este cambio). Confirmado en vivo, con sesión de admin real:
+hidratación de Zustand). Esto expuso un bug preexistente (no introducido por este cambio): una recarga
+dura del navegador a una ruta de admin protegida podía rebotar a `/login` por una carrera de hidratación
+entre `adminStore` y el guard de `useAdminAuth` — corregido el mismo día, ver
+[Credenciales_QA_Local.md](../06-referencias-tecnicas/Credenciales_QA_Local.md#nota-histórica-bug-de-recarga-dura-ya-corregido).
+Confirmado en vivo, con sesión de admin real:
 - `/qa-test/admin/barberos` → **"Gestión de Barberos & Equipo de Staff"**, "Administra el equipo de QA
   Test Tenant...", **"+ Invitar Nuevo Barbero"**.
 - `/qa-test/admin/configuracion` → **"Catálogo de Servicios"**, servicio sembrado visible, **"50.00%

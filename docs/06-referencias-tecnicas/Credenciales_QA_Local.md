@@ -51,10 +51,14 @@ Recargar la página del navegador (o navegar dentro de la app) y el panel de adm
 reserva público van a mostrar la terminología nueva de inmediato — así se verificó la
 [Fase 2-D](../02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md).
 
-## Nota sobre navegación en el navegador de desarrollo
+## Nota histórica: bug de recarga dura ya corregido
 
-Si navegas directo por URL (recarga dura) a una página protegida como `/[slug]/admin/barberos` sin
-pasar primero por el login, la app puede redirigirte a `/admin/login` aunque la cookie de sesión siga
-siendo válida — es una carrera de hidratación del store de Zustand (`adminStore`, persistido en
-`localStorage`) contra el guard de `useAdminAuth`, no un bug de autenticación real. Basta con volver a
-navegar dentro de la app (o refrescar una segunda vez) para que continúe la sesión normalmente.
+Hasta el 2026-07-25, navegar directo por URL (recarga dura) a una página protegida como
+`/[slug]/admin/barberos` podía redirigir incorrectamente a `/admin/login` aunque la cookie de sesión
+siguiera siendo válida — una carrera de hidratación del store de Zustand (`adminStore`, persistido en
+`localStorage`) contra el guard de `useAdminAuth`. Corregido en
+[`useAdminAuth.ts`](../../apps/web/src/hooks/useAdminAuth.ts): el guard ya no decide "no hay sesión" en
+base a que el store local esté momentáneamente vacío — solo confía en la respuesta real del servidor
+(`GET /auth/me`, validado contra la cookie httpOnly). Verificado con este mismo tenant de QA: sesión
+válida sobrevive la recarga dura, sesión inexistente redirige a login, y rol incorrecto redirige a
+`/agenda` — los tres casos correctos en recarga dura.
