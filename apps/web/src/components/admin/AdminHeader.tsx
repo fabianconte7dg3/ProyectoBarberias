@@ -6,6 +6,7 @@ import {
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
 import { es } from 'date-fns/locale';
+import { useTenant } from '@/lib/tenant-context';
 
 interface AdminHeaderProps {
   tenantSlug: string;
@@ -32,6 +33,7 @@ export function AdminHeader({
 }: AdminHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const { terminologiaEmpleado } = useTenant();
   const isSelectedToday = isToday(selectedDate);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
@@ -48,7 +50,7 @@ export function AdminHeader({
   const navLinks = [
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isAdmin ? [
-      { label: 'Empleados', href: `/${tenantSlug}/admin/empleados`, icon: Users },
+      { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/barberos`, icon: Users },
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: 'Métricas', href: `/${tenantSlug}/admin/dashboard`, icon: TrendingUp },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },

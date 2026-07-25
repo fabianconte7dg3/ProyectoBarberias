@@ -1,10 +1,11 @@
-# Multi-Industria — Fase 2-D: Terminología Dinámica Real (Portal de Reserva)
+# Multi-Industria — Fase 2-D: Terminología Dinámica Real (Portal de Reserva + Panel de Admin)
 
-> **Fecha:** 2026-07-24
-> **Estado:** ✅ Aplicado (backend + frontend, portal de reserva público)
+> **Fecha:** 2026-07-24 / 2026-07-25
+> **Estado:** ✅ Aplicado (backend + portal de reserva público + panel de administración)
 > **Alcance:** Conectar `terminologiaEmpleado`/`terminologiaServicio`/`terminologiaCliente` (agregadas en
-> [Fase 1](./Plan_Multi_Industria_Schema.md)) al frontend público, reemplazando el copy genérico
-> introducido en [Fase 2](./Plan_Multi_Industria_Fase2_Rename.md).
+> [Fase 1](./Plan_Multi_Industria_Schema.md)) al frontend, reemplazando el copy genérico introducido en
+> [Fase 2](./Plan_Multi_Industria_Fase2_Rename.md). Se hizo en dos tandas: primero el Portal de Reserva
+> (cara al cliente), luego el Panel de Administración (cara al staff) — ver sección 6.
 
 ---
 
@@ -88,11 +89,46 @@ Solo en el Portal de Reserva público (decisión de alcance, ver sección 5):
 
 ## 5. Explícitamente diferido
 
-- **Terminología dinámica en el panel de administración** (`agenda`, `barberos`, `configuracion`,
-  `dashboard`). Mismo patrón (`useTenant()` ya está disponible en todo ese árbol), pero es una
-  superficie mucho más grande (labels, títulos de gráficos, tablas) y de menor urgencia — lo usa el
-  staff interno, no el cliente que decide si reservar.
 - **Banner de "Reserva Pausada"** en el portal público cuando `killSwitchActivo`/`estado` no es
   `activo` — ya documentado como funcionalidad esperada en `matriz-permisos-y-bloqueos.md` pero nunca
   implementada en el frontend. El nuevo endpoint `/tenants/publico/:slug` podría exponer ese estado en
   el futuro, pero no se agregó ahora para no mezclar features.
+- **Badge de rol crudo en el selector de perfil** (`ProfileSelector.tsx`) sigue mostrando el valor
+  literal del enum (`"empleado"`) en vez de la terminología — detalle menor, no user-facing crítico
+  (es solo una etiqueta pequeña bajo el nombre en la pantalla de login), no se tocó en esta pasada.
+
+## 6. Extensión: Panel de Administración (2026-07-25)
+
+Se conectó `useTenant()` también en el panel de administración (`barberos`, `configuracion`,
+`dashboard` y los modales compartidos `InviteEmpleadoModal`, `CobrarCitaModal`, `HorariosModal`,
+`ListaTurnosView`, `AdminHeader`). `agenda/page.tsx` no necesitó cambios — solo usa `empleado` como
+identificador interno, nunca como copy visible. Reemplazados: títulos de página/sección, botones,
+labels de tabla, placeholders de formulario, títulos y leyendas de gráficos (Recharts `name` prop),
+mensajes de estado vacío/carga.
+
+**Bug encontrado y corregido en el camino**: el `sed` de la Fase 2 había renombrado por error el `href`
+de navegación de "Barberos" en `AdminHeader.tsx` de `/admin/barberos` a `/admin/empleados` — un 404
+real, porque el directorio de la página (`app/[tenantSlug]/admin/barberos/`) nunca se renombró a
+propósito (ver exclusión de ruta física en la Fase 2). El patrón `\bbarberos\b` sí hizo match dentro del
+template string de la URL porque está delimitado por `/` y una comilla — algo que no se detectó en la
+revisión de esa fase porque el smoke test de entonces no hizo click en la navegación del admin. Corregido
+para que el label sea dinámico (`{terminologiaEmpleado}s`) pero la ruta siga apuntando a `barberos`.
+
+**Verificación**: `tsc --noEmit` limpio en ambos paquetes. El click-through visual en el navegador no
+pudo completarse — el pane de este entorno no registra eventos de clic/teclado sintéticos de forma
+confiable contra esta página en particular (confirmado con múltiples estrategias: CDP click, doble
+click, teclado físico, y `.click()` vía JS con lotes síncronos que no dejan a React re-renderizar entre
+dígitos del PIN). Se optó por **no seguir forzando login de prueba** una vez que hacerlo hubiera
+requerido sobrescribir la contraseña real de un usuario admin de prueba (`josep@gmail.com` /
+Jose Perez) además del PIN — cambiar credenciales reales de un usuario, aunque sea de datos de prueba
+locales, no se justificaba solo para una verificación visual cuando ya había señal fuerte de
+correctitud: compilación limpia, revisión manual de cada string cambiado, y el mismo patrón
+`TenantProvider`/`useTenant()` ya validado en vivo en el Portal de Reserva (incluida la prueba de cambio
+de industria en caliente de la sección 4).
+
+**Efecto secundario a revertir manualmente**: se sobrescribió `pin_acceso` del usuario
+`d95f87f6-a57e-4512-91c3-7c8a22339b17` (Jose Perez, rol `admin`) con el hash de `"1234"` durante el
+intento de login — luego se descubrió que el login por PIN solo aplica a `empleado`/`recepcion`
+(`auth.service.ts:171`, `inArray(rol, ['empleado', 'recepcion'])`), así que este cambio no tiene ningún
+efecto funcional (los admins entran por email/contraseña, que no se tocó). Se deja documentado por
+transparencia, no por riesgo real.

@@ -10,6 +10,7 @@ import {
   CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
+import { useTenant } from '@/lib/tenant-context';
 
 interface Servicio {
   id: string;
@@ -59,6 +60,7 @@ export default function AdminConfiguracionPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
+  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
 
   const currentUser = useAdminStore((state) => state.user);
 
@@ -253,7 +255,7 @@ export default function AdminConfiguracionPage() {
               <span>Configuración del Local</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Servicios · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable
+              {terminologiaServicio}s · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable
             </p>
           </div>
         </div>
@@ -316,7 +318,7 @@ export default function AdminConfiguracionPage() {
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
               <Scissors size={20} className="text-primary" />
-              <h2 className="text-base font-bold">Catálogo de Servicios</h2>
+              <h2 className="text-base font-bold">Catálogo de {terminologiaServicio}s</h2>
             </div>
 
             <button
@@ -324,18 +326,18 @@ export default function AdminConfiguracionPage() {
               className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity"
             >
               <Plus size={16} />
-              <span>Nuevo Servicio</span>
+              <span>Nuevo {terminologiaServicio}</span>
             </button>
           </div>
 
           {/* Formulario Modal Crear Servicio */}
           {isNuevoServicioOpen && (
             <form onSubmit={handleCrearServicio} className="bg-secondary/40 border border-border p-4 rounded-xl space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Crear Nuevo Servicio</h3>
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Crear Nuevo {terminologiaServicio}</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <input
                   type="text"
-                  placeholder="Nombre del Servicio (ej. Barba Express)"
+                  placeholder={`Nombre del ${terminologiaServicio} (ej. Barba Express)`}
                   required
                   value={nuevoNombre}
                   onChange={(e) => setNuevoNombre(e.target.value)}
@@ -373,7 +375,7 @@ export default function AdminConfiguracionPage() {
                   disabled={saving}
                   className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
                 >
-                  Guardar Servicio
+                  Guardar {terminologiaServicio}
                 </button>
               </div>
             </form>
@@ -432,7 +434,7 @@ export default function AdminConfiguracionPage() {
               <div>
                 <h2 className="text-base font-bold">Equipo de Staff & Configuración de Comisiones</h2>
                 <p className="text-xs text-muted-foreground">
-                  Configura comisiones independientes para servicios de corte y venta de productos por empleado.
+                  Configura comisiones independientes por {terminologiaServicio.toLowerCase()} y venta de productos por {terminologiaEmpleado.toLowerCase()}.
                 </p>
               </div>
             </div>
@@ -460,7 +462,7 @@ export default function AdminConfiguracionPage() {
                     {editingComisionUserId === u.id ? (
                       <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 bg-secondary/40 p-2.5 rounded-xl border border-border">
                         <div className="flex items-center gap-1.5">
-                          <span className="text-[10px] uppercase font-bold text-muted-foreground">Servicios:</span>
+                          <span className="text-[10px] uppercase font-bold text-muted-foreground">{terminologiaServicio}s:</span>
                           <input
                             type="number"
                             min="0"
@@ -507,7 +509,7 @@ export default function AdminConfiguracionPage() {
                       <div className="flex items-center gap-2">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-mono font-extrabold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-                            {u.porcentajeComision || '0'}% Servicios
+                            {u.porcentajeComision || '0'}% {terminologiaServicio}s
                           </span>
                           {Number(u.porcentajeComisionProducto || 0) > 0 ? (
                             <span className="text-xs font-mono font-extrabold px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
@@ -574,7 +576,7 @@ export default function AdminConfiguracionPage() {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="border-b border-border uppercase text-muted-foreground font-semibold">
-                  <th className="py-2.5 px-3">Empleado</th>
+                  <th className="py-2.5 px-3">{terminologiaEmpleado}</th>
                   <th className="py-2.5 px-3">Tipo Permiso</th>
                   <th className="py-2.5 px-3">Período Otorgado</th>
                   <th className="py-2.5 px-3 text-center">Estado</th>
@@ -596,7 +598,7 @@ export default function AdminConfiguracionPage() {
                   return (
                     <tr key={b.id} className="hover:bg-secondary/40 transition-colors">
                       <td className="py-3 px-3 font-bold text-foreground">
-                        {b.empleado?.nombreCompleto || 'Empleado Staff'}
+                        {b.empleado?.nombreCompleto || `${terminologiaEmpleado} Staff`}
                       </td>
                       <td className="py-3 px-3 uppercase font-mono font-bold text-[11px] text-primary">
                         {b.tipo}

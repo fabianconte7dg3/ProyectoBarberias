@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Clock, Calendar, Save, Plus, Trash2, CheckCircle2, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
+import { useTenant } from '@/lib/tenant-context';
 
 interface HorariosModalProps {
   isOpen: boolean;
@@ -39,6 +40,7 @@ interface BloqueoItem {
 }
 
 export function HorariosModal({ isOpen, empleadoId, empleadoNombre, onClose }: HorariosModalProps) {
+  const { terminologiaEmpleado } = useTenant();
   const [activeTab, setActiveTab] = useState<'semanal' | 'bloqueos'>('semanal');
   const [dias, setDias] = useState<Record<DiaSemana, DiaState>>({
     lunes: { diaSemana: 'lunes', activo: true, horaInicio: '09:00', horaFin: '19:00', horaAlmuerzoInicio: '13:00', horaAlmuerzoFin: '14:00' },
@@ -444,7 +446,7 @@ export function HorariosModal({ isOpen, empleadoId, empleadoNombre, onClose }: H
 
                   {bloqueos.length === 0 && (
                     <p className="text-xs text-muted-foreground italic py-3 text-center">
-                      No hay bloqueos temporales vigentes para este empleado.
+                      No hay bloqueos temporales vigentes para este {terminologiaEmpleado.toLowerCase()}.
                     </p>
                   )}
                 </div>

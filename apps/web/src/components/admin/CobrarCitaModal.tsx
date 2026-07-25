@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, DollarSign, CreditCard, QrCode, HeartHandshake, Package, Plus, Minus, ShoppingBag } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { CitaAgenda } from './CitaCard';
+import { useTenant } from '@/lib/tenant-context';
 
 interface CobrarCitaModalProps {
   cita: CitaAgenda | null;
@@ -29,6 +30,7 @@ interface ItemProductoSeleccionado {
 type MetodoPago = 'efectivo' | 'yappy' | 'mixto';
 
 export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCitaModalProps) {
+  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [montoEfectivo, setMontoEfectivo] = useState<string>('');
   const [propinaBarbero, setPropinaBarbero] = useState<string>('0');
@@ -165,11 +167,11 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
               <span className="font-semibold text-foreground">{cita.clienteNombre}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">Empleado:</span>
+              <span className="text-muted-foreground font-medium">{terminologiaEmpleado}:</span>
               <span className="font-semibold text-foreground">{cita.empleadoNombre}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">Servicio:</span>
+              <span className="text-muted-foreground font-medium">{terminologiaServicio}:</span>
               <span className="font-semibold text-foreground">{cita.servicioNombre} (${totalServicio.toFixed(2)})</span>
             </div>
           </div>

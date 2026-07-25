@@ -1,6 +1,7 @@
 import React from 'react';
 import { CitaAgenda, CitaCard } from './CitaCard';
 import { Clock, Scissors, User, Calendar } from 'lucide-react';
+import { useTenant } from '@/lib/tenant-context';
 
 interface EmpleadoColumn {
   id: string;
@@ -27,6 +28,7 @@ export function ListaTurnosView({
   onStatusChange,
   onCobrarClick,
 }: ListaTurnosViewProps) {
+  const { terminologiaServicio } = useTenant();
   // Ordenar citas por hora de inicio cronológicamente
   const citasOrdenadas = [...citas].sort((a, b) => 
     new Date(a.inicioEstimado).getTime() - new Date(b.inicioEstimado).getTime()
@@ -80,7 +82,7 @@ export function ListaTurnosView({
         <div className="py-16 bg-card border border-border rounded-2xl text-center space-y-2 p-6">
           <Clock size={32} className="mx-auto text-muted-foreground/50" />
           <h3 className="text-sm font-bold text-foreground">No hay citas programadas para esta fecha</h3>
-          <p className="text-xs text-muted-foreground">Utiliza el botón "+ Cita" para agendar un nuevo servicio.</p>
+          <p className="text-xs text-muted-foreground">Utiliza el botón "+ Cita" para agendar un nuevo {terminologiaServicio.toLowerCase()}.</p>
         </div>
       )}
 

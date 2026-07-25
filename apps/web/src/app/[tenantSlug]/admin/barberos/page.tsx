@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { InviteEmpleadoModal } from '@/components/admin/InviteEmpleadoModal';
+import { useTenant } from '@/lib/tenant-context';
 
 interface UsuarioStaff {
   id: string;
@@ -26,6 +27,7 @@ export default function AdminBarberosPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
+  const { nombreComercial, terminologiaEmpleado, terminologiaServicio } = useTenant();
 
   const currentUser = useAdminStore((state) => state.user);
 
@@ -109,7 +111,7 @@ export default function AdminBarberosPage() {
       <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-4">
         <div className="flex items-center gap-3 text-muted-foreground">
           <RefreshCw className="animate-spin" size={24} />
-          <span className="font-semibold text-sm">Cargando equipo de empleados y staff...</span>
+          <span className="font-semibold text-sm">Cargando equipo de {terminologiaEmpleado.toLowerCase()}s y staff...</span>
         </div>
       </div>
     );
@@ -130,10 +132,10 @@ export default function AdminBarberosPage() {
           <div>
             <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
               <Users size={20} className="text-primary" />
-              <span>Gestión de Empleados & Equipo de Staff</span>
+              <span>Gestión de {terminologiaEmpleado}s & Equipo de Staff</span>
             </h1>
             <p className="text-xs text-muted-foreground">
-              Administra el equipo de tu barbería, comisiones por venta y horarios laborales.
+              Administra el equipo de {nombreComercial}, comisiones por venta y horarios laborales.
             </p>
           </div>
         </div>
@@ -144,7 +146,7 @@ export default function AdminBarberosPage() {
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
           >
             <UserPlus size={16} />
-            <span>+ Invitar Nuevo Empleado</span>
+            <span>+ Invitar Nuevo {terminologiaEmpleado}</span>
           </button>
 
           <button
@@ -224,7 +226,7 @@ export default function AdminBarberosPage() {
                       {isEditingThis ? (
                         <div className="space-y-2 pt-1">
                           <div className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">Comisión Servicios:</span>
+                            <span className="text-muted-foreground">Comisión {terminologiaServicio}s:</span>
                             <div className="flex items-center gap-1">
                               <input
                                 type="number"

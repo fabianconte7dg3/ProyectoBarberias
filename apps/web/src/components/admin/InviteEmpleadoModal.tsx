@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, UserPlus, CheckCircle2, AlertTriangle, Copy, Check } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
+import { useTenant } from '@/lib/tenant-context';
 
 interface InviteEmpleadoModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface InviteEmpleadoModalProps {
 }
 
 export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: InviteEmpleadoModalProps) {
+  const { nombreComercial, terminologiaEmpleado, terminologiaServicio } = useTenant();
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [rol, setRol] = useState<'empleado' | 'recepcion'>('empleado');
   const [porcentajeComision, setPorcentajeComision] = useState('60');
@@ -68,7 +70,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
           <div className="flex items-center gap-2 font-bold text-base">
             <UserPlus size={20} className="text-primary" />
-            <span>Invitar Nuevo Empleado / Staff</span>
+            <span>Invitar Nuevo {terminologiaEmpleado} / Staff</span>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
             <X size={20} />
@@ -102,14 +104,14 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
 
               <div>
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
-                  Rol en la Barbería
+                  Rol en {nombreComercial}
                 </label>
                 <select
                   value={rol}
                   onChange={(e) => setRol(e.target.value as 'empleado' | 'recepcion')}
                   className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-semibold"
                 >
-                  <option value="empleado">Empleado (Cortes, Servicios & Productos)</option>
+                  <option value="empleado">{terminologiaEmpleado} ({terminologiaServicio}s & Productos)</option>
                   <option value="recepcion">Recepción / Caja</option>
                 </select>
               </div>
@@ -118,7 +120,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
                 <div className="grid grid-cols-2 gap-3 bg-secondary/30 p-3 rounded-xl border border-border">
                   <div>
                     <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                      Comisión Servicios (%)
+                      Comisión {terminologiaServicio}s (%)
                     </label>
                     <input
                       type="number"
@@ -173,7 +175,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
               </div>
 
               <p className="text-xs text-muted-foreground">
-                Envía este enlace de activación al empleado para que ingrese y configure su PIN de acceso de 4 dígitos:
+                Envía este enlace de activación al {terminologiaEmpleado.toLowerCase()} para que ingrese y configure su PIN de acceso de 4 dígitos:
               </p>
 
               <div className="p-3 bg-secondary border border-border rounded-xl font-mono text-[11px] break-all select-all">

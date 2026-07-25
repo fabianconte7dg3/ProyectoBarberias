@@ -10,6 +10,7 @@ import {
   AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3, Layers
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
+import { useTenant } from '@/lib/tenant-context';
 import { 
   ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend, BarChart, Bar, CartesianGrid 
 } from 'recharts';
@@ -123,6 +124,7 @@ export default function AdminDashboardPage() {
   const params = useParams();
   const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
+  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
 
   const currentUser = useAdminStore((state) => state.user);
   const [data, setData] = useState<DashboardData | null>(null);
@@ -353,7 +355,7 @@ export default function AdminDashboardPage() {
             }`}
           >
             <Scissors size={16} />
-            <span>Servicios & Productos</span>
+            <span>{terminologiaServicio}s & Productos</span>
           </button>
 
           <button
@@ -463,7 +465,7 @@ export default function AdminDashboardPage() {
                   ${(data?.ingresosTotales || 0).toFixed(2)}
                 </div>
                 <span className="text-[11px] font-semibold text-muted-foreground block pt-1">
-                  Servicios: ${(data?.ingresosServicios || 0).toFixed(2)} | Productos: ${(data?.ingresosProductos || 0).toFixed(2)}
+                  {terminologiaServicio}s: ${(data?.ingresosServicios || 0).toFixed(2)} | Productos: ${(data?.ingresosProductos || 0).toFixed(2)}
                 </span>
               </div>
 
@@ -665,7 +667,7 @@ export default function AdminDashboardPage() {
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
                   <Scissors size={18} className="text-primary" />
-                  <span>Servicios Más Demandados</span>
+                  <span>{terminologiaServicio}s Más Demandados</span>
                 </h2>
 
                 <div className="space-y-2.5">
@@ -685,7 +687,7 @@ export default function AdminDashboardPage() {
                   ))}
                   {(!data?.topServicios || data.topServicios.length === 0) && (
                     <div className="py-4 text-center text-xs text-muted-foreground">
-                      No hay servicios registrados en este período.
+                      No hay {terminologiaServicio.toLowerCase()}s registrados en este período.
                     </div>
                   )}
                 </div>
@@ -747,7 +749,7 @@ export default function AdminDashboardPage() {
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
                   <Layers size={18} className="text-blue-500" />
-                  <span>Producción por Empleado: Servicios vs Retail ($)</span>
+                  <span>Producción por {terminologiaEmpleado}: {terminologiaServicio}s vs Retail ($)</span>
                 </h2>
 
                 <div className="h-64 w-full pt-2">
@@ -759,7 +761,7 @@ export default function AdminDashboardPage() {
                         <YAxis stroke="#888888" fontSize={11} tickLine={false} tickFormatter={(v) => `$${v}`} />
                         <Tooltip contentStyle={{ backgroundColor: 'var(--card)', borderColor: 'var(--border)', borderRadius: '12px', fontSize: '12px', fontWeight: 'bold' }} formatter={(v: any) => [`$${Number(v).toFixed(2)}`]} />
                         <Legend wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                        <Bar dataKey="facturadoServicios" stackId="a" fill="#3b82f6" name="Servicios ($)" radius={[0, 0, 0, 0]} />
+                        <Bar dataKey="facturadoServicios" stackId="a" fill="#3b82f6" name={`${terminologiaServicio}s ($)`} radius={[0, 0, 0, 0]} />
                         <Bar dataKey="facturadoProductos" stackId="a" fill="#10b981" name="Productos ($)" radius={[6, 6, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -775,7 +777,7 @@ export default function AdminDashboardPage() {
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
                   <Users size={18} className="text-purple-500" />
-                  <span>Citas Atendidas por Empleado</span>
+                  <span>Citas Atendidas por {terminologiaEmpleado}</span>
                 </h2>
 
                 <div className="h-64 w-full pt-2">
@@ -810,10 +812,10 @@ export default function AdminDashboardPage() {
                 <table className="w-full text-left text-sm border-collapse">
                   <thead>
                     <tr className="border-b border-border text-xs uppercase text-muted-foreground font-semibold">
-                      <th className="py-2.5 px-3">Empleado</th>
+                      <th className="py-2.5 px-3">{terminologiaEmpleado}</th>
                       <th className="py-2.5 px-3 text-center">Citas</th>
                       <th className="py-2.5 px-3 text-right">Facturado Bruto</th>
-                      <th className="py-2.5 px-3 text-center">% Servicio / % Producto</th>
+                      <th className="py-2.5 px-3 text-center">% {terminologiaServicio} / % Producto</th>
                       <th className="py-2.5 px-3 text-right text-emerald-600 dark:text-emerald-400">Comisión Total</th>
                       <th className="py-2.5 px-3 text-right text-rose-500">Propinas</th>
                     </tr>
