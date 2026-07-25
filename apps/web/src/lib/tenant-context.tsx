@@ -2,6 +2,14 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 
+export interface CampoPersonalizado {
+  entidad: string;
+  clave: string;
+  etiqueta: string;
+  tipo: 'texto' | 'numero' | 'fecha';
+  requerido: boolean;
+}
+
 export interface TenantPublica {
   nombreComercial: string;
   slug: string;
@@ -11,6 +19,7 @@ export interface TenantPublica {
   terminologiaEmpleado: string;
   terminologiaServicio: string;
   terminologiaCliente: string;
+  configCamposPersonalizados: CampoPersonalizado[];
 }
 
 const TenantContext = createContext<TenantPublica | null>(null);

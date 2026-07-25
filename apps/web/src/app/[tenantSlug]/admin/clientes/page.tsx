@@ -6,9 +6,12 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminHeader } from '@/components/admin/AdminHeader';
-import { 
-  ArrowLeft, Search, Plus, UserCheck, ShieldCheck, AlertTriangle, 
-  MessageSquare, Edit, Ban, RefreshCw, X, Check, Mail, Phone, Calendar, DollarSign, Lock, ShieldAlert
+import { useTenant } from '@/lib/tenant-context';
+import { requierePaciente } from '@/lib/industrias';
+import {
+  ArrowLeft, Search, Plus, UserCheck, ShieldCheck, AlertTriangle,
+  MessageSquare, Edit, Ban, RefreshCw, X, Check, Mail, Phone, Calendar, DollarSign, Lock, ShieldAlert,
+  PawPrint, FileClock
 } from 'lucide-react';
 
 interface Cliente {
@@ -25,6 +28,24 @@ interface Cliente {
   createdAt: string;
 }
 
+interface Paciente {
+  id: string;
+  clienteId: string;
+  nombre: string;
+  camposPersonalizados: Record<string, unknown>;
+  activo: boolean;
+  createdAt: string;
+}
+
+interface NotaClinicaMetadata {
+  id: string;
+  citaId: string;
+  empleadoId: string;
+  empleadoNombre: string | null;
+  proximaRevisionEn: string | null;
+  createdAt: string;
+}
+
 export default function AdminClientesPage() {
   const params = useParams();
   const router = useRouter();
@@ -32,6 +53,8 @@ export default function AdminClientesPage() {
 
   const currentUser = useAdminStore((state) => state.user);
   const logoutStore = useAdminStore((state) => state.logout);
+  const { industria, configCamposPersonalizados, terminologiaCliente } = useTenant();
+  const mostrarPacientes = requierePaciente(industria);
 
 
   const [clientesList, setClientesList] = useState<Cliente[]>([]);
@@ -53,6 +76,16 @@ export default function AdminClientesPage() {
   const [formAceptaMkt, setFormAceptaMkt] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
+
+  // Multi-industria: pacientes (mascotas) del cliente en edición
+  const [pacientesList, setPacientesList] = useState<Paciente[]>([]);
+  const [loadingPacientes, setLoadingPacientes] = useState(false);
+  const [formPacienteNombre, setFormPacienteNombre] = useState('');
+  const [formPacienteCampos, setFormPacienteCampos] = useState<Record<string, string>>({});
+  const [savingPaciente, setSavingPaciente] = useState(false);
+  const [pacienteErrorMsg, setPacienteErrorMsg] = useState('');
+  const [notasMetadataPorPaciente, setNotasMetadataPorPaciente] = useState<Record<string, NotaClinicaMetadata[]>>({});
+  const [pacienteHistorialAbierto, setPacienteHistorialAbierto] = useState<string | null>(null);
 
   // 1. Guard de autenticación — usa hook centralizado para evitar cierre de
   //    sesión causado por storage events de otras pestañas (ej. página de reservas)
@@ -88,6 +121,10 @@ export default function AdminClientesPage() {
     setFormNotas('');
     setFormAceptaMkt(false);
     setFormError('');
+    setPacientesList([]);
+    setNotasMetadataPorPaciente({});
+    setPacienteHistorialAbierto(null);
+    resetFormPaciente();
     setIsModalOpen(true);
   };
 
@@ -99,7 +136,75 @@ export default function AdminClientesPage() {
     setFormNotas(c.notasPreferencia || '');
     setFormAceptaMkt(c.aceptaMarketing);
     setFormError('');
+    setPacientesList([]);
+    setNotasMetadataPorPaciente({});
+    setPacienteHistorialAbierto(null);
+    resetFormPaciente();
     setIsModalOpen(true);
+    if (mostrarPacientes) {
+      loadPacientes(c.id);
+    }
+  };
+
+  const resetFormPaciente = () => {
+    setFormPacienteNombre('');
+    setFormPacienteCampos({});
+    setPacienteErrorMsg('');
+  };
+
+  const loadPacientes = async (clienteId: string) => {
+    setLoadingPacientes(true);
+    try {
+      const res = await fetchApi<Paciente[]>(`/pacientes?clienteId=${clienteId}`);
+      setPacientesList(res || []);
+    } catch (err: any) {
+      console.error('Error cargando pacientes:', err);
+    } finally {
+      setLoadingPacientes(false);
+    }
+  };
+
+  const handleAddPaciente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCliente || !formPacienteNombre.trim()) {
+      setPacienteErrorMsg(`El nombre de ${terminologiaCliente === 'Dueño de mascota' ? 'la mascota' : 'el paciente'} es requerido.`);
+      return;
+    }
+
+    setSavingPaciente(true);
+    setPacienteErrorMsg('');
+    try {
+      await fetchApi('/pacientes', {
+        method: 'POST',
+        body: JSON.stringify({
+          clienteId: editingCliente.id,
+          nombre: formPacienteNombre.trim(),
+          camposPersonalizados: formPacienteCampos,
+        }),
+      });
+      resetFormPaciente();
+      loadPacientes(editingCliente.id);
+    } catch (err: any) {
+      setPacienteErrorMsg(err.message || 'Error al registrar.');
+    } finally {
+      setSavingPaciente(false);
+    }
+  };
+
+  const handleVerHistorial = async (pacienteId: string) => {
+    if (pacienteHistorialAbierto === pacienteId) {
+      setPacienteHistorialAbierto(null);
+      return;
+    }
+    setPacienteHistorialAbierto(pacienteId);
+    if (!notasMetadataPorPaciente[pacienteId]) {
+      try {
+        const res = await fetchApi<NotaClinicaMetadata[]>(`/notas-clinicas/metadata/paciente/${pacienteId}`);
+        setNotasMetadataPorPaciente((prev) => ({ ...prev, [pacienteId]: res || [] }));
+      } catch (err: any) {
+        console.error('Error cargando historial clínico (metadata):', err);
+      }
+    }
   };
 
   const handleSaveCliente = async (e: React.FormEvent) => {
@@ -484,7 +589,7 @@ export default function AdminClientesPage() {
       {/* MODAL CREAR / EDITAR CLIENTE */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95">
+          <div className={`bg-card border border-border w-full ${editingCliente && mostrarPacientes ? 'max-w-lg' : 'max-w-md'} rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto`}>
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <UserCheck size={18} className="text-primary" />
@@ -578,6 +683,118 @@ export default function AdminClientesPage() {
                 </button>
               </div>
             </form>
+
+            {/* Multi-industria: pacientes/mascotas del cliente (solo en edición) */}
+            {editingCliente && mostrarPacientes && (
+              <div className="border-t border-border pt-4 space-y-3">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                  <PawPrint size={14} className="text-primary" />
+                  <span>Pacientes de {editingCliente.nombreCompleto || 'este cliente'}</span>
+                </h3>
+
+                {loadingPacientes ? (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <RefreshCw className="animate-spin" size={14} />
+                    <span>Cargando...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {pacientesList.length === 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">Aún no hay pacientes registrados.</p>
+                    )}
+                    {pacientesList.map((p) => (
+                      <div key={p.id} className="bg-secondary/30 border border-border rounded-xl p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <span className="font-bold text-xs text-foreground block">{p.nombre}</span>
+                            {Object.entries(p.camposPersonalizados || {}).filter(([, v]) => v).length > 0 && (
+                              <span className="text-[10px] text-muted-foreground">
+                                {Object.entries(p.camposPersonalizados)
+                                  .filter(([, v]) => v)
+                                  .map(([k, v]) => `${k}: ${v}`)
+                                  .join(' · ')}
+                              </span>
+                            )}
+                          </div>
+                          {currentUser?.rol === 'admin' && (
+                            <button
+                              type="button"
+                              onClick={() => handleVerHistorial(p.id)}
+                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
+                              title="Ver historial clínico (metadata, sin contenido)"
+                            >
+                              <FileClock size={13} />
+                            </button>
+                          )}
+                        </div>
+
+                        {pacienteHistorialAbierto === p.id && (
+                          <div className="bg-background/60 border border-border rounded-lg p-2 space-y-1">
+                            {(notasMetadataPorPaciente[p.id] || []).length === 0 ? (
+                              <p className="text-[10px] text-muted-foreground italic">Sin notas clínicas registradas.</p>
+                            ) : (
+                              notasMetadataPorPaciente[p.id].map((n) => (
+                                <div key={n.id} className="text-[10px] text-muted-foreground flex items-center justify-between">
+                                  <span>{new Date(n.createdAt).toLocaleDateString()} — {n.empleadoNombre || 'Empleado'}</span>
+                                  {n.proximaRevisionEn && <span className="font-semibold">Próx. revisión: {n.proximaRevisionEn}</span>}
+                                </div>
+                              ))
+                            )}
+                            <p className="text-[9px] text-muted-foreground/70 pt-1 border-t border-border">
+                              Solo el profesional autor puede ver el contenido clínico completo.
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Formulario para agregar un nuevo paciente */}
+                <div className="bg-secondary/20 border border-dashed border-border rounded-xl p-3 space-y-2">
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">Nombre</label>
+                    <input
+                      type="text"
+                      value={formPacienteNombre}
+                      onChange={(e) => setFormPacienteNombre(e.target.value)}
+                      placeholder="Ej. Firulais"
+                      className="w-full px-3 py-1.5 bg-background border border-border rounded-lg text-xs font-semibold"
+                    />
+                  </div>
+
+                  {configCamposPersonalizados
+                    .filter((campo) => campo.entidad === 'paciente')
+                    .map((campo) => (
+                      <div key={campo.clave}>
+                        <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
+                          {campo.etiqueta}{campo.requerido && ' *'}
+                        </label>
+                        <input
+                          type={campo.tipo === 'numero' ? 'number' : campo.tipo === 'fecha' ? 'date' : 'text'}
+                          value={formPacienteCampos[campo.clave] || ''}
+                          onChange={(e) => setFormPacienteCampos((prev) => ({ ...prev, [campo.clave]: e.target.value }))}
+                          className="w-full px-3 py-1.5 bg-background border border-border rounded-lg text-xs font-semibold"
+                        />
+                      </div>
+                    ))}
+
+                  {pacienteErrorMsg && (
+                    <p className="text-[10px] text-destructive font-medium">{pacienteErrorMsg}</p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handleAddPaciente}
+                    disabled={savingPaciente}
+                    className="w-full py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
+                  >
+                    <Plus size={13} />
+                    <span>{savingPaciente ? 'Guardando...' : 'Registrar Paciente'}</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}

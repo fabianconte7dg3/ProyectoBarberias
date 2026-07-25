@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Calendar, Clock } from 'lucide-react';
+import { X, UserPlus, Phone, Calendar, Clock, PawPrint } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
+import { useTenant } from '@/lib/tenant-context';
+import { requierePaciente } from '@/lib/industrias';
 
 interface Empleado {
   id: string;
@@ -13,6 +15,11 @@ interface Servicio {
   nombre: string;
   duracionMinutos: number;
   precioBase: number;
+}
+
+interface Paciente {
+  id: string;
+  nombre: string;
 }
 
 interface QuickWalkInModalProps {
@@ -32,15 +39,21 @@ export function QuickWalkInModal({
   empleados,
   initialDate,
 }: QuickWalkInModalProps) {
+  const { industria, terminologiaCliente } = useTenant();
+  const mostrarPaciente = requierePaciente(industria);
+
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState('');
   const [servicioId, setServicioId] = useState('');
   const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || '');
-  
+
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [inicioHora, setInicioHora] = useState('12:00');
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [pacientesDelCliente, setPacientesDelCliente] = useState<Paciente[]>([]);
+  const [pacienteId, setPacienteId] = useState('');
+  const [clienteExistenteId, setClienteExistenteId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -62,10 +75,31 @@ export function QuickWalkInModal({
       const hh = String(now.getHours()).padStart(2, '0');
       const mm = String(now.getMinutes()).padStart(2, '0');
       setInicioHora(`${hh}:${mm}`);
+
+      setPacientesDelCliente([]);
+      setPacienteId('');
+      setClienteExistenteId('');
     }
   }, [isOpen, initialDate]);
 
   if (!isOpen) return null;
+
+  const handleTelefonoBlur = async () => {
+    if (!mostrarPaciente || !telefonoWhatsapp.trim()) return;
+    try {
+      const resultados = await fetchApi<{ id: string }[]>(`/clientes?q=${encodeURIComponent(telefonoWhatsapp.trim())}`);
+      if (resultados.length > 0) {
+        setClienteExistenteId(resultados[0].id);
+        const pacientes = await fetchApi<Paciente[]>(`/pacientes?clienteId=${resultados[0].id}`);
+        setPacientesDelCliente(pacientes || []);
+      } else {
+        setClienteExistenteId('');
+        setPacientesDelCliente([]);
+      }
+    } catch (err) {
+      console.error('Error buscando cliente/pacientes existentes:', err);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +122,7 @@ export function QuickWalkInModal({
         clienteId = nuevoCliente.id;
       } catch (err: any) {
         // Si el cliente ya existe (409 Conflict), buscar por teléfono
-        const resultados = await fetchApi<{ id: string }[]>(`/clientes?q=${telefonoWhatsapp}`);
+        const resultados = await fetchApi<{ id: string }[]>(`/clientes?q=${encodeURIComponent(telefonoWhatsapp)}`);
         if (resultados.length > 0) {
           clienteId = resultados[0].id;
         } else {
@@ -108,6 +142,7 @@ export function QuickWalkInModal({
           clienteId,
           empleadoId,
           servicioId,
+          ...(mostrarPaciente && pacienteId && { pacienteId }),
           inicioEstimado: inicioEstimado.toISOString(),
           origen: 'walk_in',
         }),
@@ -174,10 +209,43 @@ export function QuickWalkInModal({
                 placeholder="61234567"
                 value={telefonoWhatsapp}
                 onChange={(e) => setTelefonoWhatsapp(e.target.value)}
+                onBlur={handleTelefonoBlur}
                 className="w-full pl-10 pr-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
               />
             </div>
           </div>
+
+          {/* Selección de Paciente (mascota) — solo industrias que lo requieren */}
+          {mostrarPaciente && (
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5 mb-1">
+                <PawPrint size={13} />
+                <span>Paciente</span>
+              </label>
+              {clienteExistenteId ? (
+                pacientesDelCliente.length > 0 ? (
+                  <select
+                    value={pacienteId}
+                    onChange={(e) => setPacienteId(e.target.value)}
+                    className="w-full px-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
+                  >
+                    <option value="">Sin especificar</option>
+                    {pacientesDelCliente.map((p) => (
+                      <option key={p.id} value={p.id}>{p.nombre}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground italic">
+                    Este {terminologiaCliente.toLowerCase()} no tiene pacientes registrados todavía — agrégalo desde Clientes.
+                  </p>
+                )
+              ) : (
+                <p className="text-[11px] text-muted-foreground italic">
+                  Escribe el teléfono para buscar al {terminologiaCliente.toLowerCase()} y sus pacientes registrados.
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Selección Empleado */}
           <div>

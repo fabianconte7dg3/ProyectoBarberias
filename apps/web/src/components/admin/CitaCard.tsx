@@ -17,6 +17,8 @@ export interface CitaAgenda {
   servicioNombre: string;
   servicioPrecio: number;
   servicioDuracion: number;
+  pacienteId?: string | null;
+  pacienteNombre?: string | null;
 }
 
 interface CitaCardProps {

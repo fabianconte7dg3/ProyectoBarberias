@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, CreditCard, QrCode, HeartHandshake, Package, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { X, DollarSign, CreditCard, QrCode, HeartHandshake, Package, Plus, Minus, ShoppingBag, Stethoscope } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { CitaAgenda } from './CitaCard';
 import { useTenant } from '@/lib/tenant-context';
+import { useAdminStore } from '@/lib/adminStore';
+import { requierePaciente } from '@/lib/industrias';
 
 interface CobrarCitaModalProps {
   cita: CitaAgenda | null;
@@ -30,12 +32,19 @@ interface ItemProductoSeleccionado {
 type MetodoPago = 'efectivo' | 'yappy' | 'mixto';
 
 export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCitaModalProps) {
-  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
+  const { terminologiaEmpleado, terminologiaServicio, industria } = useTenant();
+  const currentUser = useAdminStore((state) => state.user);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [montoEfectivo, setMontoEfectivo] = useState<string>('');
   const [propinaBarbero, setPropinaBarbero] = useState<string>('0');
   const [rucCliente, setRucCliente] = useState('');
   const [nombreFiscalCliente, setNombreFiscalCliente] = useState('');
+
+  // Multi-industria: nota clínica — solo visible/editable por el empleado
+  // asignado a la cita (ver docs/.../Plan_Multi_Industria_Fase3_DatosPorVertical.md §4).
+  const [diagnostico, setDiagnostico] = useState('');
+  const [tratamiento, setTratamiento] = useState('');
+  const [proximaRevisionEn, setProximaRevisionEn] = useState('');
   
   // Productos catálogo e ítems seleccionados
   const [catalogProductos, setCatalogProductos] = useState<ProductoCatalog[]>([]);
@@ -60,6 +69,8 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
   };
 
   if (!isOpen || !cita) return null;
+
+  const mostrarNotaClinica = requierePaciente(industria) && !!cita.pacienteId && currentUser?.id === cita.empleadoId;
 
   const totalServicio = Number(cita.servicioPrecio || 0);
   const totalProductos = productosSeleccionados.reduce((acc, p) => acc + (p.precioVenta * p.cantidad), 0);
@@ -126,6 +137,23 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
           })),
         }),
       });
+
+      if (mostrarNotaClinica && (diagnostico.trim() || tratamiento.trim() || proximaRevisionEn)) {
+        try {
+          await fetchApi('/notas-clinicas', {
+            method: 'POST',
+            body: JSON.stringify({
+              citaId: cita.id,
+              pacienteId: cita.pacienteId,
+              diagnostico: diagnostico.trim() || undefined,
+              tratamiento: tratamiento.trim() || undefined,
+              proximaRevisionEn: proximaRevisionEn || undefined,
+            }),
+          });
+        } catch (notaErr) {
+          console.error('Error guardando nota clínica:', notaErr);
+        }
+      }
 
       onSuccess();
       onClose();
@@ -362,6 +390,43 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
               </div>
             </div>
           </div>
+
+          {/* Nota Clínica (solo empleado asignado, industria con paciente) */}
+          {mostrarNotaClinica && (
+            <div className="border-t border-border pt-3 space-y-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Stethoscope size={14} className="text-primary" />
+                <span>Nota Clínica — {cita.pacienteNombre || 'Paciente'} (opcional, solo tú la verás)</span>
+              </span>
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Diagnóstico</label>
+                <textarea
+                  rows={2}
+                  value={diagnostico}
+                  onChange={(e) => setDiagnostico(e.target.value)}
+                  className="w-full p-2.5 bg-secondary/50 border border-border rounded-lg text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Tratamiento</label>
+                <textarea
+                  rows={2}
+                  value={tratamiento}
+                  onChange={(e) => setTratamiento(e.target.value)}
+                  className="w-full p-2.5 bg-secondary/50 border border-border rounded-lg text-xs"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] font-semibold text-muted-foreground block mb-1">Próxima revisión</label>
+                <input
+                  type="date"
+                  value={proximaRevisionEn}
+                  onChange={(e) => setProximaRevisionEn(e.target.value)}
+                  className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-xs font-mono"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Botones de Acción */}
           <div className="flex gap-3 pt-2">
