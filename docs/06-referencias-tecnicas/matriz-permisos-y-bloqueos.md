@@ -1,6 +1,6 @@
 # Matriz de Permisos, Roles y Estados de Bloqueo
 
-Este documento especifica la matriz de control de acceso (RBAC), estados de suscripción y mecanismos de bloqueo (*kill-switches*) de la plataforma BarberOS.
+Este documento especifica la matriz de control de acceso (RBAC), estados de suscripción y mecanismos de bloqueo (*kill-switches*) de la plataforma Volumetrix.
 
 ---
 
@@ -11,7 +11,7 @@ Este documento especifica la matriz de control de acceso (RBAC), estados de susc
 | **Efectivo** | Registro manual en caja | N/A | El cliente paga en efectivo. Registrado por el barbero/recepción. |
 | **Yappy (Manual)** | Verificación manual por cliente | N/A | El cliente transfiere por Yappy y muestra el comprobante. |
 | **Yappy (Comercial IPN)** | Integración API Banco General | N/A | Webhook cifrado con AES-256-CBC. Sin datos de tarjeta. |
-| **Tarjeta** | Registro manual POS | **Inofensivo (No aplica)** | Registro de cobro efectuado en el datáfono físico del local. **BarberOS NUNCA solicita, procesa ni almacena números de tarjeta (PAN/CVV)**. |
+| **Tarjeta** | Registro manual POS | **Inofensivo (No aplica)** | Registro de cobro efectuado en el datáfono físico del local. **Volumetrix NUNCA solicita, procesa ni almacena números de tarjeta (PAN/CVV)**. |
 
 ---
 

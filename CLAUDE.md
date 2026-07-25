@@ -4,8 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project
 
-BarberOS — a Panama-focused multi-tenant SaaS (originally for barbershops, now expanding to other
-service industries — see `docs/01-vision-y-plan/`). Monorepo with two apps:
+Volumetrix (rebranded from BarberOS 2026-07-25) — a Panama-focused multi-tenant SaaS (originally for
+barbershops, now expanding to other service industries — see `docs/01-vision-y-plan/`). Monorepo with
+two apps:
 
 - `apps/api` — NestJS 11 + Drizzle ORM + PostgreSQL (RLS-based multi-tenancy) + Redis/BullMQ.
 - `apps/web` — Next.js 16 (App Router) + React 19 + Zustand + Tailwind 4.
@@ -23,7 +24,7 @@ Infra (Postgres 16 + Redis), from repo root:
 ```bash
 docker compose -f infrastructure/docker-compose.yml up -d
 ```
-Container names: `barberos_postgres` (db `barberos`, user `postgres`), `barberos_redis`.
+Container names: `volumetrix_postgres` (db `volumetrix`, user `postgres`), `volumetrix_redis`.
 
 Backend (`apps/api`):
 ```bash
@@ -60,7 +61,7 @@ accumulated drift instead of just your change. The established team convention i
    `DO $$ IF NOT EXISTS ... $$`, `CREATE INDEX IF NOT EXISTS`, etc. — safe to re-run.
 3. Apply it directly to the running container:
    ```bash
-   docker exec -i barberos_postgres psql -U postgres -d barberos -f - < apps/api/src/database/migrations/NNNN_description.sql
+   docker exec -i volumetrix_postgres psql -U postgres -d volumetrix -f - < apps/api/src/database/migrations/NNNN_description.sql
    ```
 4. Verify with `psql` (`\d table_name`, `enum_range`) — don't trust `schema.ts` alone, since declared
    indexes/constraints sometimes were never actually materialized in the live DB.

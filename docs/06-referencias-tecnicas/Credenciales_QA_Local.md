@@ -1,6 +1,6 @@
 # Credenciales de Prueba (QA Local)
 
-> Solo para el entorno de desarrollo local (Docker `barberos_postgres`). **Nunca usar este patrón
+> Solo para el entorno de desarrollo local (Docker `volumetrix_postgres`). **Nunca usar este patrón
 > contra producción.**
 
 ## Por qué existe esto
@@ -13,7 +13,7 @@ cuentas reales para verificar algo.
 ## Cómo aplicarlo
 
 ```bash
-docker exec -i barberos_postgres psql -U postgres -d barberos \
+docker exec -i volumetrix_postgres psql -U postgres -d volumetrix \
   -f - < apps/api/src/database/seeds/seed-qa-test.sql
 ```
 

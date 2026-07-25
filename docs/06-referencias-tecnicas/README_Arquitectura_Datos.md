@@ -47,7 +47,7 @@ src/citas/
 2. **Aplicar el esquema y las migraciones — a mano, en orden, vía `psql`** (no `drizzle-kit`):
    ```bash
    for f in apps/api/src/database/migrations/*.sql; do
-     docker exec -i barberos_postgres psql -U postgres -d barberos -f - < "$f"
+     docker exec -i volumetrix_postgres psql -U postgres -d volumetrix -f - < "$f"
    done
    ```
    Cada archivo es idempotente (`ADD COLUMN IF NOT EXISTS`, etc.) — seguro de re-correr. Para un cambio

@@ -1,13 +1,12 @@
 # Especificación de Producto — Volumetrix
 
-> **Nota de nomenclatura:** "Volumetrix" es el nombre de marca **objetivo**, propuesto en el plan de
-> rebrand (ver [`plan.md`](./plan.md), Fase 1). Este documento describe el producto usando ese nombre
-> porque es un `spec.md` orientado a lo que el sistema *es y hace*, no a cómo se llama en el código hoy.
-> **El código, la base de datos (`barberos`), los contenedores Docker y las cadenas de texto en pantalla
-> siguen diciendo "BarberOS"/"barberías" en este momento** — el rebrand de código todavía no se ejecutó
-> (verificado: cero ocurrencias de "Volumetrix" en todo el repo al momento de escribir esto). No trates
-> ninguna referencia a "Volumetrix" en el código como un bug; es simplemente trabajo pendiente, rastreado
-> en `plan.md`.
+> **Nota de nomenclatura:** "Volumetrix" es el nombre de marca del producto — el rebrand desde "BarberOS"
+> se ejecutó el 2026-07-25 (ver [`plan.md`](./plan.md), Fase 1, y el detalle en
+> [`Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md`](./02-arquitectura-y-db/Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md)).
+> Código, base de datos (`volumetrix`), contenedores Docker (`volumetrix_postgres`/`volumetrix_redis`) y
+> las cadenas de texto en pantalla ya dicen "Volumetrix". La tabla física `barberias` y el enum
+> `industria_negocio` (valor `barberia`) se dejaron sin tocar a propósito — son datos de negocio, no
+> marca, y renombrarlos es una migración aparte fuera de alcance de este rebrand.
 
 ## 1. Qué es Volumetrix
 

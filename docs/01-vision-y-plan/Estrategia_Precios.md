@@ -27,5 +27,5 @@ El modelo no restringe funciones. Todos los planes incluyen las funcionalidades 
 3. **Alto margen de ganancia para ti:** Tus costos de servidor por local (usando la arquitectura de Hetzner) rondarán menos de $1 USD por local. Cobrando $50 a una barbería premium, tienes un margen operativo gigante.
 
 ## 4. Upsell a Futuro (Fase 4)
-- **Marca Blanca (White-label):** Vender la app con el logo y colores de la barbería en lugar de "BarberOS" por $99 adicionales al mes.
+- **Marca Blanca (White-label):** Vender la app con el logo y colores de la barbería en lugar de "Volumetrix" por $99 adicionales al mes.
 - **Múltiples Sucursales:** Cobrar el "Plan Pro" multiplicador por cada sucursal adicional que un mismo dueño abra.

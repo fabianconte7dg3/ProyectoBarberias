@@ -3,9 +3,11 @@
 > Objetivo (tomado literalmente del roadmap original del proyecto,
 > [`archives/Checklist_Desarrollo_SaaS.md`](../archives/Checklist_Desarrollo_SaaS.md): *"si un
 > programador nuevo entra, debe entender la arquitectura en 15 minutos"*): este documento es ese
-> recorrido. Describe
-> el estado **actual** del código — hoy la marca sigue siendo **BarberOS**; el rebrand a "Volumetrix" es
-> un plan propuesto y no ejecutado, ver [`plan.md`](../plan.md) Fase 1.
+> recorrido. Describe el estado **actual** del código — la marca es **Volumetrix** (rebrand ejecutado el
+> 2026-07-25, ver [`plan.md`](../plan.md) Fase 1 y el detalle en
+> [`Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md`](../02-arquitectura-y-db/Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md)).
+> La base de datos y los contenedores Docker también se renombraron (`volumetrix_postgres`/
+> `volumetrix_redis`, DB `volumetrix`).
 
 ## Qué es esto
 
@@ -74,8 +76,8 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
 - **Multi-industria:** la terminología ya es dinámica (cosmético, funciona), pero la captura de datos
   específica del vertical (`datos_adicionales`, `notas`) no tiene wiring de UI/API todavía — ver
   [`spec.md`](../spec.md) §7.
-- **Marca:** "BarberOS" en código y UI. Rebrand a "Volumetrix" propuesto, no ejecutado — ver
-  [`plan.md`](../plan.md) Fase 1.
+- **Marca:** "Volumetrix" en código y UI (rebrand ejecutado 2026-07-25) — ver [`plan.md`](../plan.md)
+  Fase 1.
 - **Tests automatizados:** cobertura real cero (boilerplate sin personalizar) — ver
   [`spec.md`](../spec.md) §10.
 - **Infraestructura:** todo corre en Docker local; nada de dominio/SSL/CI-CD/staging todavía.

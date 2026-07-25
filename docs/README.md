@@ -1,6 +1,8 @@
-# 📚 Documentación Técnica del Proyecto Barberías (SaaS Multitenant)
+# 📚 Documentación Técnica de Volumetrix (SaaS Multitenant)
 
-¡Bienvenido a la documentación oficial del sistema **BarberOS / Proyecto Barberías**!
+¡Bienvenido a la documentación oficial de **Volumetrix**! (nombre de código del repositorio:
+"ProyectoBarberias" — histórico, el producto se rebrandeó a Volumetrix el 2026-07-25, ver
+[`plan.md`](./plan.md) Fase 1).
 
 Esta documentación está organizada de forma modular en categorías claras para facilitar su navegación, mantenimiento y referencia técnica.
 
@@ -52,6 +54,7 @@ docs/
 - [Stack Web](./02-arquitectura-y-db/Stack_Web.md) — Elección de tecnologías (NestJS, Next.js, BullMQ, Tailwind) con correcciones sobre qué se adoptó realmente.
 - [Escalabilidad y Crecimiento](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md) — Hoja de ruta de escalado por fases, con costos y umbrales.
 - [Auditoría del Stack Tecnológico](./02-arquitectura-y-db/Auditoria_Stack_Tecnologico.md) — 56 vulnerabilidades encontradas y remediadas (39→0 backend, 17→6 residuales de bajo riesgo), dependencias muertas eliminadas, todo verificado en vivo.
+- [Rebrand — Fase 1: BarberOS → Volumetrix](./02-arquitectura-y-db/Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md) — Backend, frontend, infra (Docker/DB) y documentación renombrados. ✅ Implementado.
 - [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`. ✅ Implementado.
 - [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend. ✅ Implementado.
 - [Multi-Industria — Fase 2-D: Terminología Dinámica Real](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md) — Endpoint público de tenant + Context de React. ✅ Implementado.

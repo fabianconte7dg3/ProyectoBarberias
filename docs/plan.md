@@ -25,85 +25,22 @@ Ya ejecutado y verificado en sesiones anteriores. Detalle completo en cada doc e
       referencias obsoletas corregidas (ERD de 12→19 tablas, instrucciones de `drizzle-kit` que
       contradecían la política del proyecto, etc.) — ver el propio historial de commits de esta fecha
 
-## Fase 1 — Rebrand: BarberOS → Volumetrix 🔲 Propuesto, no iniciado
+## Fase 1 — Rebrand: BarberOS → Volumetrix ✅ Completo
 
-> **Estado de verificación (2026-07-24):** se confirmó contra el código real que **nada de este rebrand
-> se ejecutó todavía** — cero ocurrencias de "Volumetrix" en todo el repo. Todos los archivos referenciados
-> abajo existen tal como se listan (verificado con `find`/`grep`, no asumido). Este plan viene con 3
-> banderas del autor original que requieren una decisión explícita antes de ejecutar — están reproducidas
-> tal cual en la sección "Decisiones pendientes" más abajo. **No ejecutar sin resolver esas 3 primero.**
+Ejecutado y verificado el 2026-07-25. Detalle completo (decisiones resueltas, qué se cambió, qué se
+excluyó a propósito, verificación) en
+[`Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md`](./02-arquitectura-y-db/Plan_Rebrand_Fase1_BarberOS_a_Volumetrix.md).
 
-### A. Infraestructura & Docker
-
-- [ ] `infrastructure/docker-compose.yml`: `barberos_postgres`→`volumetrix_postgres`,
-      `barberos_redis`→`volumetrix_redis`, `POSTGRES_DB: barberos`→`volumetrix`
-      — ⚠️ ver Decisión Pendiente #3 (recreación de volumen)
-
-### B. Backend (`apps/api`)
-
-- [ ] `schema.ts`: `estadoBarberiaEnum` → `estadoTenantEnum` (**solo el nombre de la variable TS** — el
-      enum físico de Postgres `estado_barberia` NO cambia, cero migración SQL necesaria para esto)
-- [ ] Reemplazar los 2 literales `"BarberOS"` en `super-admin.service.ts` (líneas 37 y 78 — URL de TOTP y
-      mensaje de bienvenida del setup inicial)
-- [ ] Revisar strings de UI/respuesta en `tenants.service.ts`
-- [ ] Revisar strings hardcoded en `auth.controller.ts`, `citas.controller.ts`, `clientes.controller.ts`,
-      `kill-switch.guard.ts`, `usuarios.service.ts`, `servicios.service.ts`
-- [ ] **NO tocar:** tabla física `barberias`, enum `industria_negocio` (valor `barberia` se queda), FK de
-      las 11 tablas relacionadas — eso es una migración aparte, fuera de este plan
-
-### C. Frontend (`apps/web`)
-
-- [ ] Mover `apps/web/src/app/[tenantSlug]/admin/barberos/` → `.../admin/empleados/`, agregar redirect
-      301 desde la ruta vieja
-- [ ] Renombrar `components/super-admin/BarberiasEnRiesgoCard.tsx` → `NegociosEnRiesgoCard.tsx`
-      (componente + import)
-- [ ] Renombrar `components/super-admin/CrearBarberiaModal.tsx` → `CrearNegocioModal.tsx` + copy "Crear
-      Barbería" → "Crear Negocio"
-- [ ] Reemplazar los 5 literales `"BarberOS"` confirmados en frontend:
-      `app/super-admin/page.tsx:172`, `app/super-admin/login/page.tsx:100`,
-      `app/super-admin/setup/page.tsx:129`, `components/booking/SuccessView.tsx:15`,
-      `components/admin/AdminHeader.tsx:76` — más el texto de `app/[tenantSlug]/admin/datos/page.tsx:393`
-      (copy de exportación de clientes, menciona "BarberOS filtra automáticamente...")
-
-### D. Documentación
-
-- [x] `docs/spec.md` — este mismo plan lo generó (ver commit de esta sesión)
-- [x] `docs/plan.md` — este archivo
-- [ ] `CLAUDE.md` / `.agents/AGENTS.md`: actualizar nombre del proyecto y referencias a "BarberOS" **solo
-      después** de que el rebrand de código (secciones A-C) esté efectivamente hecho — hacerlo antes
-      dejaría la documentación describiendo un estado que el código todavía no tiene, que es exactamente
-      el tipo de inconsistencia que
-      [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
-      identificó como anti-patrón a evitar
-
-### E. Walkthrough
-
-- [x] `docs/04-hitos-y-changelogs/walkthrough.md` — creado en esta sesión, documenta el estado **actual**
-      (pre-rebrand, marca "BarberOS") — se actualizará cuando la Fase 1 se ejecute
-
-### Decisiones pendientes (reproducidas del plan original, sin resolver todavía)
-
-1. **¿Los slugs de tenants actuales (`estilo-solo-carlos`, etc.) siguen funcionando igual?** Asunción del
-   plan original: sí, los slugs son datos, no código — el rebrand no los toca. Nadie lo ha confirmado
-   explícitamente todavía.
-2. **¿La ruta `/[tenantSlug]/admin/barberos` se renombra a `/empleados` con redirect 301?** Incluido en el
-   plan (sección C), pero no confirmado por el usuario.
-3. **Docker Compose — renombrar `POSTGRES_DB: barberos` → `volumetrix` requiere recrear el volumen o
-   hacer `pg_dump` + restore.** Inocuo en dev local, pero es una acción con pérdida de datos si se hace
-   mal — **no ejecutar sin que el usuario confirme el método** (recreación vs dump/restore) y sin
-   respaldo previo.
-
-### Verificación (cuando se ejecute)
-
-```bash
-cd apps/api && npx tsc --noEmit
-cd apps/web && npx tsc --noEmit
-```
-- Docker Compose levanta con los nuevos nombres de contenedor.
-- `npm run dev` en ambos paquetes sin errores.
-- `/[slug]/admin/empleados` carga la lista de empleados; `/[slug]/admin/barberos` redirige 301.
-- Super-admin login muestra el nuevo nombre.
-- El panel de un tenant sigue mostrando su terminología dinámica (no hardcoded).
+- [x] Infra: contenedores Docker y base de datos renombrados (`barberos`→`volumetrix`), sin pérdida de
+      datos (backup previo + `ALTER DATABASE`, verificado con conteo de filas antes/después)
+- [x] Backend: `estadoBarberiaEnum`→`estadoTenantEnum`, literales `"BarberOS"` reemplazados, mensajes
+      genéricos `"Barbería no encontrada"`→`"Negocio no encontrado"`
+- [x] Frontend: ruta `/admin/barberos`→`/admin/empleados` con redirect 308 permanente, 2 componentes de
+      SuperAdmin renombrados, 6 literales `"BarberOS"` reemplazados
+- [x] Documentación viva actualizada (`CLAUDE.md`, `README_Arquitectura_Datos.md`,
+      `Credenciales_QA_Local.md`) con los nuevos nombres de contenedor/DB
+- [x] Verificado en navegador real: login admin QA → `/admin/empleados` carga con datos reales, login
+      SuperAdmin muestra "Volumetrix SaaS Platform", redirect 308 confirmado por `curl -I`
 
 ## Fase 2 — Multi-Industria Funcional 🔲 Pendiente
 
