@@ -26,7 +26,7 @@ export const rolUsuarioEnum = pgEnum('rol_usuario', ['superadmin', 'admin', 'emp
 export const diaSemanaEnum = pgEnum('dia_semana', [
   'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo',
 ]);
-export const origenCitaEnum = pgEnum('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin', 'web_publica']);
+export const origenCitaEnum = pgEnum('origen_cita', ['bot_whatsapp', 'walk_in', 'manual_admin', 'web_publica', 'importacion_historica']);
 export const estadoCitaEnum = pgEnum('estado_cita', [
   'programada', 'en_curso', 'completada', 'ausente_strike', 'cancelada', 'revision_manual',
 ]);
@@ -50,7 +50,7 @@ export const tipoPlantillaEnum = pgEnum('tipo_plantilla', [
   'recordatorio_deuda', 'cierre_emergencia', 'bienvenida_bot',
 ]);
 export const yappyModoEnum = pgEnum('yappy_modo', ['manual', 'comercial']);
-export const tipoImportacionEnum = pgEnum('tipo_importacion', ['clientes', 'productos', 'servicios']);
+export const tipoImportacionEnum = pgEnum('tipo_importacion', ['clientes', 'productos', 'servicios', 'citas_historicas']);
 export const estadoTrabajoImportacionEnum = pgEnum('estado_trabajo_importacion', [
   'procesando', 'completado', 'completado_con_errores', 'fallido',
 ]);
@@ -98,6 +98,9 @@ export const barberias = pgTable('barberias', {
   // Multi-industria (Fase 2.2 — ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md):
   // array de claves de widget + orden para la zona de widgets destacados del dashboard.
   configWidgetsDestacados: jsonb('config_widgets_destacados').notNull().default([]),
+  // Multi-industria / Fase 2.3 (ver docs/02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md):
+  // ventana de anticipación (horas) para pedir confirmación de una cita antes de que empiece.
+  horasAntesConfirmacion: integer('horas_antes_confirmacion').notNull().default(4),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -268,6 +271,11 @@ export const citas = pgTable('citas', {
   // Multi-industria: nota por visita (ej. evolución clínica), distinta de
   // clientes.notasPreferencia que vive a nivel de perfil, no por cita puntual.
   notas: text('notas'),
+  // Fase 2.3 — confirmación obligatoria (ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §2).
+  // Flag independiente del estado_cita (no interfiere con la máquina de estados existente).
+  confirmada: boolean('confirmada').notNull().default(false),
+  // Cuándo se encoló/envió el pedido de confirmación — evita reenviar duplicado si el job corre 2 veces.
+  confirmacionSolicitadaEn: timestamp('confirmacion_solicitada_en', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 }, (table) => ({
   idxCitasTenantEmpleadoInicio: index('idx_citas_tenant_empleado_inicio').on(table.tenantId, table.empleadoId, table.inicioEstimado),
@@ -291,6 +299,29 @@ export const notasClinicas = pgTable('notas_clinicas', {
   proximaRevisionEn: date('proxima_revision_en'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
+
+// ============================================================================
+// TABLA 5.6: inasistencias (historial con fechas — Fase 2.3, ver
+// Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §5). clientes.ausenciasStrikes
+// se mantiene como contador rápido; esta tabla respalda el detalle por fecha.
+// Insert-only: se escribe en los mismos 2 puntos donde hoy se incrementa el
+// contador (citas.service.ts:cambiarEstado y citas.processor.ts:handleCancelacionRetraso).
+// ============================================================================
+
+export const inasistencias = pgTable('inasistencias', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  clienteId: uuid('cliente_id').notNull().references(() => clientes.id, { onDelete: 'cascade' }),
+  citaId: uuid('cita_id').notNull().references(() => citas.id, { onDelete: 'cascade' }),
+  fecha: timestamp('fecha', { withTimezone: true }).notNull(), // inicioEstimado de la cita a la que faltó
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const inasistenciasRelations = relations(inasistencias, ({ one }) => ({
+  barberia: one(barberias, { fields: [inasistencias.tenantId], references: [barberias.id] }),
+  cliente: one(clientes, { fields: [inasistencias.clienteId], references: [clientes.id] }),
+  cita: one(citas, { fields: [inasistencias.citaId], references: [citas.id] }),
+}));
 
 // ============================================================================
 // TABLA 6: transacciones (append-only — finanzas + DGI)
