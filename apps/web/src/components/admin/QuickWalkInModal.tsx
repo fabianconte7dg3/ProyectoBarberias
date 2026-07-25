@@ -235,8 +235,8 @@ export function QuickWalkInModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-card text-card-foreground border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
-        
+      <div className="bg-card text-card-foreground border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
+
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
           <div className="flex items-center gap-2 font-bold text-lg">
@@ -249,7 +249,7 @@ export function QuickWalkInModal({
         </div>
 
         {/* Form Content */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+        <form onSubmit={handleSubmit} className="p-6 space-y-4 overflow-y-auto flex-1">
           {error && (
             <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-xl text-destructive text-sm">
               {error}

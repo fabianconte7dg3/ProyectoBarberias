@@ -114,7 +114,7 @@ export default function AdminCajaPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
       {/* Header Admin */}
-      <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between shadow-xs">
+      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}

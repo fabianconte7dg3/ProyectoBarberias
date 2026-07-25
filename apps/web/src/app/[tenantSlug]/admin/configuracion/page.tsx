@@ -328,7 +328,7 @@ export default function AdminConfiguracionPage() {
     <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
       
       {/* Header Admin */}
-      <header className="border-b border-border bg-card px-6 py-4 flex items-center justify-between shadow-xs">
+      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
         <div className="flex items-center gap-4">
           <button
             onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
@@ -665,7 +665,7 @@ export default function AdminConfiguracionPage() {
 
           <div className="space-y-3">
             {staff.map((u) => (
-              <div key={u.id} className="p-4 bg-secondary/20 border border-border rounded-xl flex items-center justify-between gap-4">
+              <div key={u.id} className="p-4 bg-secondary/20 border border-border rounded-xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div>
                     <div className="font-semibold text-sm flex items-center gap-2">
@@ -729,7 +729,7 @@ export default function AdminConfiguracionPage() {
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center flex-wrap gap-2">
                         <div className="flex items-center gap-1.5">
                           <span className="text-xs font-mono font-extrabold px-3 py-1 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
                             {u.porcentajeComision || '0'}% {terminologiaServicio}s

@@ -64,7 +64,7 @@ export function AdminHeader({
     <header className="w-full bg-card/95 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-xs">
       
       {/* Container Principal Desktop / Mobile Header */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-2 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
         
         {/* 1. Logo & Branding */}
         <div className="flex items-center gap-3">
@@ -87,7 +87,7 @@ export function AdminHeader({
         </div>
 
         {/* 2. Navegador de Fechas (Centrado en Pantallas Medianas / Grandes) */}
-        <div className="flex items-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm">
+        <div className="flex items-center justify-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm order-3 w-full sm:order-none sm:w-auto">
           <button
             onClick={() => onDateChange(subDays(selectedDate, 1))}
             className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"

@@ -272,7 +272,7 @@ export default function AdminProductosPage() {
       {/* Modal Crear / Editar */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card text-card-foreground border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95">
+          <div className="bg-card text-card-foreground border border-border w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 flex flex-col max-h-[90vh]">
             <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-secondary/30">
               <h3 className="font-bold text-base">
                 {editingId ? 'Editar Producto' : 'Nuevo Producto'}
@@ -282,7 +282,7 @@ export default function AdminProductosPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="p-6 space-y-4">
+            <form onSubmit={handleSave} className="p-6 space-y-4 overflow-y-auto flex-1">
               <div>
                 <label className="text-xs font-semibold text-muted-foreground block mb-1">Nombre del Producto</label>
                 <input
