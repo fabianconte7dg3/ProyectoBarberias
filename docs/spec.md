@@ -20,13 +20,13 @@ base de datos, no solo de aplicación.
 ## 2. Verticales
 
 - **Activo hoy (Go-To-Market):** barberías y salones de belleza en Panamá.
-- **Soportado a nivel de esquema, sin UI/flujo de captura de datos propio todavía** (ver hallazgo en
+- **Soportado a nivel de esquema; veterinaria y clínica médica ya tienen captura de datos propia**
+  (entidad `pacientes` + `notas_clinicas`, ver [`plan.md`](./plan.md) §2.1); spa/masajes, taller mecánico
+  y espacios de alquiler (canchas/salas) siguen sin UI/flujo de captura propio (ver hallazgo en
   [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
-  y [`plan.md`](./plan.md) Fase 2.4):
-  spa/masajes, veterinaria, clínica médica, taller mecánico, espacios de alquiler (canchas/salas). El
-  enum `industria_negocio` y las columnas `terminologia_empleado/servicio/cliente` ya existen; lo que
-  falta es capturar dato específico del vertical (`clientes.datos_adicionales`, `citas.notas` — hoy sin
-  wiring de UI/API) y validar un piloto real de punta a punta.
+  y [`plan.md`](./plan.md) Fase 2.4). El enum `industria_negocio` y las columnas
+  `terminologia_empleado/servicio/cliente` ya existen para todos los verticales; falta validar un piloto
+  real de punta a punta con un tenant no-barbería.
 
 ## 3. Actores
 
@@ -90,17 +90,14 @@ base de datos, no solo de aplicación.
   deslogueaba sesiones válidas.
 - Kill-switch de plataforma sobre un tenant → bloquea toda mutación (`503` a cualquier verbo que no sea
   `GET`) sin afectar a otros tenants.
+- Cliente de veterinaria/clínica con varias mascotas/pacientes, cada una con historial clínico propio →
+  entidad `pacientes` + `notas_clinicas` estructurada, confidencialidad a nivel de aplicación (solo el
+  profesional autor ve el contenido; el admin ve metadata, nunca diagnóstico/tratamiento), motor de
+  campos personalizados por tenant para que agregar un vertical nuevo no requiera tocar código — ver
+  [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md).
 
 ## 7. Casos límite / gaps conocidos, aún sin resolver
 
-- **Captura de dato específico del vertical (diseñado, no implementado).** El caso real que expuso el
-  límite del modelo original: un cliente de veterinaria puede tener varias mascotas, cada una con
-  historial propio — un campo JSONB plano en `clientes` no lo soporta. Diseño acordado con el usuario
-  (entidad `pacientes` + `notas_clinicas` estructurada, con el historial clínico visible solo para el
-  profesional que atendió y metadata para el admin, más un motor de campos personalizados configurable
-  por tenant para que agregar un vertical nuevo no requiera tocar código) —
-  ver [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
-  y las tareas concretas en [`plan.md`](./plan.md) §2.1.
 - **Combos de servicios, citas de acompañante y templates por vertical (diseñados, no implementados).**
   Un cliente de barbería puede querer corte+barba+tinte como un solo bloque cobrado con comisión
   desglosada por servicio; un cliente puede venir acompañado (padre e hijo) y ambos atenderse; cada

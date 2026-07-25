@@ -42,33 +42,49 @@ excluyó a propósito, verificación) en
 - [x] Verificado en navegador real: login admin QA → `/admin/empleados` carga con datos reales, login
       SuperAdmin muestra "Volumetrix SaaS Platform", redirect 308 confirmado por `curl -I`
 
-## Fase 2 — Multi-Industria Funcional 🔲 Pendiente
+## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1 completo, 2.2-2.4 pendientes)
 
 > **Diseño acordado con el usuario (2026-07-24, vía entrevista) — ver
 > [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
-> para el detalle completo y el porqué de cada decisión.** Nada de esto está implementado todavía —
-> son tareas listas para ejecutar cuando el usuario lo confirme.
+> para el detalle completo y el porqué de cada decisión.**
 
-### 2.1 Modelo de datos por vertical (mascotas/pacientes + historial clínico)
+### 2.1 Modelo de datos por vertical (mascotas/pacientes + historial clínico) ✅ Completo
 
-- [ ] `schema.ts`: nueva tabla `pacientes` (`tenantId`, `clienteId`, `nombre`, `camposPersonalizados`
+Ejecutado y verificado el 2026-07-25 (tenant `qa-test` conmutado a `industria='veterinaria'`, smoke test
+end-to-end en navegador real: cliente → paciente "Firulais" con campos dinámicos → cita con `pacienteId`
+→ cobro con nota clínica → confirmado en DB). Detalle completo del diseño en
+[`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
+(estado actualizado a implementado, con las notas de la sección siguiente).
+
+- [x] `schema.ts`: nueva tabla `pacientes` (`tenantId`, `clienteId`, `nombre`, `camposPersonalizados`
       jsonb, `activo`)
-- [ ] `schema.ts`: `citas.pacienteId` (UUID, nullable, FK a `pacientes`)
-- [ ] `schema.ts`: nueva tabla `notas_clinicas` (`citaId`, `pacienteId`, `empleadoId`, `diagnostico`,
+- [x] `schema.ts`: `citas.pacienteId` (UUID, nullable, FK a `pacientes`)
+- [x] `schema.ts`: nueva tabla `notas_clinicas` (`citaId`, `pacienteId`, `empleadoId`, `diagnostico`,
       `tratamiento`, `proximaRevisionEn`, `createdAt`)
-- [ ] `schema.ts`: `barberias.configCamposPersonalizados` (jsonb, default `[]`)
-- [ ] Migración SQL idempotente `0012_pacientes_y_notas_clinicas.sql` (2 tablas nuevas + 2 columnas,
-      políticas RLS estándar por `tenant_id` en las tablas nuevas)
-- [ ] Backend: `PacientesModule` (CRUD básico, scoped a `clienteId`)
-- [ ] Backend: `NotasClinicasModule` con `findFullByCita()` (solo autor) y `findMetadataByCita()` (admin,
-      sin contenido clínico) — ver sección 4 del doc de diseño para el porqué de este patrón
-- [ ] Backend: plantillas de `configCamposPersonalizados` por defecto según `industria`, aplicadas al
+- [x] `schema.ts`: `barberias.configCamposPersonalizados` (jsonb, default `[]`)
+- [x] Migración SQL idempotente `0012_pacientes_y_notas_clinicas.sql` (2 tablas nuevas + 2 columnas,
+      políticas RLS estándar por `tenant_id` en las tablas nuevas; `GRANT` append-only en
+      `notas_clinicas`, sin `UPDATE`/`DELETE` — un historial clínico no se edita en silencio)
+- [x] Backend: `PacientesModule` (CRUD básico, scoped a `clienteId`)
+- [x] Backend: `NotasClinicasModule` con `findFullByCita()` (solo autor, 403 para cualquier otro) y
+      `findMetadataByPaciente()` (admin, agregado por paciente en vez de por cita — desviación deliberada
+      del diseño original `findMetadataByCita()`, para que la vista de historial del admin muestre todas
+      las notas de un paciente de una vez; sigue exponiendo únicamente
+      `id/citaId/empleadoId/empleadoNombre/proximaRevisionEn/createdAt`, nunca `diagnostico`/`tratamiento`)
+- [x] Backend: plantillas de `configCamposPersonalizados` por defecto según `industria`, aplicadas al
       crear un tenant desde SuperAdmin (`crearTenantManual`)
-- [ ] Frontend: formulario de paciente (mascota) dentro del flujo de cliente, renderizado dinámicamente
+- [x] Frontend: formulario de paciente (mascota) dentro del flujo de cliente, renderizado dinámicamente
       desde `configCamposPersonalizados` — solo visible cuando el tenant tiene `industria` que lo requiere
-- [ ] Frontend: captura de nota clínica al cerrar una cita (solo visible/editable por el empleado
+- [x] Frontend: captura de nota clínica al cerrar una cita (solo visible/editable por el empleado
       asignado a esa cita)
-- [ ] Frontend: vista de admin con metadata de notas clínicas (sin contenido) para auditoría/reportes
+- [x] Frontend: vista de admin con metadata de notas clínicas (sin contenido) para auditoría/reportes
+- [x] Gap encontrado durante la verificación (no listado originalmente): `QuickWalkInModal.tsx` era el
+      único camino de creación de citas desde el panel de admin y no tenía selector de paciente —
+      cerrado con búsqueda de cliente/pacientes por teléfono (`onBlur`) + `<select>` condicional
+- [x] Bug encontrado durante la verificación: `` `/clientes?q=${telefono}` `` sin `encodeURIComponent` —
+      un teléfono con `+` (formato usado en toda la app) se decodifica como espacio en el query string del
+      lado del servidor, así que la búsqueda de cliente existente fallaba en silencio. Corregido en los 2
+      sitios de `QuickWalkInModal.tsx` que tenían el mismo patrón
 
 ### 2.2 Combos, citas grupales y templates por vertical
 

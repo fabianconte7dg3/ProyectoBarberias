@@ -58,7 +58,7 @@ docs/
 - [Multi-Industria — Fase 1: Esquema](./02-arquitectura-y-db/Plan_Multi_Industria_Schema.md) — Columnas de industria/terminología dinámica agregadas a `barberias`, `clientes` y `citas`. ✅ Implementado.
 - [Multi-Industria — Fase 2: Rename `barbero` → `empleado`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md) — Rename completo backend/DB/frontend. ✅ Implementado.
 - [Multi-Industria — Fase 2-D: Terminología Dinámica Real](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md) — Endpoint público de tenant + Context de React. ✅ Implementado.
-- [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados. 🔲 Diseño aprobado, no implementado.
+- [Multi-Industria — Fase 3: Modelo de Datos por Vertical](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md) — Entidad `pacientes`, historial clínico estructurado con confidencialidad por profesional, motor de campos personalizados. ✅ Implementado y verificado (2026-07-25).
 - [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Combos con comisión itemizada, citas de acompañante, widgets configurables por vertical. 🔲 Diseño aprobado, no implementado.
 - [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Calendario en tiempo real (SSE), confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias, importación de citas históricas. 🔲 Diseño aprobado, no implementado.
 

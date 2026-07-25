@@ -1,7 +1,8 @@
-# Multi-Industria — Fase 3: Modelo de Datos por Vertical (Diseño, aprobado — no implementado)
+# Multi-Industria — Fase 3: Modelo de Datos por Vertical
 
-> **Fecha:** 2026-07-24
-> **Estado:** ✅ Diseño acordado con el usuario vía entrevista (ver sección 6) · 🔲 Sin implementar
+> **Fecha diseño:** 2026-07-24 · **Fecha implementación:** 2026-07-25
+> **Estado:** ✅ Implementado y verificado (ver sección 8) — diseño acordado con el usuario vía entrevista
+> (sección 6), ejecutado como Fase 2.1 de [`plan.md`](../plan.md)
 > **Alcance:** resolver el gap identificado en `Checklist_Multi_Industria_y_Produccion.md` Fase 3 —
 > hoy la terminología es dinámica pero `clientes.datos_adicionales`/`citas.notas` no tienen wiring real,
 > y un campo JSONB plano no alcanza para el caso real de veterinaria (múltiples mascotas por cliente) ni
@@ -161,6 +162,39 @@ Preguntas hechas al usuario y respuestas, en orden:
 
 ## 7. Siguiente paso
 
-Este documento es diseño aprobado, **no implementación**. Ver [`plan.md`](../plan.md), Fase 2, para el
-desglose en tareas chicas ejecutables (schema.ts, migración SQL, servicio de NestJS, UI de captura). No
-se toca código hasta que el usuario confirme que se ejecuta esta fase.
+Ver [`plan.md`](../plan.md), §2.1, para el desglose ejecutado en tareas chicas (schema.ts, migración SQL,
+servicio de NestJS, UI de captura) — todas completas, ver sección 8.
+
+## 8. Implementación (2026-07-25) — qué coincide con el diseño y qué se desvió
+
+El modelo de datos (§3), el motor de campos personalizados (§3.4) y el flujo de confidencialidad de
+`findFullByCita()` (§4) se implementaron exactamente como se diseñaron. Dos diferencias respecto a este
+documento, ambas deliberadas y descubiertas durante la ejecución:
+
+- **`findMetadataByCita()` → `findMetadataByPaciente()`.** El diseño original (§4) proponía una consulta
+  de metadata por cita individual. Al construir la UI de admin (historial dentro de la ficha de cliente)
+  resultó más útil agregar por `pacienteId`: el admin ve de una vez todas las notas de "Firulais", no
+  cita por cita. La garantía de confidencialidad no cambia — sigue devolviendo únicamente
+  `id/citaId/empleadoId/empleadoNombre/proximaRevisionEn/createdAt`, nunca `diagnostico`/`tratamiento`.
+- **Gap no anticipado: `QuickWalkInModal.tsx`.** El diseño no mencionaba que el panel de admin tiene un
+  segundo camino de creación de citas (walk-in / manual, usado por recepción) además del portal público
+  de reserva. Sin selector de paciente ahí, una cita creada por recepción para una veterinaria quedaba
+  sin `pacienteId` y por lo tanto sin poder capturar nota clínica al cobrar. Se agregó búsqueda de
+  cliente/pacientes existentes por teléfono (`onBlur`) + `<select>` condicional, con el mismo criterio de
+  "solo visible si la industria del tenant lo requiere" que el resto del wiring.
+
+Verificación end-to-end (navegador real, no solo `curl`): tenant `qa-test` conmutado a
+`industria='veterinaria'`, cliente creado, paciente "Firulais" registrado con sus campos dinámicos
+(especie/raza/peso), cita creada desde `QuickWalkInModal` con `pacienteId` enlazado, cobro con nota
+clínica capturada — confirmado en Postgres real. Seguridad verificada con requests directos autenticados:
+el autor de la nota recibe 200 en `findFullByCita`; un segundo empleado autenticado (no autor) recibe 403
+con el mensaje "Solo el profesional que atendió esta cita puede ver el contenido clínico."; un empleado
+sin rol admin recibe 403 en el endpoint de metadata (`@Roles('admin')`); el admin recibe 200 con solo los
+campos no clínicos.
+
+De paso se encontró y corrigió un bug preexistente en `QuickWalkInModal.tsx`: la búsqueda de cliente
+existente construía `` `/clientes?q=${telefono}` `` sin `encodeURIComponent`. Un teléfono con `+`
+(formato usado en toda la app, ej. `+50761112222`) se decodifica como espacio en el query string del lado
+del servidor (convención `application/x-www-form-urlencoded` que aplica el parser de Express incluso a
+querystrings de `GET`), así que la búsqueda fallaba en silencio y nunca encontraba al cliente. Corregido
+en los 2 sitios del archivo con el mismo patrón.
