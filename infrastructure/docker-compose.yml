@@ -3,11 +3,11 @@ version: '3.8'
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: barberos_postgres
+    container_name: volumetrix_postgres
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
-      POSTGRES_DB: barberos
+      POSTGRES_DB: volumetrix
     ports:
       - "5432:5432"
     volumes:
@@ -16,7 +16,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: barberos_redis
+    container_name: volumetrix_redis
     ports:
       - "6379:6379"
     volumes:
