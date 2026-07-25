@@ -87,6 +87,11 @@ export default function AdminClientesPage() {
   const [notasMetadataPorPaciente, setNotasMetadataPorPaciente] = useState<Record<string, NotaClinicaMetadata[]>>({});
   const [pacienteHistorialAbierto, setPacienteHistorialAbierto] = useState<string | null>(null);
 
+  // Fase 2.3: fechas de inasistencia por cliente (respalda el badge de strikes) —
+  // ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §5
+  const [inasistenciasPorCliente, setInasistenciasPorCliente] = useState<Record<string, { fecha: string }[]>>({});
+  const [inasistenciasAbiertoParaCliente, setInasistenciasAbiertoParaCliente] = useState<string | null>(null);
+
   // 1. Guard de autenticación — usa hook centralizado para evitar cierre de
   //    sesión causado por storage events de otras pestañas (ej. página de reservas)
   useAdminAuth({ tenantSlug });
@@ -203,6 +208,22 @@ export default function AdminClientesPage() {
         setNotasMetadataPorPaciente((prev) => ({ ...prev, [pacienteId]: res || [] }));
       } catch (err: any) {
         console.error('Error cargando historial clínico (metadata):', err);
+      }
+    }
+  };
+
+  const handleVerInasistencias = async (clienteId: string) => {
+    if (inasistenciasAbiertoParaCliente === clienteId) {
+      setInasistenciasAbiertoParaCliente(null);
+      return;
+    }
+    setInasistenciasAbiertoParaCliente(clienteId);
+    if (!inasistenciasPorCliente[clienteId]) {
+      try {
+        const res = await fetchApi<{ fecha: string }[]>(`/clientes/${clienteId}/inasistencias`);
+        setInasistenciasPorCliente((prev) => ({ ...prev, [clienteId]: res || [] }));
+      } catch (err: any) {
+        console.error('Error cargando fechas de inasistencia:', err);
       }
     }
   };
@@ -512,17 +533,41 @@ export default function AdminClientesPage() {
                           </td>
 
                           {/* Strikes */}
-                          <td className="py-3.5 px-4 text-center">
+                          <td className="py-3.5 px-4 text-center relative">
                             {c.ausenciasStrikes > 0 ? (
-                              <span className={`px-2 py-0.5 rounded-full text-xs font-extrabold border ${
-                                c.ausenciasStrikes >= 3 
-                                  ? 'bg-rose-500/10 text-rose-500 border-rose-500/20' 
-                                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
-                              }`}>
+                              <button
+                                type="button"
+                                onClick={() => handleVerInasistencias(c.id)}
+                                title="Ver fechas de inasistencia"
+                                className={`px-2 py-0.5 rounded-full text-xs font-extrabold border cursor-pointer hover:opacity-80 ${
+                                  c.ausenciasStrikes >= 3
+                                    ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                                    : 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20'
+                                }`}
+                              >
                                 {c.ausenciasStrikes} {c.ausenciasStrikes === 1 ? 'strike' : 'strikes'}
-                              </span>
+                              </button>
                             ) : (
                               <span className="text-xs text-muted-foreground font-mono">0</span>
+                            )}
+
+                            {inasistenciasAbiertoParaCliente === c.id && (
+                              <div className="absolute z-20 right-0 mt-1 w-56 bg-card border border-border rounded-xl shadow-xl p-3 text-left animate-in fade-in zoom-in-95">
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground mb-1.5">Fechas de inasistencia</p>
+                                {!inasistenciasPorCliente[c.id] ? (
+                                  <p className="text-xs text-muted-foreground">Cargando...</p>
+                                ) : inasistenciasPorCliente[c.id].length === 0 ? (
+                                  <p className="text-xs text-muted-foreground">Sin registros.</p>
+                                ) : (
+                                  <ul className="space-y-1">
+                                    {inasistenciasPorCliente[c.id].map((i, idx) => (
+                                      <li key={idx} className="text-xs font-mono text-foreground">
+                                        {new Date(i.fecha).toLocaleDateString('es-PA', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
                             )}
                           </td>
 

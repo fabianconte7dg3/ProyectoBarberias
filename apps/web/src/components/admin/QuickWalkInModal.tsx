@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Calendar, Clock, PawPrint, Users, Trash2 } from 'lucide-react';
+import { X, UserPlus, Phone, Calendar, Clock, PawPrint, Users, Trash2, AlertTriangle } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
 import { useTenant } from '@/lib/tenant-context';
-import { requierePaciente } from '@/lib/industrias';
+import { requierePaciente, requiereMotivo } from '@/lib/industrias';
 
 interface Empleado {
   id: string;
@@ -22,6 +22,12 @@ interface Paciente {
   nombre: string;
 }
 
+interface ClienteEncontrado {
+  id: string;
+  ausenciasStrikes: number;
+  bloqueado: boolean;
+}
+
 // Citas grupales (cliente + acompañante) — ver
 // docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §3.
 // Todos los acompañantes comparten fecha/hora con la persona principal (walk-in
@@ -30,6 +36,7 @@ interface Acompanante {
   pacienteId: string;
   servicioId: string;
   empleadoId: string;
+  notas: string;
 }
 
 interface QuickWalkInModalProps {
@@ -51,11 +58,13 @@ export function QuickWalkInModal({
 }: QuickWalkInModalProps) {
   const { industria, terminologiaCliente } = useTenant();
   const mostrarPaciente = requierePaciente(industria);
+  const mostrarMotivo = requiereMotivo(industria);
 
   const [nombreCompleto, setNombreCompleto] = useState('');
   const [telefonoWhatsapp, setTelefonoWhatsapp] = useState('');
   const [servicioId, setServicioId] = useState('');
   const [empleadoId, setEmpleadoId] = useState(empleados[0]?.id || '');
+  const [notas, setNotas] = useState('');
 
   const [fecha, setFecha] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [inicioHora, setInicioHora] = useState('12:00');
@@ -64,6 +73,7 @@ export function QuickWalkInModal({
   const [pacientesDelCliente, setPacientesDelCliente] = useState<Paciente[]>([]);
   const [pacienteId, setPacienteId] = useState('');
   const [clienteExistenteId, setClienteExistenteId] = useState('');
+  const [clienteEncontrado, setClienteEncontrado] = useState<ClienteEncontrado | null>(null);
   const [acompanantes, setAcompanantes] = useState<Acompanante[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -90,6 +100,7 @@ export function QuickWalkInModal({
       setPacientesDelCliente([]);
       setPacienteId('');
       setClienteExistenteId('');
+      setClienteEncontrado(null);
       setAcompanantes([]);
     }
   }, [isOpen, initialDate]);
@@ -97,14 +108,17 @@ export function QuickWalkInModal({
   if (!isOpen) return null;
 
   const handleTelefonoBlur = async () => {
-    if (!mostrarPaciente || !telefonoWhatsapp.trim()) return;
+    if (!telefonoWhatsapp.trim()) return;
     try {
-      const resultados = await fetchApi<{ id: string }[]>(`/clientes?q=${encodeURIComponent(telefonoWhatsapp.trim())}`);
+      const resultados = await fetchApi<ClienteEncontrado[]>(`/clientes?q=${encodeURIComponent(telefonoWhatsapp.trim())}`);
       if (resultados.length > 0) {
+        setClienteEncontrado(resultados[0]);
+        if (!mostrarPaciente) return;
         setClienteExistenteId(resultados[0].id);
         const pacientes = await fetchApi<Paciente[]>(`/pacientes?clienteId=${resultados[0].id}`);
         setPacientesDelCliente(pacientes || []);
       } else {
+        setClienteEncontrado(null);
         setClienteExistenteId('');
         setPacientesDelCliente([]);
       }
@@ -116,7 +130,7 @@ export function QuickWalkInModal({
   const handleAddAcompanante = () => {
     setAcompanantes((prev) => [
       ...prev,
-      { pacienteId: '', servicioId: servicios[0]?.id || '', empleadoId },
+      { pacienteId: '', servicioId: servicios[0]?.id || '', empleadoId, notas: '' },
     ]);
   };
 
@@ -136,6 +150,10 @@ export function QuickWalkInModal({
     }
     if (acompanantes.some((a) => !a.servicioId || !a.empleadoId)) {
       setError('Completa el servicio y empleado de cada acompañante, o quítalo de la lista.');
+      return;
+    }
+    if (mostrarMotivo && (!notas.trim() || acompanantes.some((a) => !a.notas.trim()))) {
+      setError('Indica el motivo de la visita para cada persona.');
       return;
     }
 
@@ -172,6 +190,7 @@ export function QuickWalkInModal({
         empleadoId,
         servicioId,
         ...(mostrarPaciente && pacienteId && { pacienteId }),
+        ...(notas.trim() && { notas: notas.trim() }),
         inicioEstimado,
         origen: 'walk_in' as const,
       };
@@ -193,6 +212,7 @@ export function QuickWalkInModal({
             empleadoId: a.empleadoId,
             servicioId: a.servicioId,
             ...(mostrarPaciente && a.pacienteId && { pacienteId: a.pacienteId }),
+            ...(a.notas.trim() && { notas: a.notas.trim() }),
             inicioEstimado,
             origen: 'walk_in' as const,
           })),
@@ -268,6 +288,18 @@ export function QuickWalkInModal({
                 className="w-full pl-10 pr-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm"
               />
             </div>
+            {/* Alerta de inasistencias/bloqueo — no bloquea automático, solo informa al
+                staff (ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §3) */}
+            {clienteEncontrado && (clienteEncontrado.ausenciasStrikes > 0 || clienteEncontrado.bloqueado) && (
+              <div className="mt-2 flex items-start gap-2 p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-700 dark:text-amber-400">
+                <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                <p className="text-[11px] font-medium leading-snug">
+                  {clienteEncontrado.bloqueado && 'Este cliente está bloqueado. '}
+                  {clienteEncontrado.ausenciasStrikes > 0 &&
+                    `${clienteEncontrado.ausenciasStrikes} ${clienteEncontrado.ausenciasStrikes === 1 ? 'inasistencia registrada' : 'inasistencias registradas'}.`}
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Selección de Paciente (mascota) — solo industrias que lo requieren */}
@@ -337,6 +369,22 @@ export function QuickWalkInModal({
               ))}
             </select>
           </div>
+
+          {/* Motivo de la visita — solo industrias que lo requieren (veterinaria/clínica) */}
+          {mostrarMotivo && (
+            <div>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground block mb-1">
+                Motivo de la visita
+              </label>
+              <textarea
+                value={notas}
+                onChange={(e) => setNotas(e.target.value)}
+                placeholder="Ej: Chequeo de rutina, vacunación..."
+                rows={2}
+                className="w-full px-4 py-2.5 bg-secondary/50 border border-border rounded-xl focus:border-primary focus:outline-hidden text-sm resize-none"
+              />
+            </div>
+          )}
 
           {/* Acompañantes (citas grupales) */}
           <div>
@@ -411,6 +459,15 @@ export function QuickWalkInModal({
                           <option key={b.id} value={b.id}>{b.nombreCompleto}</option>
                         ))}
                       </select>
+                      {mostrarMotivo && (
+                        <textarea
+                          value={a.notas}
+                          onChange={(e) => handleAcompananteChange(idx, 'notas', e.target.value)}
+                          placeholder="Motivo de la visita"
+                          rows={2}
+                          className="col-span-2 px-3 py-2 bg-background border border-border rounded-lg text-xs resize-none"
+                        />
+                      )}
                     </div>
                   </div>
                 ))}
