@@ -235,7 +235,7 @@ export class DatosService {
       }
     });
 
-    const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Barbero', 'Propina_Barbero', 'Empleado', 'Cliente_Tel'];
+    const headers = ['ID_Transaccion', 'Fecha', 'Metodo_Pago', 'Total_Facturado', 'Comision_Empleado', 'Propina_Empleado', 'Empleado', 'Cliente_Tel'];
     const rows = [headers.join(',')];
 
     for (const tx of txs) {
@@ -256,8 +256,8 @@ export class DatosService {
         sanitizeCsvCell(format(new Date(tx.createdAt), 'yyyy-MM-dd HH:mm')),
         sanitizeCsvCell(tx.metodoPago),
         sanitizeCsvCell(tx.totalFacturado),
-        sanitizeCsvCell(tx.comisionBarbero),
-        sanitizeCsvCell(tx.propinaBarbero),
+        sanitizeCsvCell(tx.comisionEmpleado),
+        sanitizeCsvCell(tx.propinaEmpleado),
         sanitizeCsvCell(empleadoCell),
         sanitizeCsvCell(tx.cita?.cliente?.telefonoWhatsapp || 'Sin Teléfono'),
       ];
@@ -359,13 +359,13 @@ export class DatosService {
         empleadosDeEstaTx.add(bId);
         let entry = nominaMap.get(bId) || { nombre: tx.cita.empleado.nombreCompleto, totalServicios: 0, totalProductos: 0, comisionAcumulada: 0, propinas: 0 };
         entry.totalServicios += Number(tx.totalFacturado || 0);
-        entry.comisionAcumulada += Number(tx.comisionBarbero || 0);
+        entry.comisionAcumulada += Number(tx.comisionEmpleado || 0);
         nominaMap.set(bId, entry);
       }
 
       // Propina: un empleado en la transacción → completa; varios (cobro grupal) → se
       // reparte en partes iguales, mismo criterio que reportes.service.ts.
-      const propinaTx = Number(tx.propinaBarbero || 0);
+      const propinaTx = Number(tx.propinaEmpleado || 0);
       if (propinaTx > 0 && empleadosDeEstaTx.size > 0) {
         const porEmpleado = propinaTx / empleadosDeEstaTx.size;
         for (const bId of empleadosDeEstaTx) {

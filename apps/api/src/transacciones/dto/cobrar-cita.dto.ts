@@ -24,7 +24,7 @@ export class CobrarCitaDto {
 
   @IsOptional()
   @IsNumber()
-  propinaBarbero?: number;
+  propinaEmpleado?: number;
 
   @IsOptional()
   @IsString()

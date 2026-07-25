@@ -105,7 +105,7 @@ export class ImportacionesService {
         createdAt: schema.transacciones.createdAt,
         metodoPago: schema.transacciones.metodoPago,
         totalFacturado: schema.transacciones.totalFacturado,
-        comisionBarbero: schema.transacciones.comisionBarbero,
+        comisionEmpleado: schema.transacciones.comisionEmpleado,
         empleadoNombre: empleadosSubquery,
         clienteNombre: schema.clientes.nombreCompleto,
       })
@@ -137,7 +137,7 @@ export class ImportacionesService {
         empleado: sanitizarCeldaExport(t.empleadoNombre || 'Sin asignar'),
         metodoPago: sanitizarCeldaExport(t.metodoPago),
         total: Number(t.totalFacturado || 0),
-        comision: Number(t.comisionBarbero || 0),
+        comision: Number(t.comisionEmpleado || 0),
       });
     }
 

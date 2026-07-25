@@ -164,7 +164,7 @@ export class ReportesService {
     const citasContadasPorEmpleado = new Map<string, Set<string>>();
 
     for (const tx of txsPeriodo) {
-      const propinaTx = Number(tx.propinaBarbero || 0);
+      const propinaTx = Number(tx.propinaEmpleado || 0);
       const empleadosDeEstaTx = new Set<string>();
 
       if (tx.detalles && tx.detalles.length > 0) {
@@ -215,7 +215,7 @@ export class ReportesService {
         if (stats) {
           const montoTx = Number(tx.totalFacturado || 0);
           stats.totalFacturado += montoTx;
-          stats.comisionTotal += Number(tx.comisionBarbero || 0);
+          stats.comisionTotal += Number(tx.comisionEmpleado || 0);
           stats.facturadoServicios += montoTx;
           let set = citasContadasPorEmpleado.get(bId);
           if (!set) { set = new Set(); citasContadasPorEmpleado.set(bId, set); }
@@ -414,10 +414,10 @@ export class ReportesService {
 
       const comisionTx = esSoloPreneurODueno
         ? montoTx
-        : (esLegacySinDetalles ? Number(tx.comisionBarbero || 0) : misLineas.reduce((s: number, d: any) => s + Number(d.comisionAplicada || 0), 0));
+        : (esLegacySinDetalles ? Number(tx.comisionEmpleado || 0) : misLineas.reduce((s: number, d: any) => s + Number(d.comisionAplicada || 0), 0));
 
       const empleadosDistintosEnTx = new Set((tx.detalles || []).map((d: any) => d.empleadoId || tx.cita?.empleadoId).filter(Boolean));
-      const totalPropinaTx = Number(tx.propinaBarbero || 0);
+      const totalPropinaTx = Number(tx.propinaEmpleado || 0);
       const propinaTx = empleadosDistintosEnTx.size > 1 ? totalPropinaTx / empleadosDistintosEnTx.size : totalPropinaTx;
 
       const citasEnEstaTx = new Set(misLineas.filter((d: any) => d.tipoItem === 'servicio').map((d: any) => d.citaId || tx.citaId).filter(Boolean));

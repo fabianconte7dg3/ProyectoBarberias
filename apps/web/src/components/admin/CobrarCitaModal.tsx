@@ -41,7 +41,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
   const currentUser = useAdminStore((state) => state.user);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
   const [montoEfectivo, setMontoEfectivo] = useState<string>('');
-  const [propinaBarbero, setPropinaBarbero] = useState<string>('0');
+  const [propinaEmpleado, setPropinaEmpleado] = useState<string>('0');
   const [rucCliente, setRucCliente] = useState('');
   const [nombreFiscalCliente, setNombreFiscalCliente] = useState('');
 
@@ -144,7 +144,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
           idempotencyKey,
           metodoPago,
           montoEfectivoIngresado: metodoPago === 'efectivo' ? parseFloat(montoEfectivo) : undefined,
-          propinaBarbero: parseFloat(propinaBarbero) || 0,
+          propinaEmpleado: parseFloat(propinaEmpleado) || 0,
           rucCliente: rucCliente.trim() || undefined,
           nombreFiscalCliente: nombreFiscalCliente.trim() || undefined,
           ...(!esGrupal && {
@@ -396,8 +396,8 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
               type="number"
               step="0.50"
               min="0"
-              value={propinaBarbero}
-              onChange={(e) => setPropinaBarbero(e.target.value)}
+              value={propinaEmpleado}
+              onChange={(e) => setPropinaEmpleado(e.target.value)}
               className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-lg text-sm font-mono"
             />
           </div>
