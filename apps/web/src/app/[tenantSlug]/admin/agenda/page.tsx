@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminHeader } from '@/components/admin/AdminHeader';
 import { TimelineGrid } from '@/components/admin/TimelineGrid';
 import { ListaTurnosView } from '@/components/admin/ListaTurnosView';
@@ -46,40 +47,11 @@ export default function AdminAgendaPage() {
   const activeBarbers = empleados.filter((b) => b.rol === 'empleado' || b.rol === 'admin');
   const isSoloPreneur = activeBarbers.length === 1;
 
-  // 1. Verificar sesión activa contra el backend.
-  //    IMPORTANTE: este efecto NO debe tener `currentUser` en sus dependencias
-  //    porque Zustand re-hidrata el store al detectar cambios en localStorage desde
-  //    otras pestañas (ej. la página pública de reservas), lo que provocaría que
-  //    el efecto volviera a correr, llamara fetchApi('/auth/me') y si la cookie
-  //    del backend no responde, ejecutara logout() — cerrando la sesión de todas
-  //    las pestañas del admin abiertas.
-  //    Solución: sólo se ejecuta una vez al montar el componente.
-  const sessionChecked = useRef(false);
-  useEffect(() => {
-    if (sessionChecked.current) return;
-    sessionChecked.current = true;
-
-    if (!currentUser) {
-      router.push(`/${tenantSlug}/admin/login`);
-      return;
-    }
-
-    // Validar que la cookie sigue siendo válida. Si el servidor devuelve 401
-    // (expiró la sesión real), cerramos sesión. Si hay un error de red/CORS,
-    // lo ignoramos silenciosamente para no desconectar al empleado por problemas
-    // temporales de conectividad o actividad en otras pestañas.
-    fetchApi('/auth/me')
-      .catch((err: Error) => {
-        const msg = err?.message || '';
-        // Solo hacer logout en caso de error 401 explícito del servidor
-        if (msg.includes('401') || msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('no autorizado')) {
-          logout();
-          router.push(`/${tenantSlug}/admin/login`);
-        }
-        // Para otros errores (red, CORS, 500) no cerrar sesión
-      });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantSlug]);
+  // 1. Verificar sesión activa contra el backend — delegado al hook compartido
+  //    useAdminAuth, que ya resuelve la carrera de hidratación de Zustand
+  //    (no redirige a login solo porque `currentUser` llegue null en el primer
+  //    render de una recarga dura; valida contra /auth/me antes de decidir).
+  useAdminAuth({ tenantSlug });
 
   // 2. Cargar lista de empleados
   useEffect(() => {
