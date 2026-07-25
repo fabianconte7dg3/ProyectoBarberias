@@ -101,6 +101,15 @@ base de datos, no solo de aplicación.
   misma visita, aunque los empleen empleados distintos) → `citas.grupoReservaId` + cobro conjunto en una
   sola transacción con atribución de comisión por línea/empleado real — ver
   [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md).
+- Cliente reserva sin confirmar y desaparece → confirmación obligatoria (WhatsApp con link + respaldo
+  web) con auto-liberación del horario si no confirma a tiempo; reserva con menos anticipación que la
+  ventana de confirmación se auto-confirma (no tendría sentido esperar respuesta). Cliente ya bloqueado
+  por el admin intenta reservar por el portal público → rechazado (`403`). Cliente con una reserva sin
+  confirmar intenta agendar otra por el portal público → rechazado (`409`) hasta que confirme o se libere
+  la anterior — ninguna de las dos reglas aplica cuando el staff agenda manualmente, que ya tiene contexto
+  real del cliente. Calendario público desactualizado tras una reserva de otro cliente → stream SSE
+  (`GET /horarios/disponibilidad/stream`) empuja un aviso al navegador para refrescar sin recargar. Ver
+  [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md).
 
 ## 7. Casos límite / gaps conocidos, aún sin resolver
 
@@ -111,16 +120,12 @@ base de datos, no solo de aplicación.
   §1. "Agregar acompañante" también quedó implementado solo en el flujo de recepción/admin
   (`QuickWalkInModal`), no en el wizard de reserva pública — ver §7.3 del mismo documento para el
   porqué de esa desviación de alcance.
-- **Anti-abuso, confirmación obligatoria y calendario en tiempo real (diseñados, no implementados).**
-  Verificado contra el código real, no asumido: el recordatorio de WhatsApp ya le pide al cliente
-  "responde 1 para confirmar" pero el webhook no está conectado a esa cita específica — una función que
-  el sistema promete y no cumple hoy. Tampoco existe enforcement del campo `clientes.bloqueado` (el
-  toggle del admin es decorativo), ni límite de reservas sin confirmar por teléfono, ni actualización del
-  calendario sin recargar. Diseño completo en
-  [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md),
-  tareas en [`plan.md`](./plan.md) §2.3.
 - Banner de "Reserva Pausada" en el portal público cuando el kill-switch está activo — documentado como
   esperado, nunca implementado en frontend.
+- **Portal de reserva pública sin selector de fecha por rango largo / vista mensual** — el `DaySelector`
+  del wizard muestra solo un carrusel corto de días, no un calendario mensual completo. No bloqueante,
+  fuera del alcance de la Fase 2.3 (que se centró en anti-abuso y tiempo real, no en UX de selección de
+  fecha).
 - `transacciones.comisionBarbero`/`propinaBarbero` — columnas fiscales append-only, deliberadamente no
   renombradas junto con el resto del rename `barbero`→`empleado`; requieren revisión dedicada.
 

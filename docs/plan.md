@@ -42,7 +42,7 @@ excluyó a propósito, verificación) en
 - [x] Verificado en navegador real: login admin QA → `/admin/empleados` carga con datos reales, login
       SuperAdmin muestra "Volumetrix SaaS Platform", redirect 308 confirmado por `curl -I`
 
-## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1-2.2 completos, 2.3-2.4 pendientes)
+## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1-2.3 completos, 2.4 pendiente)
 
 > **Diseño acordado con el usuario (2026-07-24, vía entrevista) — ver
 > [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
@@ -137,48 +137,83 @@ decisiones tomadas y desviaciones en
       después)
 - [x] Backend: plantilla de widgets por defecto según `industria`, aplicada al crear un tenant
 
-### 2.3 Agenda: anti-abuso, confirmación y migración de historial
+### 2.3 Agenda: anti-abuso, confirmación y migración de historial ✅ Completo
 
-> Diseño acordado con el usuario (2026-07-24, 2 rondas de entrevista) — ver
-> [`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md).
-> Incluye un hallazgo real: el recordatorio de WhatsApp ya promete "responde 1 para confirmar" pero el
-> webhook no cumple eso hoy — corregirlo es parte de esta fase, no un bug aparte.
+Ejecutado y verificado el 2026-07-25 (tenant `qa-test`, mezcla de smoke test en navegador real + curl
+directo contra la API para los casos límite de anti-abuso). Diseño acordado con el usuario (2026-07-24, 2
+rondas de entrevista) en
+[`Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md`](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md)
+(estado actualizado a implementado, con la sección de implementación y los bugs encontrados al final).
 
 **Calendario en tiempo real:**
-- [ ] Backend: `EventEmitter2` + endpoint SSE `GET /horarios/disponibilidad/stream`
-- [ ] Backend: emitir evento en `citas.service.ts`/`horarios.service.ts` al crear/cancelar cita o bloqueo
-- [ ] Frontend: `TimeSlotGrid` se suscribe vía `EventSource`, refresca al recibir evento
+- [x] Backend: `EventEmitter2` + endpoint SSE `GET /horarios/disponibilidad/stream`
+- [x] Backend: emitir evento en `citas.service.ts`/`horarios.service.ts` al crear/cancelar cita o bloqueo
+- [x] Frontend: `TimeSlotGrid` se suscribe vía `EventSource`, refresca al recibir evento — verificado
+      end-to-end: un `EventSource` en el navegador recibió el push en vivo al crear una cita vía API para
+      el mismo empleado+fecha
+- [x] **Gap encontrado durante la verificación (no listado originalmente):** `TimeSlotGrid` usaba
+      horarios 100% mockeados (`MOCK_SLOTS` hardcodeado), nunca conectado a
+      `GET /horarios/disponibilidad` — el propio §0 del doc de diseño asumía que ya estaba conectado.
+      Sin esto, el SSE no tenía nada real que refrescar. Reescrito: `fecha/page.tsx` pide disponibilidad
+      real (por empleado, o unión de todo el staff activo si se eligió "Cualquiera") y
+      `lib/disponibilidad.ts` calcula los slots reales respetando jornada/almuerzo/ocupados. De paso se
+      encontró y corrigió un bug de regresión de la Fase 2.2 en el mismo archivo: el guard de "sin
+      servicio no se puede seguir" solo miraba `servicioId`, así que reservar un combo (`comboId`, sin
+      `servicioId`) rebotaba de inmediato al paso anterior — el wizard de combos nunca funcionó en este
+      paso. También se agregó `combo: true` al `with` de `handleRecordatorio24h`
+      (`queue/citas.processor.ts`), que crasheaba con `result.servicio.nombre` sobre `null` para citas de
+      combo
 
 **Confirmación obligatoria (WhatsApp + link web):**
-- [ ] `schema.ts`: `citas.confirmada` (boolean, default `false`), `citas.confirmacionSolicitadaEn`
+- [x] `schema.ts`: `citas.confirmada` (boolean, default `false`), `citas.confirmacionSolicitadaEn`
       (timestamptz, nullable), `barberias.horasAntesConfirmacion` (integer, default `4`)
-- [ ] Backend: job BullMQ `solicitar_confirmacion` (reutiliza `tokenCliente`/`tokenExpiraEn` existentes)
-- [ ] Backend: endpoint público `POST /citas/publica/:id/confirmar?token=...`
-- [ ] Backend: job `liberar_si_no_confirmo`
-- [ ] Backend: regla de auto-confirmación si la reserva se hizo con menos anticipación que la ventana
-- [ ] **Fix del webhook existente:** `whatsapp.controller.ts` — el "1"/"2" del menú general no debe
-      confundirse con una respuesta a un pedido de confirmación de cita específica; el mensaje de
-      recordatorio deja de prometer algo que no cumple
+- [x] Backend: job BullMQ `solicitar_confirmacion` (reutiliza `tokenCliente`/`tokenExpiraEn` existentes)
+- [x] Backend: endpoint público `POST /citas/publica/:id/confirmar?token=...`
+- [x] Backend: job `liberar_si_no_confirmo`
+- [x] Backend: regla de auto-confirmación si la reserva se hizo con menos anticipación que la ventana
+- [x] **Fix del webhook existente:** `whatsapp.controller.ts` — el mensaje de `recordatorio_24h` deja de
+      prometer un flujo de respuesta numérica ("Responde 1 para Confirmar") que el webhook no conecta a
+      la cita; el mensaje de `solicitar_confirmacion` usa un link directo en su lugar, sin ambigüedad
+- [x] **Gap encontrado (no listado originalmente):** faltaba la página web de respaldo — sin ella, el
+      link del WhatsApp de confirmación no tenía a dónde apuntar. Nueva
+      `[tenantSlug]/confirmar-cita/page.tsx` (pública), llama al endpoint de arriba
 
 **Enforcement de bloqueo + alerta de inasistencias (sin auto-bloqueo):**
-- [ ] Backend: `crearCitaPublica` valida `cliente.bloqueado` (cierra un gap ya existente, el toggle del
-      admin hoy no tiene efecto)
-- [ ] `schema.ts`: nueva tabla `inasistencias` (`clienteId`, `citaId`, `fecha`)
-- [ ] Backend: insertar en `inasistencias` en los mismos 2 puntos donde ya se incrementa `ausenciasStrikes`
-- [ ] Frontend: badge/alerta de inasistencias visible al staff al crear cita o ver ficha de cliente
+- [x] Backend: `crearCitaPublica` valida `cliente.bloqueado` (cierra un gap ya existente, el toggle del
+      admin hoy no tenía efecto)
+- [x] `schema.ts`: nueva tabla `inasistencias` (`clienteId`, `citaId`, `fecha`)
+- [x] Backend: insertar en `inasistencias` en los mismos 2 puntos donde ya se incrementa `ausenciasStrikes`
+- [x] Frontend: badge/alerta de inasistencias visible al staff al crear cita (`QuickWalkInModal`) o ver
+      ficha de cliente (`admin/clientes`, con fechas reales al hacer clic en el badge de strikes)
+- [x] **Gap encontrado:** la búsqueda de cliente por teléfono en `QuickWalkInModal` solo corría para
+      industrias con paciente (veterinaria/clínica) — un tenant de barbería nunca veía la alerta.
+      Corregido para buscar siempre
 
 **"1 cita activa sin confirmar" por teléfono:**
-- [ ] Backend: `crearCitaPublica` rechaza (409) si ya existe una cita `programada`+`confirmada=false` del
+- [x] Backend: `crearCitaPublica` rechaza (409) si ya existe una cita `programada`+`confirmada=false` del
       mismo cliente — no aplica a citas creadas por staff
 
 **Campos obligatorios al reservar:**
-- [ ] `CreateClienteDto.nombreCompleto`: de opcional a requerido
-- [ ] Backend: `notas` (motivo) requerido a nivel de aplicación solo si `industria` es veterinaria/clínica
+- [x] `CreateClienteDto.nombreCompleto`: de opcional a requerido
+- [x] Backend: `notas` (motivo) requerido a nivel de aplicación solo si `industria` es veterinaria/clínica
+      (`crearCita`/`crearCitasGrupales`, público y staff); frontend: campo condicional en el wizard
+      público y en `QuickWalkInModal`
 
 **Migración de historial de citas pasadas:**
-- [ ] Backend: `POST /importaciones/citas_historicas` — no debe encolar jobs normales (recordatorio,
-      confirmación) por ser fechas pasadas
-- [ ] Definir si suman a `clientes.totalAsistencias`/`totalGastado`
+- [x] Backend: `POST /importaciones/citas_historicas` — no encola jobs normales (inserta directo vía el
+      processor, sin pasar por `citasService.crearCita()`); cliente y servicio se matchean por
+      teléfono/nombre (deben existir ya, no se crean fantasmas); `estado=completada` suma a
+      `totalAsistencias` (+ `totalGastado` si la fila trae `monto` — no se crea una transacción real para
+      no falsear el libro fiscal/DGI); `estado=ausente_strike` suma a `ausenciasStrikes` + inserta en
+      `inasistencias`
+- [x] **2 bugs pre-existentes encontrados y corregidos al construir esto** (ver §9 del doc de diseño para
+      el detalle): `parser.service.ts` convertía celdas de fecha a un formato no-ISO
+      (`String(new Date(...))`), rompiendo cualquier DTO con `@IsDateString()`; y
+      `importaciones.processor.ts` corría todo el lote en una sola transacción SQL sin aislar filas — una
+      sola fila con un error real de Postgres (ej. el `EXCLUDE` de citas solapadas) envenenaba la
+      transacción entera y tumbaba el resto del lote. Ambos corregidos (conversión a ISO;
+      `SAVEPOINT`/`ROLLBACK TO SAVEPOINT` por fila) y verificados deliberadamente provocando un choque de
+      horario en medio de un lote de 2 filas — la fila siguiente se siguió procesando
 
 ### 2.4 Resto de Multi-Industria Funcional
 
