@@ -92,6 +92,9 @@ export const barberias = pgTable('barberias', {
   terminologiaEmpleado: varchar('terminologia_empleado', { length: 100 }).notNull().default('Barbero'),
   terminologiaServicio: varchar('terminologia_servicio', { length: 100 }).notNull().default('Servicio'),
   terminologiaCliente: varchar('terminologia_cliente', { length: 100 }).notNull().default('Cliente'),
+  // Multi-industria (Fase 2.1 — ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md):
+  // define la forma de camposPersonalizados en `pacientes`/`clientes.datosAdicionales` para este tenant.
+  configCamposPersonalizados: jsonb('config_campos_personalizados').notNull().default([]),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -175,6 +178,22 @@ export const clientes = pgTable('clientes', {
 }));
 
 // ============================================================================
+// TABLA 4.5: pacientes (sujeto del servicio, opcional — veterinaria/clínica)
+// ============================================================================
+// Ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md.
+// Barbería/salón no usan esta tabla: el cliente sigue siendo el sujeto, sin cambios.
+
+export const pacientes = pgTable('pacientes', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  clienteId: uuid('cliente_id').notNull().references(() => clientes.id, { onDelete: 'cascade' }),
+  nombre: varchar('nombre', { length: 255 }).notNull(),
+  camposPersonalizados: jsonb('campos_personalizados').notNull().default({}),
+  activo: boolean('activo').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+// ============================================================================
 // TABLA 5: citas (núcleo operativo)
 // ============================================================================
 
@@ -184,6 +203,9 @@ export const citas = pgTable('citas', {
   clienteId: uuid('cliente_id').references(() => clientes.id),
   empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id),
   servicioId: uuid('servicio_id').notNull().references(() => servicios.id),
+  // Multi-industria: sujeto del servicio cuando no es el cliente mismo (mascota/paciente).
+  // Nula siempre para barbería/salón; requerida a nivel de aplicación para veterinaria/clínica.
+  pacienteId: uuid('paciente_id').references(() => pacientes.id),
   inicioEstimado: timestamp('inicio_estimado', { withTimezone: true }).notNull(),
   finEstimado: timestamp('fin_estimado', { withTimezone: true }).notNull(),
   inicioReal: timestamp('inicio_real', { withTimezone: true }),
@@ -200,6 +222,24 @@ export const citas = pgTable('citas', {
 }, (table) => ({
   idxCitasTenantEmpleadoInicio: index('idx_citas_tenant_empleado_inicio').on(table.tenantId, table.empleadoId, table.inicioEstimado),
 }));
+
+// ============================================================================
+// TABLA 5.5: notas_clinicas (historial estructurado, confidencial por autor)
+// ============================================================================
+// Confidencialidad NO es una policy RLS — es un filtro de servicio (ver
+// notas-clinicas.service.ts), igual al patrón ya usado en citas por empleado.
+
+export const notasClinicas = pgTable('notas_clinicas', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  tenantId: uuid('tenant_id').notNull().references(() => barberias.id, { onDelete: 'cascade' }),
+  citaId: uuid('cita_id').notNull().references(() => citas.id, { onDelete: 'cascade' }),
+  pacienteId: uuid('paciente_id').notNull().references(() => pacientes.id, { onDelete: 'cascade' }),
+  empleadoId: uuid('empleado_id').notNull().references(() => usuarios.id), // autor / profesional responsable
+  diagnostico: text('diagnostico'),
+  tratamiento: text('tratamiento'),
+  proximaRevisionEn: date('proxima_revision_en'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
 
 // ============================================================================
 // TABLA 6: transacciones (append-only — finanzas + DGI)
@@ -366,6 +406,7 @@ export const barberiasRelations = relations(barberias, ({ many, one }) => ({
   productos: many(productos),
   clientes: many(clientes),
   citas: many(citas),
+  pacientes: many(pacientes),
   whatsappConfig: one(whatsappConfig),
   yappyConfig: one(yappyConfig),
 }));
@@ -385,6 +426,14 @@ export const clientesRelations = relations(clientes, ({ one, many }) => ({
   barberia: one(barberias, { fields: [clientes.tenantId], references: [barberias.id] }),
   empleadoFrecuente: one(usuarios, { fields: [clientes.empleadoFrecuenteId], references: [usuarios.id] }),
   citas: many(citas),
+  pacientes: many(pacientes),
+}));
+
+export const pacientesRelations = relations(pacientes, ({ one, many }) => ({
+  barberia: one(barberias, { fields: [pacientes.tenantId], references: [barberias.id] }),
+  cliente: one(clientes, { fields: [pacientes.clienteId], references: [clientes.id] }),
+  citas: many(citas),
+  notasClinicas: many(notasClinicas),
 }));
 
 export const citasRelations = relations(citas, ({ one }) => ({
@@ -392,7 +441,15 @@ export const citasRelations = relations(citas, ({ one }) => ({
   cliente: one(clientes, { fields: [citas.clienteId], references: [clientes.id] }),
   empleado: one(usuarios, { fields: [citas.empleadoId], references: [usuarios.id] }),
   servicio: one(servicios, { fields: [citas.servicioId], references: [servicios.id] }),
+  paciente: one(pacientes, { fields: [citas.pacienteId], references: [pacientes.id] }),
   transaccion: one(transacciones, { fields: [citas.id], references: [transacciones.citaId] }),
+}));
+
+export const notasClinicasRelations = relations(notasClinicas, ({ one }) => ({
+  barberia: one(barberias, { fields: [notasClinicas.tenantId], references: [barberias.id] }),
+  cita: one(citas, { fields: [notasClinicas.citaId], references: [citas.id] }),
+  paciente: one(pacientes, { fields: [notasClinicas.pacienteId], references: [pacientes.id] }),
+  empleado: one(usuarios, { fields: [notasClinicas.empleadoId], references: [usuarios.id] }),
 }));
 
 export const transaccionesRelations = relations(transacciones, ({ one, many }) => ({
