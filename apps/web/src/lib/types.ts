@@ -17,15 +17,31 @@ export interface Empleado {
   fotoUrl?: string | null;
 }
 
+// Combo de servicios (bundle rastreado) — ver
+// docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §2.
+export interface ComboPublico {
+  id: string;
+  nombre: string;
+  precioTotal: string;
+  duracionAjustadaMinutos: number | null;
+  servicios: { servicioId: string; servicio: Servicio }[];
+}
+
 // Zod Schema para validar el estado de la reserva en el Frontend
-// Este schema asegura que no se pueda continuar sin datos válidos
+// Este schema asegura que no se pueda continuar sin datos válidos.
+// Exactamente uno de servicioId/comboId debe estar presente (mismo criterio de
+// aplicación, no de constraint, que usa el backend — ver create-cita.dto.ts).
 export const reservaSeleccionSchema = z.object({
-  servicioId: z.string().uuid("Por favor selecciona un servicio."),
+  servicioId: z.string().uuid().optional(),
+  comboId: z.string().uuid().optional(),
   // empleadoId puede ser null para la opción "Cualquier Empleado",
   // lo que indica al backend que asigne según disponibilidad.
   empleadoId: z.string().uuid().nullable().refine(val => val !== undefined, {
     message: "Por favor selecciona un empleado.",
   }),
+}).refine((data) => Boolean(data.servicioId) !== Boolean(data.comboId), {
+  message: "Por favor selecciona un servicio o un combo.",
+  path: ["servicioId"],
 });
 
 export type ReservaSeleccionState = z.infer<typeof reservaSeleccionSchema>;

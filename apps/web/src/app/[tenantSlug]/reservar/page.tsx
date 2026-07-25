@@ -5,7 +5,7 @@ import { ServiceSelection } from '@/components/booking/ServiceSelection';
 import { BarberSelection } from '@/components/booking/BarberSelection';
 import { BarberProfileCard } from '@/components/booking/BarberProfileCard';
 import { BottomAction } from '@/components/ui/BottomAction';
-import { Servicio, Empleado, reservaSeleccionSchema } from '@/lib/types';
+import { Servicio, Empleado, ComboPublico, reservaSeleccionSchema } from '@/lib/types';
 import { ArrowRight, RefreshCw } from 'lucide-react';
 import { useRouter, useParams } from 'next/navigation';
 import { useBookingStore } from '@/lib/store';
@@ -22,29 +22,35 @@ export default function ReservarPage() {
   
   // Estado global
   const servicioIdStore = useBookingStore(state => state.servicioId);
+  const comboIdStore = useBookingStore(state => state.comboId);
   const empleadoIdStore = useBookingStore(state => state.empleadoId);
   const setServicioYEmpleado = useBookingStore(state => state.setServicioYEmpleado);
+  const setComboYEmpleado = useBookingStore(state => state.setComboYEmpleado);
 
   // Datos reales de la API
   const [serviciosList, setServiciosList] = useState<Servicio[]>([]);
+  const [combosList, setCombosList] = useState<ComboPublico[]>([]);
   const [empleadosList, setEmpleadosList] = useState<Empleado[]>([]);
   const [loadingData, setLoadingData] = useState(true);
 
   // Estado local para la interfaz rápida, inicializado con el store
   const [servicioId, setServicioId] = useState<string | undefined>();
-  const [empleadoId, setEmpleadoId] = useState<string | null | undefined>(); 
+  const [comboId, setComboId] = useState<string | undefined>();
+  const [empleadoId, setEmpleadoId] = useState<string | null | undefined>();
 
-  // Cargar Servicios y Empleados en vivo desde el Backend
+  // Cargar Servicios, Combos y Empleados en vivo desde el Backend
   useEffect(() => {
     async function loadPublicCatalog() {
       setLoadingData(true);
       try {
-        const [serviciosData, staffData] = await Promise.all([
+        const [serviciosData, combosData, staffData] = await Promise.all([
           fetchPublic<Servicio[]>(`/servicios/publico/${tenantSlug}`),
+          fetchPublic<ComboPublico[]>(`/combos/publico/${tenantSlug}`),
           fetchPublic<Array<{ id: string; nombreCompleto: string; rol: string }>>(`/auth/staff/${tenantSlug}`)
         ]);
 
         setServiciosList(serviciosData || []);
+        setCombosList(combosData || []);
 
         // Filtrar solo los integrantes activos con rol 'empleado' o 'admin'
         const empleadosMapped: Empleado[] = (staffData || [])
@@ -75,11 +81,12 @@ export default function ReservarPage() {
   useEffect(() => {
     if (isHydrated) {
       setServicioId(servicioIdStore);
+      setComboId(comboIdStore);
       if (empleadosList.length > 1) {
         setEmpleadoId(empleadoIdStore);
       }
     }
-  }, [isHydrated, servicioIdStore, empleadoIdStore, empleadosList.length]);
+  }, [isHydrated, servicioIdStore, comboIdStore, empleadoIdStore, empleadosList.length]);
 
   // Si pasa a tener 1 solo empleado, asegurar selección
   useEffect(() => {
@@ -89,14 +96,30 @@ export default function ReservarPage() {
   }, [empleadosList]);
   
   // Zod Validation (Estado derivado sincrónico)
-  const isValid = reservaSeleccionSchema.safeParse({ servicioId, empleadoId }).success;
+  const isValid = reservaSeleccionSchema.safeParse({ servicioId, comboId, empleadoId }).success;
+
+  const handleSelectServicio = (id: string) => {
+    setServicioId(id);
+    setComboId(undefined);
+  };
+
+  const handleSelectCombo = (id: string) => {
+    setComboId(id);
+    setServicioId(undefined);
+  };
 
   const handleContinue = () => {
-    if (!isValid || !servicioId || empleadoId === undefined) return;
-    
+    if (!isValid || empleadoId === undefined) return;
+
     // Guardamos en estado global
-    setServicioYEmpleado(servicioId, empleadoId);
-    
+    if (comboId) {
+      setComboYEmpleado(comboId, empleadoId);
+    } else if (servicioId) {
+      setServicioYEmpleado(servicioId, empleadoId);
+    } else {
+      return;
+    }
+
     // Navegamos al siguiente paso
     router.push(`/${tenantSlug}/reservar/fecha`);
   };
@@ -116,15 +139,18 @@ export default function ReservarPage() {
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
       
-      {/* Paso 1: Selección de Servicio */}
-      <ServiceSelection 
-        servicios={serviciosList} 
-        selectedId={servicioId} 
-        onSelect={setServicioId} 
+      {/* Paso 1: Selección de Servicio o Combo */}
+      <ServiceSelection
+        servicios={serviciosList}
+        combos={combosList}
+        selectedServicioId={servicioId}
+        selectedComboId={comboId}
+        onSelectServicio={handleSelectServicio}
+        onSelectCombo={handleSelectCombo}
       />
 
       {/* Paso 2: Tarjeta de Perfil para Solo-preneur vs Selector Multiempleado */}
-      <div className={`transition-opacity duration-500 ${servicioId ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+      <div className={`transition-opacity duration-500 ${(servicioId || comboId) ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
         {isSoloPreneur && empleadosList[0] ? (
           <BarberProfileCard empleado={empleadosList[0]} />
         ) : (

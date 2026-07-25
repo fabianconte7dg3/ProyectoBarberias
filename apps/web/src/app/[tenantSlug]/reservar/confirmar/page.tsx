@@ -25,7 +25,7 @@ function ConfirmarContent() {
   const isHydrated = useHydration();
 
   // Global State
-  const { servicioId, empleadoId, fecha, hora, reset } = useBookingStore();
+  const { servicioId, comboId, empleadoId, fecha, hora, reset } = useBookingStore();
 
   // Local State
   const [nombre, setNombre] = useState('');
@@ -36,11 +36,11 @@ function ConfirmarContent() {
   // Protección de ruta (Si faltan datos y no estamos en success)
   useEffect(() => {
     if (isHydrated && status !== 'success') {
-      if (!servicioId || !fecha || !hora) {
+      if ((!servicioId && !comboId) || !fecha || !hora) {
         router.replace(`/${tenantSlug}/reservar`);
       }
     }
-  }, [isHydrated, status, servicioId, fecha, hora, router, tenantSlug]);
+  }, [isHydrated, status, servicioId, comboId, fecha, hora, router, tenantSlug]);
 
   const isValid = reservaClienteSchema.safeParse({ nombre, telefono }).success;
 
@@ -73,7 +73,7 @@ function ConfirmarContent() {
       // 2. Crear Cita Real en Backend (`POST /citas/publica`)
       const inicioEstimado = `${fecha}T${hora}:00`;
       const citaPayload: Record<string, unknown> = {
-        servicioId,
+        ...(comboId ? { comboId } : { servicioId }),
         clienteId,
         inicioEstimado,
         origen: 'web_publica',
