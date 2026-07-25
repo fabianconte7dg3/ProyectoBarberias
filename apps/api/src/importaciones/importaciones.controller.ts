@@ -28,7 +28,7 @@ export class ImportacionesController {
     })
   )
   async importar(
-    @Param('tipo') tipo: 'clientes' | 'productos' | 'servicios',
+    @Param('tipo') tipo: 'clientes' | 'productos' | 'servicios' | 'citas_historicas',
     @UploadedFile() file: any,
     @Req() req: Request
   ) {
@@ -36,8 +36,8 @@ export class ImportacionesController {
       throw new BadRequestException('Debes subir un archivo CSV o Excel (.xlsx).');
     }
 
-    if (!['clientes', 'productos', 'servicios'].includes(tipo)) {
-      throw new BadRequestException('Tipo de importación inválido. Opciones: clientes, productos, servicios');
+    if (!['clientes', 'productos', 'servicios', 'citas_historicas'].includes(tipo)) {
+      throw new BadRequestException('Tipo de importación inválido. Opciones: clientes, productos, servicios, citas_historicas');
     }
 
     const usuarioId = (req as any).user.userId;

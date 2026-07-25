@@ -22,7 +22,7 @@ export class ImportacionesService {
   async crearTrabajoImportacion(
     fileBuffer: Buffer,
     fileName: string,
-    tipo: 'clientes' | 'productos' | 'servicios',
+    tipo: 'clientes' | 'productos' | 'servicios' | 'citas_historicas',
     usuarioId: string,
   ) {
     const db = TenantContext.getDb();

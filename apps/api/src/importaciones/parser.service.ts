@@ -85,6 +85,13 @@ export class ParserService {
           val = (val as any).text;
         }
 
+        // Celdas de fecha real (.xlsx con formato fecha) llegan como Date — String(Date)
+        // produce "Mon Jun 01 2026..." (no ISO), que rompe @IsDateString() en DTOs como
+        // FilaImportCitaHistoricaDto. toISOString() preserva un formato parseable.
+        if (val instanceof Date) {
+          val = val.toISOString();
+        }
+
         rowData[cleanKey] = val !== null && val !== undefined ? String(val).trim() : undefined;
       });
 

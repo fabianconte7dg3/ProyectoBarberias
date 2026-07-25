@@ -5,19 +5,20 @@ import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { validate } from 'class-validator';
 import { plainToInstance } from 'class-transformer';
 import {
   FilaImportClienteDto,
   FilaImportProductoDto,
   FilaImportServicioDto,
+  FilaImportCitaHistoricaDto,
 } from './dto/import-filas.dto';
 
 interface JobPayload {
   trabajoId: string;
   tenantId: string;
-  tipo: 'clientes' | 'productos' | 'servicios';
+  tipo: 'clientes' | 'productos' | 'servicios' | 'citas_historicas';
   filas: Array<{ rowNumber: number; data: Record<string, any> }>;
 }
 
@@ -43,6 +44,12 @@ export class ImportacionesProcessor extends WorkerHost {
       for (const item of filas) {
         const { rowNumber, data } = item;
 
+        // Cada fila corre bajo su propio SAVEPOINT: si una fila dispara un error real
+        // de Postgres (ej. el EXCLUDE de citas_historicas por horario solapado), un
+        // ROLLBACK TO SAVEPOINT despoisona la transacción para que las filas siguientes
+        // se sigan procesando — sin esto, un solo error de DB (no de validación) tumbaría
+        // el resto del lote entero, porque runInTenantScope corre todo en 1 transacción.
+        await tx.execute(sql`SAVEPOINT fila_import`);
         try {
           if (tipo === 'clientes') {
             const dto = plainToInstance(FilaImportClienteDto, {
@@ -175,8 +182,127 @@ export class ImportacionesProcessor extends WorkerHost {
               });
               creados++;
             }
+
+          } else if (tipo === 'citas_historicas') {
+            const dto = plainToInstance(FilaImportCitaHistoricaDto, {
+              telefonoWhatsapp: data.telefonowhatsapp || data.telefono || data.celular,
+              servicioNombre: data.servicionombre || data.servicio,
+              fecha: data.fecha,
+              empleadoNombre: data.empleadonombre || data.empleado,
+              estado: data.estado,
+              notas: data.notas || data.motivo,
+              monto: data.monto,
+            });
+
+            const validationErrors = await validate(dto);
+            if (validationErrors.length > 0) {
+              const msg = validationErrors.map(e => Object.values(e.constraints || {}).join(', ')).join('; ');
+              erroresCount++;
+              detalleErrores.push({ fila: rowNumber, motivo: msg });
+              continue;
+            }
+
+            // Cliente y servicio deben existir ya — una cita histórica no crea
+            // fantasmas con datos parciales (ver comentario del DTO).
+            const [clienteExistente] = await tx
+              .select()
+              .from(schema.clientes)
+              .where(eq(schema.clientes.telefonoWhatsapp, dto.telefonoWhatsapp));
+
+            if (!clienteExistente) {
+              erroresCount++;
+              detalleErrores.push({ fila: rowNumber, motivo: `No existe un cliente con el teléfono ${dto.telefonoWhatsapp}. Impórtalo primero.` });
+              continue;
+            }
+
+            const [servicioExistente] = await tx
+              .select()
+              .from(schema.servicios)
+              .where(eq(schema.servicios.nombre, dto.servicioNombre));
+
+            if (!servicioExistente) {
+              erroresCount++;
+              detalleErrores.push({ fila: rowNumber, motivo: `No existe un servicio llamado "${dto.servicioNombre}".` });
+              continue;
+            }
+
+            let empleadoId: string | undefined;
+            if (dto.empleadoNombre) {
+              const [empleadoExistente] = await tx
+                .select({ id: schema.usuarios.id })
+                .from(schema.usuarios)
+                .where(eq(schema.usuarios.nombreCompleto, dto.empleadoNombre));
+              if (!empleadoExistente) {
+                erroresCount++;
+                detalleErrores.push({ fila: rowNumber, motivo: `No existe un empleado llamado "${dto.empleadoNombre}".` });
+                continue;
+              }
+              empleadoId = empleadoExistente.id;
+            } else {
+              const staffActivo = await tx
+                .select({ id: schema.usuarios.id })
+                .from(schema.usuarios)
+                .where(eq(schema.usuarios.activo, true))
+                .limit(2);
+              if (staffActivo.length !== 1) {
+                erroresCount++;
+                detalleErrores.push({ fila: rowNumber, motivo: 'Debes especificar empleadoNombre (hay más de un empleado activo, o ninguno).' });
+                continue;
+              }
+              empleadoId = staffActivo[0].id;
+            }
+
+            const inicioEstimado = new Date(dto.fecha);
+            const finEstimado = new Date(inicioEstimado.getTime() + servicioExistente.duracionMinutos * 60000);
+            const estadoFila = dto.estado || 'completada';
+
+            await tx.insert(schema.citas).values({
+              tenantId,
+              clienteId: clienteExistente.id,
+              empleadoId,
+              servicioId: servicioExistente.id,
+              notas: dto.notas || null,
+              inicioEstimado,
+              finEstimado,
+              origen: 'importacion_historica',
+              estado: estadoFila,
+              confirmada: true, // histórica — no aplica el flujo de confirmación
+              idempotencyKey: `hist_${trabajoId}_${rowNumber}`,
+            });
+
+            if (estadoFila === 'completada') {
+              await tx.update(schema.clientes)
+                .set({
+                  totalAsistencias: clienteExistente.totalAsistencias + 1,
+                  ...(dto.monto !== undefined && { totalGastado: (Number(clienteExistente.totalGastado) + dto.monto).toString() }),
+                })
+                .where(eq(schema.clientes.id, clienteExistente.id));
+            } else if (estadoFila === 'ausente_strike') {
+              const [citaInsertada] = await tx
+                .select({ id: schema.citas.id })
+                .from(schema.citas)
+                .where(eq(schema.citas.idempotencyKey, `hist_${trabajoId}_${rowNumber}`));
+
+              await tx.update(schema.clientes)
+                .set({ ausenciasStrikes: clienteExistente.ausenciasStrikes + 1 })
+                .where(eq(schema.clientes.id, clienteExistente.id));
+
+              if (citaInsertada) {
+                await tx.insert(schema.inasistencias).values({
+                  tenantId,
+                  clienteId: clienteExistente.id,
+                  citaId: citaInsertada.id,
+                  fecha: inicioEstimado,
+                });
+              }
+            }
+
+            creados++;
           }
+
+          await tx.execute(sql`RELEASE SAVEPOINT fila_import`);
         } catch (err: any) {
+          await tx.execute(sql`ROLLBACK TO SAVEPOINT fila_import`);
           erroresCount++;
           detalleErrores.push({ fila: rowNumber, motivo: err.message || 'Error desconocido al procesar fila' });
         }
