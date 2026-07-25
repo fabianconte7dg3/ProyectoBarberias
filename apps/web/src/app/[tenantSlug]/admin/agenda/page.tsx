@@ -358,6 +358,11 @@ export default function AdminAgendaPage() {
       {/* Modal de Cobro de Citas */}
       <CobrarCitaModal
         cita={citaParaCobrar}
+        citasDelGrupo={
+          citaParaCobrar?.grupoReservaId
+            ? citas.filter((c) => c.grupoReservaId === citaParaCobrar.grupoReservaId)
+            : undefined
+        }
         isOpen={!!citaParaCobrar}
         onClose={() => setCitaParaCobrar(null)}
         onSuccess={loadCitas}

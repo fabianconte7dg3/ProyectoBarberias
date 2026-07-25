@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { format } from 'date-fns';
-import { CheckCircle2, Clock, MoreVertical, Phone, Scissors, User, AlertTriangle, XCircle, Play, DollarSign } from 'lucide-react';
+import { CheckCircle2, Clock, MoreVertical, Phone, Scissors, User, AlertTriangle, XCircle, Play, DollarSign, Users } from 'lucide-react';
 
 export interface CitaAgenda {
   id: string;
@@ -13,12 +13,16 @@ export interface CitaAgenda {
   clienteId: string;
   clienteNombre: string;
   clienteTelefono: string;
-  servicioId: string;
-  servicioNombre: string;
-  servicioPrecio: number;
+  servicioId: string | null;
+  servicioNombre: string | null;
+  servicioPrecio: number | null;
   servicioDuracion: number;
+  comboId?: string | null;
+  comboNombre?: string | null;
+  comboPrecio?: number | null;
   pacienteId?: string | null;
   pacienteNombre?: string | null;
+  grupoReservaId?: string | null;
 }
 
 interface CitaCardProps {
@@ -81,6 +85,14 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
           <span>
             {format(inicio, 'HH:mm')} - {format(fin, 'HH:mm')}
           </span>
+          {cita.grupoReservaId && (
+            <span
+              title="Parte de una visita grupal (cliente + acompañante)"
+              className="flex items-center gap-0.5 px-1 py-0.5 rounded-md bg-violet-500/15 text-violet-600 dark:text-violet-400"
+            >
+              <Users size={10} />
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
@@ -124,9 +136,9 @@ export function CitaCard({ cita, onStatusChange, onCobrarClick, canEdit }: CitaC
         <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
           <div className="flex items-center gap-1 truncate">
             <Scissors size={11} className="opacity-70 shrink-0" />
-            <span className="truncate">{cita.servicioNombre}</span>
+            <span className="truncate">{cita.comboNombre || cita.servicioNombre}</span>
           </div>
-          <span className="font-extrabold text-foreground shrink-0 ml-1">${cita.servicioPrecio}</span>
+          <span className="font-extrabold text-foreground shrink-0 ml-1">${cita.comboPrecio ?? cita.servicioPrecio}</span>
         </div>
       </div>
 

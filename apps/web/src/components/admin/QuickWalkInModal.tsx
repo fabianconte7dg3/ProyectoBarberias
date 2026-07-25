@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, UserPlus, Phone, Calendar, Clock, PawPrint } from 'lucide-react';
+import { X, UserPlus, Phone, Calendar, Clock, PawPrint, Users, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchApi } from '@/lib/api';
 import { useTenant } from '@/lib/tenant-context';
@@ -20,6 +20,16 @@ interface Servicio {
 interface Paciente {
   id: string;
   nombre: string;
+}
+
+// Citas grupales (cliente + acompañante) — ver
+// docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §3.
+// Todos los acompañantes comparten fecha/hora con la persona principal (walk-in
+// "ahora mismo", no una secuencia con horarios distintos — decisión de alcance).
+interface Acompanante {
+  pacienteId: string;
+  servicioId: string;
+  empleadoId: string;
 }
 
 interface QuickWalkInModalProps {
@@ -54,6 +64,7 @@ export function QuickWalkInModal({
   const [pacientesDelCliente, setPacientesDelCliente] = useState<Paciente[]>([]);
   const [pacienteId, setPacienteId] = useState('');
   const [clienteExistenteId, setClienteExistenteId] = useState('');
+  const [acompanantes, setAcompanantes] = useState<Acompanante[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -79,6 +90,7 @@ export function QuickWalkInModal({
       setPacientesDelCliente([]);
       setPacienteId('');
       setClienteExistenteId('');
+      setAcompanantes([]);
     }
   }, [isOpen, initialDate]);
 
@@ -101,10 +113,29 @@ export function QuickWalkInModal({
     }
   };
 
+  const handleAddAcompanante = () => {
+    setAcompanantes((prev) => [
+      ...prev,
+      { pacienteId: '', servicioId: servicios[0]?.id || '', empleadoId },
+    ]);
+  };
+
+  const handleRemoveAcompanante = (idx: number) => {
+    setAcompanantes((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const handleAcompananteChange = (idx: number, campo: keyof Acompanante, valor: string) => {
+    setAcompanantes((prev) => prev.map((a, i) => (i === idx ? { ...a, [campo]: valor } : a)));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombreCompleto || !telefonoWhatsapp || !servicioId || !empleadoId || !fecha || !inicioHora) {
       setError('Por favor completa todos los campos requeridos');
+      return;
+    }
+    if (acompanantes.some((a) => !a.servicioId || !a.empleadoId)) {
+      setError('Completa el servicio y empleado de cada acompañante, o quítalo de la lista.');
       return;
     }
 
@@ -130,23 +161,47 @@ export function QuickWalkInModal({
         }
       }
 
-      // 2. Armar fecha y hora exactas
+      // 2. Armar fecha y hora exactas (compartida por la persona principal y sus
+      // acompañantes — walk-in "ahora mismo", no una secuencia con horarios distintos)
       const [yyyy, monthIndex, dd] = fecha.split('-').map(Number);
       const [hh, mm] = inicioHora.split(':').map(Number);
-      const inicioEstimado = new Date(yyyy, monthIndex - 1, dd, hh, mm);
+      const inicioEstimado = new Date(yyyy, monthIndex - 1, dd, hh, mm).toISOString();
 
-      // 3. Crear cita (Walk-in / Manual)
-      await fetchApi('/citas', {
-        method: 'POST',
-        body: JSON.stringify({
-          clienteId,
-          empleadoId,
-          servicioId,
-          ...(mostrarPaciente && pacienteId && { pacienteId }),
-          inicioEstimado: inicioEstimado.toISOString(),
-          origen: 'walk_in',
-        }),
-      });
+      const citaPrincipal = {
+        clienteId,
+        empleadoId,
+        servicioId,
+        ...(mostrarPaciente && pacienteId && { pacienteId }),
+        inicioEstimado,
+        origen: 'walk_in' as const,
+      };
+
+      if (acompanantes.length === 0) {
+        // 3a. Cita individual (comportamiento sin cambios)
+        await fetchApi('/citas', {
+          method: 'POST',
+          body: JSON.stringify(citaPrincipal),
+        });
+      } else {
+        // 3b. Cita grupal: la persona principal + cada acompañante, mismo cliente,
+        // agrupadas por grupoReservaId generado en el servidor (transaccional — si
+        // un horario choca, ningún acompañante queda a medio agendar).
+        const citasGrupo = [
+          citaPrincipal,
+          ...acompanantes.map((a) => ({
+            clienteId,
+            empleadoId: a.empleadoId,
+            servicioId: a.servicioId,
+            ...(mostrarPaciente && a.pacienteId && { pacienteId: a.pacienteId }),
+            inicioEstimado,
+            origen: 'walk_in' as const,
+          })),
+        ];
+        await fetchApi('/citas/grupo', {
+          method: 'POST',
+          body: JSON.stringify({ citas: citasGrupo }),
+        });
+      }
 
       onSuccess();
       onClose();
@@ -281,6 +336,86 @@ export function QuickWalkInModal({
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Acompañantes (citas grupales) */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <Users size={13} />
+                <span>Acompañantes</span>
+              </label>
+              <button
+                type="button"
+                onClick={handleAddAcompanante}
+                className="text-[11px] font-semibold text-primary hover:underline"
+              >
+                + Agregar acompañante
+              </button>
+            </div>
+
+            {acompanantes.length === 0 ? (
+              <p className="text-[11px] text-muted-foreground italic">
+                ¿Vino acompañado? Agrega otra persona para atenderla en la misma visita.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {acompanantes.map((a, idx) => (
+                  <div key={idx} className="p-2.5 bg-secondary/30 border border-border rounded-xl space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-muted-foreground">Acompañante {idx + 1}</span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveAcompanante(idx)}
+                        className="p-1 text-muted-foreground hover:text-destructive rounded-md"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+
+                    {mostrarPaciente && (
+                      pacientesDelCliente.length > 0 ? (
+                        <select
+                          value={a.pacienteId}
+                          onChange={(e) => handleAcompananteChange(idx, 'pacienteId', e.target.value)}
+                          className="w-full px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                        >
+                          <option value="">Sin especificar paciente</option>
+                          {pacientesDelCliente.map((p) => (
+                            <option key={p.id} value={p.id}>{p.nombre}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <p className="text-[11px] text-muted-foreground italic">
+                          Escribe el teléfono arriba para elegir el paciente del acompañante.
+                        </p>
+                      )
+                    )}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <select
+                        value={a.servicioId}
+                        onChange={(e) => handleAcompananteChange(idx, 'servicioId', e.target.value)}
+                        className="px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                      >
+                        {servicios.map((s) => (
+                          <option key={s.id} value={s.id}>{s.nombre}</option>
+                        ))}
+                      </select>
+                      <select
+                        value={a.empleadoId}
+                        onChange={(e) => handleAcompananteChange(idx, 'empleadoId', e.target.value)}
+                        className="px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                      >
+                        {empleados.map((b) => (
+                          <option key={b.id} value={b.id}>{b.nombreCompleto}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Fecha y Hora de Inicio */}

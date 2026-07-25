@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, DollarSign, CreditCard, QrCode, HeartHandshake, Package, Plus, Minus, ShoppingBag, Stethoscope } from 'lucide-react';
+import { X, DollarSign, CreditCard, QrCode, HeartHandshake, Package, Plus, Minus, ShoppingBag, Stethoscope, Users } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { CitaAgenda } from './CitaCard';
 import { useTenant } from '@/lib/tenant-context';
@@ -8,6 +8,11 @@ import { requierePaciente } from '@/lib/industrias';
 
 interface CobrarCitaModalProps {
   cita: CitaAgenda | null;
+  // Citas grupales: el resto de citas con el mismo grupoReservaId que `cita` (incluida
+  // ella misma), si las hay. Cuando tiene 2+ elementos se muestra el resumen combinado y
+  // se cobra todo el grupo en una sola transacción (ver
+  // docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §3).
+  citasDelGrupo?: CitaAgenda[];
   isOpen: boolean;
   onClose: () => void;
   onSuccess: () => void;
@@ -31,7 +36,7 @@ interface ItemProductoSeleccionado {
 
 type MetodoPago = 'efectivo' | 'yappy' | 'mixto';
 
-export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCitaModalProps) {
+export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSuccess }: CobrarCitaModalProps) {
   const { terminologiaEmpleado, terminologiaServicio, industria } = useTenant();
   const currentUser = useAdminStore((state) => state.user);
   const [metodoPago, setMetodoPago] = useState<MetodoPago>('efectivo');
@@ -72,9 +77,16 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
 
   const mostrarNotaClinica = requierePaciente(industria) && !!cita.pacienteId && currentUser?.id === cita.empleadoId;
 
-  const totalServicio = Number(cita.servicioPrecio || 0);
-  const totalProductos = productosSeleccionados.reduce((acc, p) => acc + (p.precioVenta * p.cantidad), 0);
-  const totalCobro = totalServicio + totalProductos;
+  // Cobro grupal: 2+ citas del mismo grupoReservaId cobradas en una sola transacción.
+  // No admite productos adicionales (ver TransaccionesService.cobrarGrupo) ni captura de
+  // nota clínica por ahora (solo la de `cita`, la principal) — alcance de esta primera versión.
+  const esGrupal = Boolean(citasDelGrupo && citasDelGrupo.length > 1);
+  const citasParaCobrar = esGrupal ? citasDelGrupo! : [cita];
+
+  const totalServicio = Number(cita.comboPrecio ?? cita.servicioPrecio ?? 0);
+  const totalServicios = citasParaCobrar.reduce((acc, c) => acc + Number(c.comboPrecio ?? c.servicioPrecio ?? 0), 0);
+  const totalProductos = esGrupal ? 0 : productosSeleccionados.reduce((acc, p) => acc + (p.precioVenta * p.cantidad), 0);
+  const totalCobro = totalServicios + totalProductos;
 
   // Cálculo exacto de vuelto en centavos enteros para evitar imprecisiones de coma flotante
   const efectivoCentavos = Math.round((parseFloat(montoEfectivo) || 0) * 100);
@@ -122,7 +134,11 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
       // IdempotencyKey generado en el cliente
       const idempotencyKey = `tx_cita_${cita.id}_${crypto.randomUUID()}`;
 
-      await fetchApi(`/citas/${cita.id}/cobrar`, {
+      const endpoint = esGrupal
+        ? `/citas/grupo/${cita.grupoReservaId}/cobrar`
+        : `/citas/${cita.id}/cobrar`;
+
+      await fetchApi(endpoint, {
         method: 'POST',
         body: JSON.stringify({
           idempotencyKey,
@@ -131,10 +147,12 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
           propinaBarbero: parseFloat(propinaBarbero) || 0,
           rucCliente: rucCliente.trim() || undefined,
           nombreFiscalCliente: nombreFiscalCliente.trim() || undefined,
-          productosAdicionales: productosSeleccionados.map(p => ({
-            productoId: p.productoId,
-            cantidad: p.cantidad,
-          })),
+          ...(!esGrupal && {
+            productosAdicionales: productosSeleccionados.map(p => ({
+              productoId: p.productoId,
+              cantidad: p.cantidad,
+            })),
+          }),
         }),
       });
 
@@ -188,23 +206,42 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
             </div>
           )}
 
-          {/* Resumen del Servicio & Empleado */}
-          <div className="bg-secondary/40 p-4 rounded-xl border border-border space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">Cliente:</span>
-              <span className="font-semibold text-foreground">{cita.clienteNombre}</span>
+          {/* Resumen del Servicio & Empleado (o de todas las citas del grupo) */}
+          {esGrupal ? (
+            <div className="bg-secondary/40 p-4 rounded-xl border border-border space-y-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-violet-600 dark:text-violet-400">
+                <Users size={13} />
+                <span>Cobro Grupal — {citasParaCobrar.length} citas</span>
+              </div>
+              {citasParaCobrar.map((c) => (
+                <div key={c.id} className="flex justify-between items-center text-sm border-t border-border/60 pt-2 first:border-t-0 first:pt-0">
+                  <div>
+                    <div className="font-semibold text-foreground">{c.pacienteNombre || c.clienteNombre}</div>
+                    <div className="text-xs text-muted-foreground">{c.comboNombre || c.servicioNombre} · {c.empleadoNombre}</div>
+                  </div>
+                  <span className="font-mono font-semibold text-foreground shrink-0">${Number(c.comboPrecio ?? c.servicioPrecio ?? 0).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">{terminologiaEmpleado}:</span>
-              <span className="font-semibold text-foreground">{cita.empleadoNombre}</span>
+          ) : (
+            <div className="bg-secondary/40 p-4 rounded-xl border border-border space-y-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">Cliente:</span>
+                <span className="font-semibold text-foreground">{cita.clienteNombre}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">{terminologiaEmpleado}:</span>
+                <span className="font-semibold text-foreground">{cita.empleadoNombre}</span>
+              </div>
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground font-medium">{terminologiaServicio}:</span>
+                <span className="font-semibold text-foreground">{cita.comboNombre || cita.servicioNombre} (${totalServicio.toFixed(2)})</span>
+              </div>
             </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-muted-foreground font-medium">{terminologiaServicio}:</span>
-              <span className="font-semibold text-foreground">{cita.servicioNombre} (${totalServicio.toFixed(2)})</span>
-            </div>
-          </div>
+          )}
 
-          {/* Productos Adicionales (Ceras, Aceites, Pomadas) */}
+          {/* Productos Adicionales (Ceras, Aceites, Pomadas) — no disponible en cobro grupal */}
+          {!esGrupal && (
           <div className="space-y-2 border-t border-border pt-3">
             <div className="flex items-center justify-between">
               <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -265,6 +302,7 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
               <p className="text-[11px] text-muted-foreground italic">No se han añadido productos adicionales al cobro.</p>
             )}
           </div>
+          )}
 
           {/* Gran Total */}
           <div className="bg-primary/5 p-4 rounded-xl border border-primary/20 flex justify-between items-center font-extrabold text-base">
@@ -352,7 +390,7 @@ export function CobrarCitaModal({ cita, isOpen, onClose, onSuccess }: CobrarCita
           <div>
             <label className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5 mb-1">
               <HeartHandshake size={14} className="text-rose-500" />
-              <span>Propina para {cita.empleadoNombre} ($)</span>
+              <span>{esGrupal ? 'Propina para el grupo, repartida en partes iguales ($)' : `Propina para ${cita.empleadoNombre} ($)`}</span>
             </label>
             <input
               type="number"
