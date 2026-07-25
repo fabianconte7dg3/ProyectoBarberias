@@ -1,4 +1,5 @@
-import { Controller, Post, Get, Body, Param, Query } from '@nestjs/common';
+import { Controller, Post, Get, Sse, Body, Param, Query, MessageEvent } from '@nestjs/common';
+import { Observable } from 'rxjs';
 import { Public } from '../common/decorators/public.decorator';
 import { HorariosService } from './horarios.service';
 import { UpsertHorarioSemanalDto } from './dto/upsert-horario-semanal.dto';
@@ -53,5 +54,16 @@ export class HorariosController {
     @Query('fecha') fecha: string,
   ) {
     return this.horariosService.getDisponibilidad(empleadoId, fecha);
+  }
+
+  // Calendario en tiempo real (ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §1) —
+  // el cliente conecta esto ADEMÁS del fetch de /disponibilidad de arriba, no en su lugar.
+  @Public()
+  @Sse('disponibilidad/stream')
+  disponibilidadStream(
+    @Query('empleadoId') empleadoId: string,
+    @Query('fecha') fecha: string,
+  ): Observable<MessageEvent> {
+    return this.horariosService.getDisponibilidadStream(empleadoId, fecha);
   }
 }

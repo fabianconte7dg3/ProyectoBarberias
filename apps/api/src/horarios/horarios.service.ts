@@ -1,4 +1,4 @@
-import { Injectable, BadRequestException, NotFoundException, Inject } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException, Inject, MessageEvent } from '@nestjs/common';
 import { TenantContext } from '../database/tenant/tenant-context';
 import * as schema from '../database/schema';
 import { eq, and, gt, or, isNull, asc, lte, sql, desc } from 'drizzle-orm';
@@ -7,10 +7,18 @@ import { CreateBloqueoDto } from './dto/create-bloqueo.dto';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AGENDA_ACTUALIZADA, AgendaActualizadaPayload } from '../common/events/agenda-actualizada.event';
+import { format } from 'date-fns';
+import { Observable, fromEvent, interval, merge } from 'rxjs';
+import { filter, map } from 'rxjs/operators';
 
 @Injectable()
 export class HorariosService {
-  constructor(@Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>) {}
+  constructor(
+    @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
+    private readonly eventEmitter: EventEmitter2,
+  ) {}
   
   // Helpers para validación de tiempo "HH:mm"
   private parseTime(timeStr: string): number {
@@ -109,6 +117,8 @@ export class HorariosService {
       notas: dto.motivo,
       expiraEn: fin, // El bloqueo expira automáticamente cuando llega su fin
     }).returning();
+
+    this.eventEmitter.emit(AGENDA_ACTUALIZADA, { tenantId, empleadoId: dto.empleadoId, fecha: format(inicio, 'yyyy-MM-dd') } satisfies AgendaActualizadaPayload);
 
     return bloqueo;
   }
@@ -260,5 +270,26 @@ export class HorariosService {
         ocupados,
       };
     });
+  }
+
+  /**
+   * Calendario en tiempo real (SSE, ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §1).
+   * No manda el payload de disponibilidad en el propio evento — solo avisa que algo
+   * cambió para ese empleado+fecha; el frontend vuelve a pedir /disponibilidad al
+   * recibirlo. Limitación conocida y documentada: EventEmitter2 vive en memoria del
+   * proceso, no escala a 2+ instancias de apps/api sin enrutar por Redis pub/sub.
+   */
+  getDisponibilidadStream(empleadoId: string, fecha: string): Observable<MessageEvent> {
+    const eventos$ = fromEvent<AgendaActualizadaPayload>(this.eventEmitter as any, AGENDA_ACTUALIZADA).pipe(
+      filter((payload) => payload.empleadoId === empleadoId && payload.fecha === fecha),
+      map((): MessageEvent => ({ data: { tipo: 'actualizacion' } })),
+    );
+
+    // Heartbeat cada 20s para mantener viva la conexión SSE a través de proxies.
+    const heartbeat$ = interval(20000).pipe(
+      map((): MessageEvent => ({ data: { tipo: 'heartbeat' } })),
+    );
+
+    return merge(eventos$, heartbeat$);
   }
 }
