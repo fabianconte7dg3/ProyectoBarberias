@@ -42,7 +42,7 @@ excluyó a propósito, verificación) en
 - [x] Verificado en navegador real: login admin QA → `/admin/empleados` carga con datos reales, login
       SuperAdmin muestra "Volumetrix SaaS Platform", redirect 308 confirmado por `curl -I`
 
-## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1 completo, 2.2-2.4 pendientes)
+## Fase 2 — Multi-Industria Funcional 🔶 En progreso (2.1-2.2 completos, 2.3-2.4 pendientes)
 
 > **Diseño acordado con el usuario (2026-07-24, vía entrevista) — ver
 > [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md)
@@ -86,40 +86,56 @@ end-to-end en navegador real: cliente → paciente "Firulais" con campos dinámi
       lado del servidor, así que la búsqueda de cliente existente fallaba en silencio. Corregido en los 2
       sitios de `QuickWalkInModal.tsx` que tenían el mismo patrón
 
-### 2.2 Combos, citas grupales y templates por vertical
+### 2.2 Combos, citas grupales y templates por vertical ✅ Completo
 
-> Diseño acordado con el usuario (2026-07-24, vía entrevista) — ver
-> [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md)
-> para el detalle y el porqué de cada decisión.
+Ejecutado y verificado el 2026-07-25 (tenant `qa-test` conmutado a veterinaria, smoke test end-to-end en
+navegador real: combo de 2 servicios → cita grupal con 2 empleados distintos → cobro conjunto → comisión
+verificada línea por línea en DB y en los reportes de "Mi Desempeño"/dashboard). Detalle completo,
+decisiones tomadas y desviaciones en
+[`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md)
+(estado actualizado a implementado, con la sección de implementación al final).
 
 **Combos de servicios:**
-- [ ] `schema.ts`: nuevas tablas `combos` (`nombre`, `precioTotal`, `duracionAjustadaMinutos`, `activo`)
-      y `combo_servicios` (`comboId`, `servicioId`, `orden`, `precioAsignado`)
-- [ ] `schema.ts`: `citas.servicioId` pasa a nullable; nueva `citas.comboId` (nullable, FK a `combos`)
-- [ ] Migración SQL idempotente `0013_combos.sql`
-- [ ] Backend: cálculo de duración de cita cuando es un combo (`combos.duracionAjustadaMinutos` o suma de
+- [x] `schema.ts`: nuevas tablas `combos` (`nombre`, `precioTotal`, `duracionAjustadaMinutos`, `activo`)
+      y `combo_servicios` (`comboId`, `servicioId`, `orden`, `precioAsignado` — con `id` surrogate +
+      `unique(comboId, servicioId)` en vez de la PK compuesta propuesta, para seguir la convención del
+      resto del esquema)
+- [x] `schema.ts`: `citas.servicioId` pasa a nullable; nueva `citas.comboId` (nullable, FK a `combos`)
+- [x] Migración SQL idempotente `0013_combos.sql`
+- [x] Backend: cálculo de duración de cita cuando es un combo (`combos.duracionAjustadaMinutos` o suma de
       `duracionMinutos` de sus servicios) en `citas.service.ts`
-- [ ] Backend: al cobrar una cita con `comboId`, generar una fila de `detallesTransaccion` por cada
+- [x] Backend: al cobrar una cita con `comboId`, generar una fila de `detallesTransaccion` por cada
       servicio del combo (reusa la tabla existente, sin schema nuevo para esto)
-- [ ] Frontend: gestión de combos en `admin/configuracion`, selector de combo en el flujo de reserva
+- [x] Frontend: gestión de combos en `admin/configuracion`, selector de combo en el flujo de reserva
       pública
 
 **Citas grupales (acompañante):**
-- [ ] `schema.ts`: `citas.grupoReservaId` (nullable UUID) + índice parcial
-- [ ] Migración SQL (puede ir junto con `0013_combos.sql` o aparte)
-- [ ] Backend: crear N citas con el mismo `grupoReservaId` en una sola operación transaccional (extender
-      `crearCita` o un nuevo `crearCitasGrupales`)
-- [ ] **Decisión pendiente, no resuelta en el diseño:** cómo se cobra un grupo en una sola transacción,
-      dado que `transacciones.citaId` referencia una sola cita hoy — requiere revisión dedicada antes de
-      tocar `transacciones` (tabla fiscal, ver `CLAUDE.md`)
-- [ ] Frontend: flujo de reserva pública con "agregar acompañante"; agenda de staff muestra citas del
-      mismo grupo agrupadas visualmente
+- [x] `schema.ts`: `citas.grupoReservaId` (nullable UUID) + índice parcial
+- [x] Migración SQL (`0013_combos.sql` para `citas.grupoReservaId`, `0014_citas_grupales_y_cobro_conjunto.sql`
+      para `transacciones.grupoReservaId` + `detallesTransaccion.citaId`/`empleadoId`)
+- [x] Backend: `crearCitasGrupales()` crea N citas con el mismo `grupoReservaId` (generado en el
+      servidor) en una sola transacción SQL — si cualquiera choca con el `EXCLUDE` constraint, toda la
+      operación revierte. Nuevos endpoints `POST /citas/grupo` y `POST /citas/grupo/publica`.
+- [x] **Decisión resuelta con el usuario:** cobro conjunto multi-empleado (versión completa, no la
+      simplificada de "solo mismo empleado"). Una transacción cubre todo el grupo
+      (`transacciones.citaId` NULL, `grupoReservaId` set); cada línea de `detallesTransaccion` lleva su
+      propia `citaId`/`empleadoId` para atribuir comisión al empleado real. Esto rompió el supuesto "una
+      transacción = un empleado" que asumían 4 puntos de reportes/exportación (dashboard, Mi Desempeño,
+      CSV de transacciones/nómina, xlsx financiero/nómina) — reescritos para leer la atribución por línea
+      con fallback a `cita.empleadoId` en transacciones anteriores a esta migración. Propina se reparte
+      en partes iguales entre los empleados del grupo (sin forma automática de saber a cuál iba dirigida).
+- [x] Frontend: agenda de staff muestra citas del mismo grupo agrupadas visualmente (badge). **Desviación
+      de alcance:** "agregar acompañante" se construyó en `QuickWalkInModal` (flujo de recepción/admin),
+      no en el wizard de reserva pública — es donde recepción realmente agenda walk-ins con acompañante;
+      el self-service público con acompañante queda como trabajo futuro explícito, no a medio construir.
 
 **Templates por vertical (widgets configurables):**
-- [ ] `schema.ts`: `barberias.configWidgetsDestacados` (jsonb, default `[]`)
-- [ ] Frontend: `WIDGET_REGISTRY` + zona de widgets destacados en `admin/dashboard` (primero; home/citas
+- [x] `schema.ts`: `barberias.configWidgetsDestacados` (jsonb, default `[]`)
+- [x] Frontend: `WIDGET_REGISTRY` (6 widgets: producción por empleado, top servicios, pacientes activos,
+      próximas revisiones, clientes en riesgo, stock bajo) + zona de widgets destacados en
+      `admin/dashboard` (solo dashboard por ahora, como marcaba el alcance — home/citas quedan para
       después)
-- [ ] Backend: plantilla de widgets por defecto según `industria`, aplicada al crear un tenant
+- [x] Backend: plantilla de widgets por defecto según `industria`, aplicada al crear un tenant
 
 ### 2.3 Agenda: anti-abuso, confirmación y migración de historial
 

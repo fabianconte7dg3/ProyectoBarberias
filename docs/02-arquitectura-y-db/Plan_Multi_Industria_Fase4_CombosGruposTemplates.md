@@ -1,7 +1,8 @@
-# Multi-Industria — Fase 4: Combos, Citas Grupales y Templates por Vertical (Diseño, aprobado — no implementado)
+# Multi-Industria — Fase 4: Combos, Citas Grupales y Templates por Vertical
 
-> **Fecha:** 2026-07-24
-> **Estado:** ✅ Diseño acordado con el usuario vía entrevista (ver sección 5) · 🔲 Sin implementar
+> **Fecha diseño:** 2026-07-24 · **Fecha implementación:** 2026-07-25
+> **Estado:** ✅ Implementado y verificado (ver sección 7) — diseño acordado con el usuario vía entrevista
+> (sección 5), ejecutado como Fase 2.2 de [`plan.md`](../plan.md)
 > **Alcance:** tres necesidades de negocio reales identificadas por el usuario, que aplican a los 4
 > verticales activos (barbería, salón, veterinaria, clínica): (1) que cada vertical tenga una experiencia
 > de producto propia, no solo terminología; (2) combos de servicios (ej. corte + barba + tinte); (3)
@@ -142,7 +143,64 @@ ALTER TABLE citas ADD COLUMN combo_id UUID REFERENCES combos(id);
 
 ## 6. Siguiente paso
 
-Diseño aprobado, **no implementado**. Ver [`plan.md`](../plan.md), Fase 2 §2.2, para las tareas chicas
-ejecutables. La decisión de `transacciones`/cobro grupal (sección 3, nota de implementación) debe
-resolverse explícitamente con el usuario antes de tocar esa tabla, dado que es una tabla fiscal con
-política de no-tocar-sin-revisión ya establecida.
+Ver [`plan.md`](../plan.md), Fase 2 §2.2, para el desglose ejecutado en tareas chicas — todas completas,
+ver sección 7.
+
+## 7. Implementación (2026-07-25) — decisiones tomadas y desviaciones del diseño
+
+### 7.1 Cobro conjunto de citas grupales (la decisión pendiente de la sección 3)
+
+Se presentó al usuario el alcance real antes de tocar `transacciones` (tabla fiscal, política de
+no-tocar-sin-revisión de `CLAUDE.md`): la versión correcta requiere que cada línea de servicio sepa qué
+empleado la realizó, porque los 4 puntos que calculan comisión (dashboard, "Mi Desempeño", export CSV de
+transacciones/nómina, export xlsx financiero/nómina) asumían "una transacción = un empleado" derivándolo
+de `cita.empleadoId`. El usuario eligió la **versión completa multi-empleado** (no la simplificada de
+"solo mismo empleado").
+
+Diseño final:
+- Una sola transacción cubre el grupo completo: `transacciones.citaId` queda `NULL` (igual que hoy para
+  ventas de mostrador), nueva columna `transacciones.grupoReservaId` la etiqueta.
+- `detalles_transaccion.citaId` y `detalles_transaccion.empleadoId` (ambas nuevas, nullable) — cada línea
+  de servicio queda enlazada a su cita y su empleado real. Se pueblan siempre que se conoce la cita/
+  empleado, no solo en cobro grupal: un combo genera varias líneas para la misma cita, y esto permite
+  deduplicarlas al contar citas en reportes.
+- Los 4 puntos de comisión se reescribieron para sumar por `detallesTransaccion.empleadoId` con fallback
+  a `cita.empleadoId` (transacciones anteriores a esta migración, donde el campo nuevo es `NULL`) — cero
+  cambio de comportamiento para el caso de siempre (una cita, un empleado).
+- Propina (`transacciones.propinaBarbero`) sigue siendo un solo valor por transacción — no hay forma de
+  saber a cuál empleado iba dirigida en un cobro grupal, así que se reparte en partes iguales entre los
+  empleados involucrados en esa transacción.
+- Verificado end-to-end: cita 1 (Servicio de Prueba, $10, QA Admin sin % comisión) + cita 2 (Vacuna, $20,
+  QA Empleado 50%) cobradas juntas → transacción con `totalFacturado=$30`, `comisionBarbero=$10`
+  (0 + 10); cada línea con su propio `empleadoId`; dashboard y "Mi Desempeño" atribuyeron $20
+  facturado/$0 comisión a QA Admin y $20 facturado/$10 comisión a QA Empleado — sin duplicar ni perder
+  dinero entre los dos.
+
+### 7.2 Combos: PK compuesta → id surrogate
+
+El diseño (sección 2) proponía `combo_servicios` con PK compuesta `(combo_id, servicio_id)`. Se
+implementó con `id` surrogate + `UNIQUE(combo_id, servicio_id)` en su lugar — ninguna otra tabla del
+esquema usa PK compuesta, y mantener la convención (más `tenant_id` propio, igual que
+`detalles_transaccion`) simplifica la policy RLS y el resto del código que asume `id` en todas las tablas.
+
+### 7.3 "Agregar acompañante": admin (`QuickWalkInModal`), no el wizard público
+
+El diseño no distinguía dónde vive el flujo de "agregar acompañante". Se construyó en
+`QuickWalkInModal.tsx` (el flujo de recepción/admin para walk-ins) en vez del wizard de reserva pública
+(`reservar/**`), porque: (a) es el camino real por el que un dueño de mascota con 2 pacientes o un padre
+con un hijo se agenda hoy — casi siempre asistido por recepción, no self-service; (b) agregar un segundo
+paso completo (servicio + empleado + horario del acompañante) al wizard público es una feature de tamaño
+comparable a esta misma fase, con su propio store/schema/UX: mejor una iteración dedicada aparte que un
+self-service a medio construir. El selector de combo sí se agregó al wizard público (sección 7.4), que es
+un cambio más contenido (una opción más en la misma pantalla, no un paso nuevo).
+
+### 7.4 Verificación end-to-end (navegador real)
+
+Tenant `qa-test` conmutado a `industria='veterinaria'`: combo "Consulta + Vacuna" ($25, 2 servicios)
+creado en `admin/configuracion` → cita grupal creada desde `QuickWalkInModal` (Servicio de Prueba con QA
+Admin + Vacuna con QA Empleado, mismo `grupoReservaId` generado en el servidor) → agenda muestra el badge
+de "visita grupal" en ambas tarjetas → cobro conjunto desde `CobrarCitaModal` (resumen de las 2 citas,
+`productosAdicionales` correctamente ocultos, propina de $10 repartida) → `POST /citas/grupo/:id/cobrar
+→ 201` → comisión verificada exacta en DB y en los reportes de ambos empleados. Widgets del dashboard
+(`pacientes_activos`, `revisiones_proximas`, `produccion_empleado`) verificados con datos reales
+(1 paciente activo, 0 próximas revisiones, $20/$20 de producción por veterinario).

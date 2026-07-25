@@ -95,15 +95,22 @@ base de datos, no solo de aplicación.
   profesional autor ve el contenido; el admin ve metadata, nunca diagnóstico/tratamiento), motor de
   campos personalizados por tenant para que agregar un vertical nuevo no requiera tocar código — ver
   [`Plan_Multi_Industria_Fase3_DatosPorVertical.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md).
+- Combo de servicios (corte+barba+tinte) cobrado como un solo bloque pero con comisión desglosada por
+  servicio interno → tablas `combos`/`combo_servicios` ("bundle rastreado"), una línea de
+  `detallesTransaccion` por servicio al cobrar. Cita de acompañante (cliente + 2da persona atendida en la
+  misma visita, aunque los empleen empleados distintos) → `citas.grupoReservaId` + cobro conjunto en una
+  sola transacción con atribución de comisión por línea/empleado real — ver
+  [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md).
 
 ## 7. Casos límite / gaps conocidos, aún sin resolver
 
-- **Combos de servicios, citas de acompañante y templates por vertical (diseñados, no implementados).**
-  Un cliente de barbería puede querer corte+barba+tinte como un solo bloque cobrado con comisión
-  desglosada por servicio; un cliente puede venir acompañado (padre e hijo) y ambos atenderse; cada
-  vertical debería sentir su propio dashboard/home, no una etiqueta cambiada sobre el mismo layout. Diseño
-  completo en [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md),
-  tareas en [`plan.md`](./plan.md) §2.2.
+- **Templates por vertical más allá del dashboard (parcial).** El motor de widgets destacados
+  (`WIDGET_REGISTRY` + `barberias.configWidgetsDestacados`) está implementado y funcionando en
+  `admin/dashboard`; extenderlo a home/citas queda pendiente — ver
+  [`Plan_Multi_Industria_Fase4_CombosGruposTemplates.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md)
+  §1. "Agregar acompañante" también quedó implementado solo en el flujo de recepción/admin
+  (`QuickWalkInModal`), no en el wizard de reserva pública — ver §7.3 del mismo documento para el
+  porqué de esa desviación de alcance.
 - **Anti-abuso, confirmación obligatoria y calendario en tiempo real (diseñados, no implementados).**
   Verificado contra el código real, no asumido: el recordatorio de WhatsApp ya le pide al cliente
   "responde 1 para confirmar" pero el webhook no está conectado a esa cita específica — una función que
