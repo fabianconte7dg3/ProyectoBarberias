@@ -114,17 +114,33 @@ template string de la URL porque está delimitado por `/` y una comilla — algo
 revisión de esa fase porque el smoke test de entonces no hizo click en la navegación del admin. Corregido
 para que el label sea dinámico (`{terminologiaEmpleado}s`) pero la ruta siga apuntando a `barberos`.
 
-**Verificación**: `tsc --noEmit` limpio en ambos paquetes. El click-through visual en el navegador no
-pudo completarse — el pane de este entorno no registra eventos de clic/teclado sintéticos de forma
-confiable contra esta página en particular (confirmado con múltiples estrategias: CDP click, doble
-click, teclado físico, y `.click()` vía JS con lotes síncronos que no dejan a React re-renderizar entre
-dígitos del PIN). Se optó por **no seguir forzando login de prueba** una vez que hacerlo hubiera
-requerido sobrescribir la contraseña real de un usuario admin de prueba (`josep@gmail.com` /
-Jose Perez) además del PIN — cambiar credenciales reales de un usuario, aunque sea de datos de prueba
-locales, no se justificaba solo para una verificación visual cuando ya había señal fuerte de
-correctitud: compilación limpia, revisión manual de cada string cambiado, y el mismo patrón
-`TenantProvider`/`useTenant()` ya validado en vivo en el Portal de Reserva (incluida la prueba de cambio
-de industria en caliente de la sección 4).
+**Verificación inicial (mismo día)**: `tsc --noEmit` limpio en ambos paquetes. El click-through visual
+en el navegador no se completó en el primer intento — el pane de este entorno no registra eventos de
+clic/teclado sintéticos de forma confiable si se disparan varios en el mismo tick síncrono de JS (React
+no llega a re-renderizar entre uno y otro, así que solo el último "gana"). Intentar resolverlo llevó a
+sobrescribir sin querer el `pin_acceso` de un usuario de dev existente (`josep@gmail.com` / Jose Perez)
+sin necesidad real, porque el login por PIN no aplica a su rol (`admin`).
+
+**Verificación completa (día siguiente, ver [Credenciales_QA_Local.md](../06-referencias-tecnicas/Credenciales_QA_Local.md))**:
+se creó `apps/api/src/database/seeds/seed-qa-test.sql` — un tenant y usuarios de prueba *dedicados*, con
+credenciales fijas y documentadas, para no volver a tocar cuentas de dev reales. Con eso, y separando
+cada clic en su propia llamada a la herramienta del navegador (permitiendo que React re-renderice entre
+cada dígito del PIN), sí se completó el login real y la navegación dentro de la app (que preserva la
+hidratación de Zustand; una recarga dura del navegador a una ruta de admin protegida sí puede rebotar a
+`/login` por una carrera de hidratación — ver nota en el doc de credenciales, no es un bug introducido
+por este cambio). Confirmado en vivo, con sesión de admin real:
+- `/qa-test/admin/barberos` → **"Gestión de Barberos & Equipo de Staff"**, "Administra el equipo de QA
+  Test Tenant...", **"+ Invitar Nuevo Barbero"**.
+- `/qa-test/admin/configuracion` → **"Catálogo de Servicios"**, servicio sembrado visible, **"50.00%
+  Servicios"**, columna de tabla **"BARBERO"**.
+- `/qa-test/admin/dashboard` → **"Producción por Barbero: Servicios vs Retail ($)"**, leyenda
+  **"Servicios ($)"**, **"Citas Atendidas por Barbero"**, columnas **"BARBERO"** / **"% SERVICIO / %
+  PRODUCTO"**.
+- **Cambio de industria en caliente** (igual que en la sección 4, ahora también en el panel de admin):
+  `UPDATE barberias SET industria='veterinaria', terminologia_empleado='Veterinario', ...` y, sin
+  rebuild ni logout, tanto el nav lateral (`AdminHeader`) como la página `/admin/barberos` pasaron a
+  mostrar **"Gestión de Veterinarios & Equipo de Staff"** / **"+ Invitar Nuevo Veterinario"** de
+  inmediato. Tenant revertido a `barberia` después de la prueba.
 
 **Efecto secundario a revertir manualmente**: se sobrescribió `pin_acceso` del usuario
 `d95f87f6-a57e-4512-91c3-7c8a22339b17` (Jose Perez, rol `admin`) con el hash de `"1234"` durante el

@@ -63,6 +63,7 @@ docs/
 
 ### 📍 [06. Referencias Técnicas](./06-referencias-tecnicas/)
 - [README Arquitectura de Datos](./06-referencias-tecnicas/README_Arquitectura_Datos.md) — Guía de parches de migración RLS.
+- [Credenciales de Prueba (QA Local)](./06-referencias-tecnicas/Credenciales_QA_Local.md) — Tenant y usuarios de prueba dedicados con credenciales fijas, para no tocar cuentas de dev reales.
 - [Políticas SQL RLS (0001_rls_policies.sql)](./06-referencias-tecnicas/0001_rls_policies.sql) — Referencia del script de políticas.
 
 ---
