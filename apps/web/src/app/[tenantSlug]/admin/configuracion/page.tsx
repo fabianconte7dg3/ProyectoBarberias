@@ -5,9 +5,9 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { 
-  ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2, 
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar
+import {
+  ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2,
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar, Layers
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { useTenant } from '@/lib/tenant-context';
@@ -18,6 +18,15 @@ interface Servicio {
   duracionMinutos: number;
   precioBase: string;
   activo: boolean;
+}
+
+interface Combo {
+  id: string;
+  nombre: string;
+  precioTotal: string;
+  duracionAjustadaMinutos: number | null;
+  activo: boolean;
+  servicios: { servicioId: string; orden: number; precioAsignado: string; servicio: Servicio }[];
 }
 
 interface UsuarioStaff {
@@ -65,6 +74,7 @@ export default function AdminConfiguracionPage() {
   const currentUser = useAdminStore((state) => state.user);
 
   const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [combos, setCombos] = useState<Combo[]>([]);
   const [staff, setStaff] = useState<UsuarioStaff[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [historialBloqueos, setHistorialBloqueos] = useState<BloqueoHistorial[]>([]);
@@ -80,6 +90,13 @@ export default function AdminConfiguracionPage() {
   const [nuevoNombre, setNuevoNombre] = useState('');
   const [nuevaDuracion, setNuevaDuracion] = useState('30');
   const [nuevoPrecio, setNuevoPrecio] = useState('15.00');
+
+  // Formulario nuevo combo
+  const [isNuevoComboOpen, setIsNuevoComboOpen] = useState(false);
+  const [comboNombre, setComboNombre] = useState('');
+  const [comboPrecioTotal, setComboPrecioTotal] = useState('');
+  const [comboDuracion, setComboDuracion] = useState('');
+  const [comboServiciosSel, setComboServiciosSel] = useState<Record<string, string>>({}); // servicioId -> precioAsignado
 
   // Formulario comisiones (Servicios & Productos)
   const [editingComisionUserId, setEditingComisionUserId] = useState<string | null>(null);
@@ -100,13 +117,15 @@ export default function AdminConfiguracionPage() {
     setLoading(true);
     setError('');
     try {
-      const [resServicios, resStaff, resAudit, resBloqueos] = await Promise.all([
+      const [resServicios, resCombos, resStaff, resAudit, resBloqueos] = await Promise.all([
         fetchApi<Servicio[]>('/servicios'),
+        fetchApi<Combo[]>('/combos'),
         fetchApi<UsuarioStaff[]>('/usuarios'),
         fetchApi<AuditLog[]>('/audit?limit=25'),
         fetchApi<BloqueoHistorial[]>('/horarios/bloqueos-historial'),
       ]);
       setServicios(resServicios || []);
+      setCombos(resCombos || []);
       setStaff(resStaff || []);
       setAuditLogs(resAudit || []);
       setHistorialBloqueos(resBloqueos || []);
@@ -158,6 +177,74 @@ export default function AdminConfiguracionPage() {
       loadData();
     } catch (err: any) {
       setError(err.message || 'Error al desactivar el servicio.');
+    }
+  };
+
+  // 2.5. Combos: alternar selección de servicio, crear, desactivar
+  const toggleComboServicio = (servicioId: string, precioBase: string) => {
+    setComboServiciosSel((prev) => {
+      const next = { ...prev };
+      if (servicioId in next) {
+        delete next[servicioId];
+      } else {
+        next[servicioId] = precioBase;
+      }
+      return next;
+    });
+  };
+
+  const handleCrearCombo = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (saving) return;
+
+    const serviciosSeleccionados = Object.entries(comboServiciosSel);
+    if (serviciosSeleccionados.length < 2) {
+      setError('Un combo necesita al menos 2 servicios.');
+      return;
+    }
+
+    setSaving(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      await fetchApi('/combos', {
+        method: 'POST',
+        body: JSON.stringify({
+          nombre: comboNombre,
+          precioTotal: parseFloat(comboPrecioTotal),
+          ...(comboDuracion && { duracionAjustadaMinutos: parseInt(comboDuracion, 10) }),
+          servicios: serviciosSeleccionados.map(([servicioId, precioAsignado], idx) => ({
+            servicioId,
+            orden: idx,
+            precioAsignado: parseFloat(precioAsignado),
+          })),
+        }),
+      });
+
+      setSuccessMsg('Combo creado con éxito.');
+      setIsNuevoComboOpen(false);
+      setComboNombre('');
+      setComboPrecioTotal('');
+      setComboDuracion('');
+      setComboServiciosSel({});
+      loadData();
+    } catch (err: any) {
+      console.error('Error creando combo:', err);
+      setError(err.message || 'Error al crear el combo.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSoftDeleteCombo = async (id: string) => {
+    if (!confirm('¿Seguro que deseas desactivar este combo?')) return;
+    try {
+      await fetchApi(`/combos/${id}`, { method: 'DELETE' });
+      setSuccessMsg('Combo desactivado.');
+      loadData();
+    } catch (err: any) {
+      setError(err.message || 'Error al desactivar el combo.');
     }
   };
 
@@ -401,6 +488,142 @@ export default function AdminConfiguracionPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* 2.5. SECCIÓN: Combos de Servicios (bundle rastreado — ver
+             docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §2) */}
+        <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-border pb-3">
+            <div className="flex items-center gap-2">
+              <Layers size={20} className="text-primary" />
+              <div>
+                <h2 className="text-base font-bold">Combos de {terminologiaServicio}s</h2>
+                <p className="text-xs text-muted-foreground">
+                  Agrupa {terminologiaServicio.toLowerCase()}s en un bloque con precio propio — cada uno se sigue
+                  contabilizando por separado para reportes y comisión.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setIsNuevoComboOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-xl hover:opacity-90 transition-opacity"
+            >
+              <Plus size={16} />
+              <span>Nuevo Combo</span>
+            </button>
+          </div>
+
+          {isNuevoComboOpen && (
+            <form onSubmit={handleCrearCombo} className="bg-secondary/40 border border-border p-4 rounded-xl space-y-3">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Crear Nuevo Combo</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input
+                  type="text"
+                  placeholder="Nombre del combo (ej. Corte + Barba)"
+                  required
+                  value={comboNombre}
+                  onChange={(e) => setComboNombre(e.target.value)}
+                  className="px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                />
+                <input
+                  type="number"
+                  step="0.50"
+                  placeholder="Precio Total del Combo ($)"
+                  required
+                  value={comboPrecioTotal}
+                  onChange={(e) => setComboPrecioTotal(e.target.value)}
+                  className="px-3 py-2 bg-background border border-border rounded-lg text-xs font-mono font-bold"
+                />
+                <input
+                  type="number"
+                  placeholder="Duración ajustada (min, opcional)"
+                  value={comboDuracion}
+                  onChange={(e) => setComboDuracion(e.target.value)}
+                  className="px-3 py-2 bg-background border border-border rounded-lg text-xs"
+                />
+              </div>
+
+              <div>
+                <p className="text-[11px] font-semibold text-muted-foreground mb-2">
+                  Selecciona los {terminologiaServicio.toLowerCase()}s del combo (mínimo 2) y ajusta el precio asignado a cada uno:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {servicios.map((s) => {
+                    const seleccionado = s.id in comboServiciosSel;
+                    return (
+                      <div
+                        key={s.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg border text-xs ${seleccionado ? 'bg-primary/10 border-primary/40' : 'bg-background border-border'}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={seleccionado}
+                          onChange={() => toggleComboServicio(s.id, s.precioBase)}
+                          className="shrink-0"
+                        />
+                        <span className="flex-1 truncate">{s.nombre}</span>
+                        {seleccionado && (
+                          <input
+                            type="number"
+                            step="0.50"
+                            value={comboServiciosSel[s.id]}
+                            onChange={(e) => setComboServiciosSel((prev) => ({ ...prev, [s.id]: e.target.value }))}
+                            className="w-20 px-2 py-1 bg-secondary/50 border border-border rounded-md font-mono text-right"
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => { setIsNuevoComboOpen(false); setComboServiciosSel({}); }}
+                  className="px-3 py-1.5 text-xs hover:bg-secondary rounded-lg"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-4 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg"
+                >
+                  Guardar Combo
+                </button>
+              </div>
+            </form>
+          )}
+
+          {combos.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">Todavía no hay combos configurados.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {combos.map((c) => (
+                <div key={c.id} className="p-3 bg-secondary/20 border border-border rounded-xl flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="font-semibold text-sm">{c.nombre}</div>
+                    <div className="text-xs text-muted-foreground truncate">
+                      {c.servicios.map((cs) => cs.servicio.nombre).join(' + ')}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-0.5">
+                      {c.duracionAjustadaMinutos ? `${c.duracionAjustadaMinutos} min · ` : ''}
+                      <strong className="font-mono text-emerald-600 dark:text-emerald-400">${Number(c.precioTotal).toFixed(2)}</strong>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleSoftDeleteCombo(c.id)}
+                    className="p-1.5 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg transition-colors shrink-0"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 3. SECCIÓN: Productos & Inventario Retail */}
