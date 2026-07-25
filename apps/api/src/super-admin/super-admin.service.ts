@@ -35,6 +35,18 @@ const PLANTILLA_CAMPOS_PERSONALIZADOS_POR_INDUSTRIA: Record<string, unknown[]> =
   ],
 };
 
+/**
+ * Multi-industria (Fase 2.2): plantilla inicial de widgets destacados del dashboard por
+ * industria — punto de partida editable, no una restricción. El motor de widgets
+ * (WIDGET_REGISTRY en el frontend) es lo que se prioriza en esta fase, no cada widget
+ * individual — ver Plan_Multi_Industria_Fase4_CombosGruposTemplates.md §1.
+ */
+const PLANTILLA_WIDGETS_POR_INDUSTRIA: Record<string, string[]> = {
+  veterinaria: ['pacientes_activos', 'revisiones_proximas', 'produccion_empleado'],
+  clinica_medica: ['pacientes_activos', 'revisiones_proximas', 'produccion_empleado'],
+};
+const PLANTILLA_WIDGETS_DEFAULT = ['produccion_empleado', 'top_servicios'];
+
 @Injectable()
 export class SuperAdminService {
   constructor(
@@ -320,6 +332,7 @@ FECHA: ${new Date().toISOString()}
         ...(dto.terminologiaServicio && { terminologiaServicio: dto.terminologiaServicio }),
         ...(dto.terminologiaCliente && { terminologiaCliente: dto.terminologiaCliente }),
         configCamposPersonalizados: PLANTILLA_CAMPOS_PERSONALIZADOS_POR_INDUSTRIA[dto.industria || ''] || [],
+        configWidgetsDestacados: PLANTILLA_WIDGETS_POR_INDUSTRIA[dto.industria || ''] || PLANTILLA_WIDGETS_DEFAULT,
       });
 
       await tx.insert(schema.usuarios).values({

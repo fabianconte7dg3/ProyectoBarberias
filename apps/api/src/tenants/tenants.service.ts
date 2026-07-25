@@ -29,6 +29,7 @@ export class TenantsService {
           terminologiaServicio: true,
           terminologiaCliente: true,
           configCamposPersonalizados: true,
+          configWidgetsDestacados: true,
         },
       });
       if (!tenant) throw new NotFoundException('Negocio no encontrado');
