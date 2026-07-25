@@ -59,6 +59,12 @@ export class ClientesController {
     return this.clientesService.findOne(id);
   }
 
+  @Roles('admin', 'recepcion', 'empleado')
+  @Get(':id/inasistencias')
+  obtenerInasistencias(@Param('id') id: string) {
+    return this.clientesService.obtenerInasistencias(id);
+  }
+
   @Roles('admin', 'recepcion')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateClienteDto) {

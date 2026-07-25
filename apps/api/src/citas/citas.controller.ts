@@ -39,12 +39,21 @@ export class CitasController {
     if (!tenantId) throw new NotFoundException('Negocio no encontrado');
 
     return runInTenantScope(this.db, tenantId, async () => {
-      const result = await this.citasService.crearCita(data, idempotencyKey);
+      const result = await this.citasService.crearCita(data, idempotencyKey, true);
       if (result.isExisting) {
         res.status(HttpStatus.OK);
       }
       return result.cita;
     });
+  }
+
+  @Public()
+  @Post('publica/:id/confirmar')
+  async confirmarCitaPublica(
+    @Param('id') id: string,
+    @Query('token') token: string,
+  ) {
+    return this.citasService.confirmarCita(id, token);
   }
 
   @Roles('admin', 'recepcion', 'empleado')
@@ -83,7 +92,7 @@ export class CitasController {
     if (!tenantId) throw new NotFoundException('Negocio no encontrado');
 
     return runInTenantScope(this.db, tenantId, async () => {
-      const result = await this.citasService.crearCitasGrupales(data, idempotencyKey);
+      const result = await this.citasService.crearCitasGrupales(data, idempotencyKey, true);
       if (result.isExisting) {
         res.status(HttpStatus.OK);
       }

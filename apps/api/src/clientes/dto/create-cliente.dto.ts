@@ -6,10 +6,10 @@ export class CreateClienteDto {
   @MaxLength(30)
   telefonoWhatsapp: string;
 
-  @IsOptional()
   @IsString()
+  @IsNotEmpty()
   @MaxLength(255)
-  nombreCompleto?: string;
+  nombreCompleto: string;
 
   @IsOptional()
   @IsString()

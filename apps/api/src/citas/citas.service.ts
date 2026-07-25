@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, BadRequestException, ForbiddenException, Inject } from '@nestjs/common';
 import { eq, and, lte, gte, or, between, ne, inArray, desc, sql } from 'drizzle-orm';
-import { citas, bloqueosTemporales, servicios, combos, clientes, usuarios, pacientes } from '../database/schema';
+import { citas, bloqueosTemporales, servicios, combos, clientes, usuarios, pacientes, barberias, inasistencias } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
 import { CreateCitaDto } from './dto/create-cita.dto';
@@ -12,6 +12,9 @@ import * as schema from '../database/schema';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 import { CombosService } from '../combos/combos.service';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { AGENDA_ACTUALIZADA } from '../common/events/agenda-actualizada.event';
+import { format } from 'date-fns';
 
 @Injectable()
 export class CitasService {
@@ -19,7 +22,12 @@ export class CitasService {
     @Inject(DRIZZLE_POOL_DB) private readonly db: NodePgDatabase<typeof schema>,
     @InjectQueue('CITAS_QUEUE') private readonly citasQueue: Queue,
     private readonly combosService: CombosService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
+
+  private emitirAgendaActualizada(tenantId: string, empleadoId: string, fecha: Date) {
+    this.eventEmitter.emit(AGENDA_ACTUALIZADA, { tenantId, empleadoId, fecha: format(fecha, 'yyyy-MM-dd') });
+  }
 
   /**
    * Resuelve la duración en minutos de una cita a partir de servicioId o comboId
@@ -69,17 +77,90 @@ export class CitasService {
   }
 
   /**
-   * Crea una nueva cita, manejando idempotencia y concurrencia.
+   * Config del tenant relevante para crear una cita: ventana de anticipación
+   * (horas) para pedir confirmación, e industria (para exigir "motivo" —
+   * ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §2 y §6).
    */
-  async crearCita(data: CreateCitaDto, idempotencyKey: string) {
+  private async resolverConfigTenant(db: any, tenantId: string): Promise<{ horasAntesConfirmacion: number; industria: string }> {
+    const [tenant] = await db
+      .select({ horasAntesConfirmacion: barberias.horasAntesConfirmacion, industria: barberias.industria })
+      .from(barberias)
+      .where(eq(barberias.id, tenantId));
+    return {
+      horasAntesConfirmacion: tenant?.horasAntesConfirmacion ?? 4,
+      industria: tenant?.industria ?? 'barberia',
+    };
+  }
+
+  private static readonly INDUSTRIAS_QUE_EXIGEN_MOTIVO = ['veterinaria', 'clinica_medica'];
+
+  /**
+   * Campos de confirmación para una cita nueva. Si se reserva con menos
+   * anticipación que la ventana configurada, no tiene sentido pedir
+   * confirmación (no habría tiempo de esperar respuesta) — se auto-confirma.
+   */
+  private construirCamposConfirmacion(inicio: Date, horasAntesConfirmacion: number) {
+    const msVentana = horasAntesConfirmacion * 60 * 60 * 1000;
+    const requiereConfirmacion = (inicio.getTime() - Date.now()) >= msVentana;
+    return {
+      confirmada: !requiereConfirmacion,
+      tokenCliente: crypto.randomUUID(),
+      tokenExpiraEn: inicio,
+    };
+  }
+
+  /**
+   * Reglas anti-abuso que SOLO aplican a la vía pública (el staff creando
+   * citas manuales ya tiene contexto real del cliente frente a él — ver
+   * Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §3 y §4).
+   */
+  private async validarReglasAntiAbusoPublicas(db: any, clienteId?: string) {
+    if (!clienteId) return;
+
+    const [cliente] = await db.select({ bloqueado: clientes.bloqueado }).from(clientes).where(eq(clientes.id, clienteId));
+    if (cliente?.bloqueado) {
+      throw new ForbiddenException('No fue posible completar la reserva. Por favor contacta directamente al negocio.');
+    }
+
+    const [citaPendiente] = await db
+      .select({ id: citas.id })
+      .from(citas)
+      .where(and(
+        eq(citas.clienteId, clienteId),
+        eq(citas.estado, 'programada'),
+        eq(citas.confirmada, false),
+      ))
+      .limit(1);
+
+    if (citaPendiente) {
+      throw new ConflictException('Ya tienes una reserva pendiente de confirmar. Confírmala o espera a que se libere para agendar otra.');
+    }
+  }
+
+  /**
+   * Crea una nueva cita, manejando idempotencia y concurrencia.
+   * `esPublica` activa las reglas anti-abuso (Fase 2.3) que no aplican
+   * cuando el staff agenda manualmente.
+   */
+  async crearCita(data: CreateCitaDto, idempotencyKey: string, esPublica = false) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
 
+    if (esPublica) {
+      await this.validarReglasAntiAbusoPublicas(db, data.clienteId);
+    }
+
     const duracionMinutos = await this.resolverDuracionMinutos(db, data);
     const resolvedEmpleadoId = await this.resolverEmpleadoId(db, data.empleadoId);
+    const { horasAntesConfirmacion, industria } = await this.resolverConfigTenant(db, tenantId);
+
+    if (CitasService.INDUSTRIAS_QUE_EXIGEN_MOTIVO.includes(industria) && !data.notas?.trim()) {
+      throw new BadRequestException('Indica el motivo de la visita para continuar.');
+    }
 
     const inicio = new Date(data.inicioEstimado);
     const fin = new Date(inicio.getTime() + duracionMinutos * 60000);
+    const camposConfirmacion = this.construirCamposConfirmacion(inicio, horasAntesConfirmacion);
 
     // 2. Limpieza oportunista de bloqueos temporales expirados (fire and forget)
     db.delete(bloqueosTemporales)
@@ -98,10 +179,12 @@ export class CitasService {
           servicioId: data.servicioId || null,
           comboId: data.comboId || null,
           pacienteId: data.pacienteId,
+          notas: data.notas,
           inicioEstimado: inicio,
           finEstimado: fin,
           origen: data.origen,
           idempotencyKey,
+          ...camposConfirmacion,
         })
         .onConflictDoNothing({ target: citas.idempotencyKey })
         .returning();
@@ -115,7 +198,8 @@ export class CitasService {
         return { cita: citaExistente, isExisting: true };
       }
 
-      await this.encolarJobsCita(nuevaCita, tenantId, inicio);
+      this.emitirAgendaActualizada(tenantId, resolvedEmpleadoId, inicio);
+      await this.encolarJobsCita(nuevaCita, tenantId, inicio, horasAntesConfirmacion);
 
       return { cita: nuevaCita, isExisting: false };
     } catch (error: any) {
@@ -130,7 +214,7 @@ export class CitasService {
     }
   }
 
-  private async encolarJobsCita(nuevaCita: typeof citas.$inferSelect, tenantId: string, inicio: Date) {
+  private async encolarJobsCita(nuevaCita: typeof citas.$inferSelect, tenantId: string, inicio: Date, horasAntesConfirmacion: number) {
     const inicioTime = inicio.getTime();
     const now = Date.now();
 
@@ -149,6 +233,29 @@ export class CitasService {
         { delay: delayRetraso, jobId: `retraso_${nuevaCita.id}` }
       );
     }
+
+    // Confirmación obligatoria (ver §2 del doc de diseño) — solo si la cita
+    // no quedó auto-confirmada por falta de anticipación.
+    if (!nuevaCita.confirmada) {
+      const deadline = inicioTime - (horasAntesConfirmacion * 60 * 60 * 1000);
+
+      const delaySolicitar = deadline - now;
+      if (delaySolicitar > 0) {
+        await this.citasQueue.add('solicitar_confirmacion',
+          { citaId: nuevaCita.id, tenantId },
+          { delay: delaySolicitar, jobId: `confirmacion_${nuevaCita.id}` }
+        );
+      }
+
+      // Margen de 30 min después del deadline para que el cliente alcance a responder.
+      const delayLiberar = deadline + (30 * 60 * 1000) - now;
+      if (delayLiberar > 0) {
+        await this.citasQueue.add('liberar_si_no_confirmo',
+          { citaId: nuevaCita.id, tenantId },
+          { delay: delayLiberar, jobId: `liberar_${nuevaCita.id}` }
+        );
+      }
+    }
   }
 
   /**
@@ -157,10 +264,23 @@ export class CitasService {
    * generado acá. Si cualquiera choca con el EXCLUDE constraint, toda la operación revierte —
    * no se permite un grupo a medio crear.
    */
-  async crearCitasGrupales(data: CreateCitasGrupalesDto, idempotencyKeyBase: string) {
+  async crearCitasGrupales(data: CreateCitasGrupalesDto, idempotencyKeyBase: string, esPublica = false) {
     const db = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
     const grupoReservaId = crypto.randomUUID();
+
+    if (esPublica) {
+      const clienteIdsUnicos = [...new Set(data.citas.map((c) => c.clienteId).filter(Boolean))];
+      for (const clienteId of clienteIdsUnicos) {
+        await this.validarReglasAntiAbusoPublicas(db, clienteId);
+      }
+    }
+
+    const { horasAntesConfirmacion, industria } = await this.resolverConfigTenant(db, tenantId);
+
+    if (CitasService.INDUSTRIAS_QUE_EXIGEN_MOTIVO.includes(industria) && data.citas.some((c) => !c.notas?.trim())) {
+      throw new BadRequestException('Indica el motivo de la visita para cada persona del grupo.');
+    }
 
     db.delete(bloqueosTemporales)
       .where(lte(bloqueosTemporales.expiraEn, new Date()))
@@ -179,6 +299,7 @@ export class CitasService {
           const resolvedEmpleadoId = await this.resolverEmpleadoId(tx, citaData.empleadoId);
           const inicio = new Date(citaData.inicioEstimado);
           const fin = new Date(inicio.getTime() + duracionMinutos * 60000);
+          const camposConfirmacion = this.construirCamposConfirmacion(inicio, horasAntesConfirmacion);
 
           const [nuevaCita] = await tx
             .insert(citas)
@@ -189,11 +310,13 @@ export class CitasService {
               servicioId: citaData.servicioId || null,
               comboId: citaData.comboId || null,
               pacienteId: citaData.pacienteId,
+              notas: citaData.notas,
               grupoReservaId,
               inicioEstimado: inicio,
               finEstimado: fin,
               origen: citaData.origen,
               idempotencyKey: idempotencyKeys[i],
+              ...camposConfirmacion,
             })
             .returning();
 
@@ -220,7 +343,8 @@ export class CitasService {
     }
 
     for (const nuevaCita of nuevasCitas) {
-      await this.encolarJobsCita(nuevaCita, tenantId, new Date(nuevaCita.inicioEstimado));
+      this.emitirAgendaActualizada(tenantId, nuevaCita.empleadoId, new Date(nuevaCita.inicioEstimado));
+      await this.encolarJobsCita(nuevaCita, tenantId, new Date(nuevaCita.inicioEstimado), horasAntesConfirmacion);
     }
 
     return { citas: nuevasCitas, grupoReservaId, isExisting: false };
@@ -260,6 +384,7 @@ export class CitasService {
           })
           .returning();
 
+        this.emitirAgendaActualizada(tenantId, data.empleadoId, new Date(data.inicio));
         return bloqueo;
       } catch (error: any) {
         const code = error.code || error.cause?.code;
@@ -362,15 +487,68 @@ export class CitasService {
             .update(clientes)
             .set({ ausenciasStrikes: cliente.ausenciasStrikes + 1 })
             .where(eq(clientes.id, cita.clienteId));
+
+          // Historial con fecha (ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §5) —
+          // respalda el contador de arriba, insert-only.
+          await tx.insert(inasistencias).values({
+            tenantId: cita.tenantId,
+            clienteId: cita.clienteId,
+            citaId: cita.id,
+            fecha: cita.inicioEstimado,
+          });
         }
       }
-      
+
       if (nuevoEstado !== 'programada') {
         await this.citasQueue.remove(`recordatorio_${citaId}`).catch(() => {});
         await this.citasQueue.remove(`retraso_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`confirmacion_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`liberar_${citaId}`).catch(() => {});
+      }
+
+      if (nuevoEstado === 'cancelada' || nuevoEstado === 'ausente_strike') {
+        this.emitirAgendaActualizada(cita.tenantId, cita.empleadoId, new Date(cita.inicioEstimado));
       }
 
       return cita;
+    });
+  }
+
+  /**
+   * Confirma una cita vía el token público (WhatsApp o link web de respaldo —
+   * ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §2). Idempotente: confirmar
+   * una cita ya confirmada simplemente la devuelve sin error.
+   */
+  async confirmarCita(citaId: string, token: string) {
+    const result = await this.db.execute(sql`SELECT get_tenant_for_cita(${citaId}) as tenant_id`);
+    const tenantId = result.rows[0]?.tenant_id as string | undefined;
+    if (!tenantId) throw new NotFoundException('Cita no encontrada');
+
+    return runInTenantScope(this.db, tenantId, async (tx) => {
+      const [cita] = await tx.select().from(citas).where(eq(citas.id, citaId));
+      if (!cita) throw new NotFoundException('Cita no encontrada');
+
+      if (!token || !cita.tokenCliente || cita.tokenCliente !== token || !cita.tokenExpiraEn || cita.tokenExpiraEn < new Date()) {
+        throw new BadRequestException('El enlace de confirmación es inválido o ya expiró.');
+      }
+
+      if (cita.confirmada) {
+        return cita;
+      }
+
+      if (cita.estado !== 'programada') {
+        throw new BadRequestException('Esta cita ya no está programada, no se puede confirmar.');
+      }
+
+      const [citaConfirmada] = await tx
+        .update(citas)
+        .set({ confirmada: true })
+        .where(eq(citas.id, citaId))
+        .returning();
+
+      await this.citasQueue.remove(`liberar_${citaId}`).catch(() => {});
+
+      return citaConfirmada;
     });
   }
 
@@ -395,8 +573,11 @@ export class CitasService {
       if (citaCancelada) {
         await this.citasQueue.remove(`recordatorio_${citaId}`).catch(() => {});
         await this.citasQueue.remove(`retraso_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`confirmacion_${citaId}`).catch(() => {});
+        await this.citasQueue.remove(`liberar_${citaId}`).catch(() => {});
+        this.emitirAgendaActualizada(citaCancelada.tenantId, citaCancelada.empleadoId, new Date(citaCancelada.inicioEstimado));
       }
-        
+
       return citaCancelada;
     });
   }

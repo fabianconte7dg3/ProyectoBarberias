@@ -65,9 +65,9 @@ export class WhatsappController {
         } else if (incomingText === '2') {
           // Cancelar
           await this.whatsappService.enviarMensajeTexto(
-            tenantId, 
-            telefono, 
-            `Entendido. Para cancelar tu cita de forma segura, por favor ingresa al link que te llegó en el correo de confirmación, o escribe '3' para hablar con un humano.`
+            tenantId,
+            telefono,
+            `Entendido. Escribe '3' para que nuestro equipo te ayude a cancelar tu cita directamente.`
           );
         } else if (incomingText === '3') {
           // Hablar con alguien

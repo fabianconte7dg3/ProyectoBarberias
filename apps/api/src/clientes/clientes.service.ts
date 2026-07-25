@@ -59,6 +59,20 @@ export class ClientesService {
     return cliente;
   }
 
+  /**
+   * Fechas de inasistencia del cliente (ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §5)
+   * — respalda el badge de ausenciasStrikes con el detalle real, no solo el contador.
+   */
+  async obtenerInasistencias(id: string) {
+    await this.findOne(id);
+    const db = TenantContext.getDb();
+
+    return db.query.inasistencias.findMany({
+      where: eq(schema.inasistencias.clienteId, id),
+      orderBy: [desc(schema.inasistencias.fecha)],
+    });
+  }
+
   async update(id: string, dto: UpdateClienteDto) {
     const db = TenantContext.getDb();
     
