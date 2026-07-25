@@ -1,6 +1,6 @@
 import { Injectable, ConflictException, NotFoundException, ForbiddenException, Inject } from '@nestjs/common';
 import { eq, and, lte, gte, or, between, ne, desc, sql } from 'drizzle-orm';
-import { citas, bloqueosTemporales, servicios, clientes, usuarios } from '../database/schema';
+import { citas, bloqueosTemporales, servicios, clientes, usuarios, pacientes } from '../database/schema';
 import { TenantContext } from '../database/tenant/tenant-context';
 import { runInTenantScope } from '../database/tenant/tenant.utils';
 import { CreateCitaDto } from './dto/create-cita.dto';
@@ -73,6 +73,7 @@ export class CitasService {
           clienteId: data.clienteId,
           empleadoId: resolvedEmpleadoId,
           servicioId: data.servicioId,
+          pacienteId: data.pacienteId,
           inicioEstimado: inicio,
           finEstimado: fin,
           origen: data.origen,
@@ -207,11 +208,14 @@ export class CitasService {
         servicioNombre: servicios.nombre,
         servicioPrecio: servicios.precioBase,
         servicioDuracion: servicios.duracionMinutos,
+        pacienteId: citas.pacienteId,
+        pacienteNombre: pacientes.nombre,
       })
       .from(citas)
       .leftJoin(usuarios, eq(citas.empleadoId, usuarios.id))
       .leftJoin(clientes, eq(citas.clienteId, clientes.id))
       .leftJoin(servicios, eq(citas.servicioId, servicios.id))
+      .leftJoin(pacientes, eq(citas.pacienteId, pacientes.id))
       .where(and(...conditions))
       .orderBy(citas.inicioEstimado);
 

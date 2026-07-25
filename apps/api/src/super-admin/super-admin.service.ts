@@ -14,6 +14,27 @@ import { ActivateAdminDto } from './dto/activate-admin.dto';
 
 export { CreateTenantDto, ActivateAdminDto };
 
+/**
+ * Multi-industria (Fase 2.1): plantilla inicial de campos personalizados de
+ * `pacientes` por industria — punto de partida editable, no una restricción.
+ * Industrias sin sujeto-paciente propio (barbería, salón, etc.) quedan en [].
+ * Ver docs/02-arquitectura-y-db/Plan_Multi_Industria_Fase3_DatosPorVertical.md §3.4.
+ */
+const PLANTILLA_CAMPOS_PERSONALIZADOS_POR_INDUSTRIA: Record<string, unknown[]> = {
+  veterinaria: [
+    { entidad: 'paciente', clave: 'especie', etiqueta: 'Especie', tipo: 'texto', requerido: true },
+    { entidad: 'paciente', clave: 'raza', etiqueta: 'Raza', tipo: 'texto', requerido: false },
+    { entidad: 'paciente', clave: 'peso_kg', etiqueta: 'Peso (kg)', tipo: 'numero', requerido: false },
+    { entidad: 'paciente', clave: 'alergias', etiqueta: 'Alergias conocidas', tipo: 'texto', requerido: false },
+  ],
+  clinica_medica: [
+    { entidad: 'paciente', clave: 'fecha_nacimiento', etiqueta: 'Fecha de nacimiento', tipo: 'fecha', requerido: false },
+    { entidad: 'paciente', clave: 'tipo_sangre', etiqueta: 'Tipo de sangre', tipo: 'texto', requerido: false },
+    { entidad: 'paciente', clave: 'alergias', etiqueta: 'Alergias conocidas', tipo: 'texto', requerido: false },
+    { entidad: 'paciente', clave: 'seguro_medico', etiqueta: 'Seguro médico', tipo: 'texto', requerido: false },
+  ],
+};
+
 @Injectable()
 export class SuperAdminService {
   constructor(
@@ -298,6 +319,7 @@ FECHA: ${new Date().toISOString()}
         ...(dto.terminologiaEmpleado && { terminologiaEmpleado: dto.terminologiaEmpleado }),
         ...(dto.terminologiaServicio && { terminologiaServicio: dto.terminologiaServicio }),
         ...(dto.terminologiaCliente && { terminologiaCliente: dto.terminologiaCliente }),
+        configCamposPersonalizados: PLANTILLA_CAMPOS_PERSONALIZADOS_POR_INDUSTRIA[dto.industria || ''] || [],
       });
 
       await tx.insert(schema.usuarios).values({

@@ -11,6 +11,8 @@ import { UsuariosModule } from './usuarios/usuarios.module';
 import { ServiciosModule } from './servicios/servicios.module';
 import { ProductosModule } from './productos/productos.module';
 import { ClientesModule } from './clientes/clientes.module';
+import { PacientesModule } from './pacientes/pacientes.module';
+import { NotasClinicasModule } from './notas-clinicas/notas-clinicas.module';
 import { HorariosModule } from './horarios/horarios.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -55,6 +57,8 @@ import { KillSwitchGuard } from './common/guards/kill-switch.guard';
     ServiciosModule,
     ProductosModule,
     ClientesModule,
+    PacientesModule,
+    NotasClinicasModule,
     HorariosModule,
     CitasModule,
     TransaccionesModule,

@@ -13,6 +13,10 @@ export class CreateCitaDto {
   @IsUUID()
   servicioId: string;
 
+  @IsUUID()
+  @IsOptional()
+  pacienteId?: string; // Multi-industria: mascota/paciente atendido (veterinaria/clínica)
+
   @IsDateString()
   inicioEstimado: string;
 
