@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.3/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.4/7)
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -447,16 +447,45 @@ encontrado) en
       "Entrar como Negocio" → banner → salir) por no contar con credenciales de superadmin con TOTP en
       este entorno
 
-### 6.4 Rediseño Panel de Administración de Tenant (Design System) 🔲 Pendiente
-- [ ] `admin/login`
-- [ ] `admin/dashboard`
-- [ ] `admin/agenda`
-- [ ] `admin/caja` + `CobrarCitaModal`
-- [ ] `admin/empleados`
-- [ ] `admin/configuracion`
-- [ ] `admin/clientes`
-- [ ] `admin/productos`
-- [ ] `admin/datos`
+### 6.4 Rediseño Panel de Administración de Tenant (Design System) ✅ Completo
+- [x] Punto de partida distinto a 6.2: a diferencia de Super Admin (que tenía `slate`/`zinc`/`blue`
+      hardcodeado por todas partes), el panel de tenant **ya usaba** los tokens semánticos
+      (`bg-card`, `text-foreground`, `bg-primary`, etc.) desde antes de esta fase — heredó la paleta
+      Design System nueva automáticamente en cuanto 6.1 cambió `globals.css`, sin tocar una sola línea
+      de estas páginas. Confirmado por grep antes de tocar nada: 0-7 coincidencias de color hardcodeado
+      por archivo (vs. cientos en Super Admin)
+- [x] `admin/login` — ya usaba tokens (`bg-card`, `bg-secondary/30`), sin cambios
+- [x] `admin/dashboard`, `admin/caja` + `CobrarCitaModal`, `admin/configuracion`, `admin/clientes`,
+      `admin/datos` — se recolorearon los ~20 usos sueltos de `blue-*` (Tailwind literal, sin token) a
+      `secondary` (teal de marca), para que el único acento fuera de paleta que quedaba en el panel se
+      alineara con el sistema de dos colores en vez de un tercero sin nombre
+- [x] `admin/agenda`, `admin/empleados`, `admin/productos` — 0 hardcodeado, sin cambios
+- [x] **Bug real encontrado y corregido en el camino** (no era de 6.4, pero bloqueaba verificarlo):
+      `proxy.ts` reescribía cualquier request en un subdominio de tenant anteponiendo el slug sin
+      comprobar si el path ya lo traía — cualquier `router.push`/`<Link>` a una ruta ya prefijada
+      (exactamente lo que hace todo el panel: `AdminHeader`, `admin/login`, `useAdminAuth`) generaba un
+      404 por doble-prefijo (`/qa-test/qa-test/admin/agenda`) apenas se navegaba dentro de una sesión
+      abierta por subdominio. Corregido con un guard de idempotencia en el propio proxy — si el path ya
+      empieza con el slug, no se reescribe. Sin este fix, el panel entero era inutilizable por
+      subdominio (el mecanismo central de Fase 4) en cuanto el usuario hacía clic en cualquier link
+      interno
+- [x] Verificado con datos reales de la seed `seed-qa-test.sql` (tenant `qa-test`,
+      `qa-admin@test.local`): login real vía API, sesión válida confirmada por `GET /auth/me`, y las 9
+      páginas (`login` incluida) cargadas con datos reales — dashboard con KPIs y gráfico de
+      recaudación, clientes con 7 registros, empleados con 2 perfiles y comisiones, agenda con grid de
+      horarios, caja con arqueo, productos y configuración con sus catálogos — todas con
+      `background:#f3faff`, `primary:#b0004a`, `secondary:#006876`, Inter, sin errores de consola
+      nuevos. `tsc --noEmit` limpio en ambos paquetes
+- [x] **Nota abierta, no resuelta**: durante la verificación, autenticar contra
+      `qa-test.localhost:3000` (subdominio de dev) en vez de `localhost:3000` (dominio raíz) resultó en
+      que la cookie `jwt` (con `SameSite=Lax`) no viajaba en llamadas fetch subsiguientes a
+      `localhost:4000` — consistente con que `qa-test.localhost` y `localhost` son sitios distintos para
+      el algoritmo de SameSite (hostnames diferentes), mientras que `localhost:3000`/`localhost:4000`
+      sí son mismo sitio (mismo hostname, solo difiere el puerto). En producción esto no debería repetirse
+      — `barberia-jose.volumetrixpa.com` y `api.volumetrixpa.com` comparten el mismo eTLD+1
+      (`volumetrixpa.com`), que es lo que decide "mismo sitio" — pero **no está verificado contra un
+      dominio real**, solo razonado. Queda como riesgo a confirmar antes de depender de subdominios en
+      producción (ver `Plan_Fase4_Infraestructura.md`)
 
 ### 6.5 Vista "Mi Silla" para staff 🔲 Pendiente
 - [ ] Backend: confirmar si alcanza con filtrar el endpoint de agenda existente por el `empleadoId`

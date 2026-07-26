@@ -49,6 +49,35 @@ URL en cada sitio.
 resuelve `*.localhost` a 127.0.0.1 sin tocar `/etc/hosts`), `admin/login` bajo el mismo subdominio
 también funciona, y el dominio raíz sin subdominio sigue sirviendo la landing sin reescribir.
 
+### 1.1 Corrección post-Fase 4 (encontrada durante Fase 6.4): rewrite no era idempotente
+
+La verificación original de esta fase solo probó `reservar` y `admin/login` — ninguna de las dos hace
+`router.push`/`<Link>` a una ruta ya prefijada con el slug del tenant. El panel de administración
+completo sí lo hace todo el tiempo (`AdminHeader` arma cada link de navegación como
+`/${tenantSlug}/admin/...`, igual que `admin/login` al redirigir tras el login y `useAdminAuth` al
+redirigir por rol incorrecto). Bajo un subdominio de tenant, cualquiera de esas navegaciones producía un
+segundo paso por el proxy que **volvía a anteponer el slug** (`/qa-test/qa-test/admin/agenda`) → 404. En
+la práctica, el panel de administración era inutilizable por subdominio en cuanto el usuario hacía clic
+en cualquier link interno — el bug no era visible en la verificación original porque esta nunca navegó
+dentro del panel ya logueado.
+
+Corregido en `proxy.ts`: si el `pathname` ya empieza con `/${slug}`, no se reescribe (se deja pasar tal
+cual). Idempotente — soporta que el rewrite se aplique más de una vez sobre el mismo path sin duplicar el
+prefijo.
+
+### 1.2 Riesgo abierto, no resuelto: cookie `jwt` (SameSite=Lax) entre subdominio de tenant y `api`
+
+Durante la misma verificación, autenticar contra `qa-test.localhost:3000` (subdominio) y llamar a la API
+en `localhost:4000` resultó en que la cookie `jwt` no viajaba en el fetch subsiguiente — consistente con
+que `qa-test.localhost` y `localhost` son *sitios* distintos para el algoritmo `SameSite` (hostnames
+distintos), mientras que `localhost:3000`/`localhost:4000` sí son el mismo sitio (mismo hostname, solo
+difiere el puerto, y `SameSite` no distingue puertos). En producción esto no debería repetirse —
+`barberia-jose.volumetrixpa.com` y `api.volumetrixpa.com` comparten el mismo eTLD+1
+(`volumetrixpa.com`), que es el criterio real de "mismo sitio" — pero **esto es un razonamiento, no algo
+verificado contra un dominio real**. Antes de depender de subdominios en producción, confirmar contra
+`volumetrixpa.com` de verdad (o un dominio de staging con el mismo patrón) que la cookie de sesión viaja
+correctamente entre `<tenant>.volumetrixpa.com` y `api.volumetrixpa.com`.
+
 ## 2. CORS de producción: `apps/api/src/main.ts`
 
 `origin: true` (refleja cualquier origin) se mantiene intacto en dev/CI (`NODE_ENV !== 'production'`). En
