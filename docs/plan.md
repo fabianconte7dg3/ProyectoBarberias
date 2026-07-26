@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.1/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.2/7)
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -388,12 +388,33 @@ encontrado) en
       System (`background:#fbf8fa`, `primary:#b7004d`, `sidebar:#1e293b`) de forma independiente; sin
       errores nuevos en consola
 
-### 6.2 Rediseño Super Admin (Executive System) 🔲 Pendiente
-- [ ] `super-admin/login`
-- [ ] `super-admin` (dashboard global)
-- [ ] `super-admin/tenants` (listado)
-- [ ] `super-admin/tenants/[id]` (detalle) — superficie donde también se agrega el botón de
-      impersonation (ver 6.3)
+### 6.2 Rediseño Super Admin (Executive System) ✅ Completo
+- [x] `super-admin/login` — hero navy (`#091426`) + tarjeta clara flotante, tokens Executive
+- [x] `super-admin/setup` — no estaba en el alcance original de 6.2, pero es la misma familia de
+      pantalla-de-acceso que login (mismo `isAuthScreen` en el layout) y quedaba visualmente rota
+      (slate oscuro) si no se tocaba también — mismo tratamiento hero navy + tarjeta
+- [x] `super-admin` (dashboard) — se separó el listado de tenants a su propia ruta (ver siguiente
+      punto); esta página ahora solo tiene las 4 KPI cards + `AlertasSeguridadPanel` +
+      `NegociosEnRiesgoCard` (recoloreados a tokens Executive, antes hardcodeaban `zinc-*`)
+- [x] `super-admin/tenants` (listado, **ruta nueva** — antes la tabla vivía inline dentro del
+      dashboard) — filtros, búsqueda, cambio de plan/estado, kill-switch y `CrearNegocioModal`
+      (recoloreado) se movieron aquí completos
+- [x] `super-admin/tenants/[id]` (detalle) — recoloreado, sin cambios de estructura. El botón de
+      impersonation queda para 6.3, no se agregó todavía
+- [x] Nuevo `super-admin/layout.tsx`: sidebar fija (260px, tokens `--sidebar-*`) con Dashboard/Negocios/
+      Cerrar sesión — reemplaza el header+logout que antes vivía duplicado en cada página. Pantallas de
+      login/setup quedan sin sidebar (`isAuthScreen`)
+- [x] Deliberadamente NO se copiaron del mockup de Stitch: gráficos Chart.js (MRR mensual, dona por
+      industria), feed de "Actividad Reciente" y "Mapa de Actividad", ni el indicador
+      "Impersonating: Tenant X" — ninguno tiene datos reales detrás (no hay endpoint de plataforma para
+      series históricas de MRR, breakdown por industria, ni feed de actividad), y agregar UI con datos
+      inventados hubiera sido una feature fantasma. Los enlaces del sidebar del mockup a "Plans"/
+      "Alerts"/"Configuration"/"Reports" tampoco se agregaron por la misma razón: esas rutas no existen
+- [x] Verificado: `tsc --noEmit` limpio; en navegador, `/super-admin/login` renderiza con los tokens
+      nuevos (confirmado antes en 6.1) y `/super-admin` (sin sesión) hace las 3 llamadas esperadas
+      (`stats`/`security-alerts`/`business-metrics`), recibe 401 y redirige a login sin errores de
+      consola ni assets rotos — no se pudo verificar visualmente el dashboard/listado ya autenticados
+      por no contar con credenciales de superadmin (con TOTP) a mano en este entorno
 
 ### 6.3 Impersonation de Super Admin ("Login as Tenant") 🔲 Pendiente
 - [ ] Backend: endpoint que emite un JWT de impersonación de expiración corta (claim distinguible del
