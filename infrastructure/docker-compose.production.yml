@@ -1,0 +1,122 @@
+# Nombre de proyecto explicito — sin esto, Compose usa el nombre del
+# directorio ("infrastructure") como default, IGUAL que docker-compose.yml
+# (dev). Corriendo ambos en la misma maquina sin esto, Compose comparte
+# la misma red/recursos por defecto entre los dos proyectos. Los
+# container_name de abajo tambien llevan el prefijo `_prod` por la misma
+# razon — un nombre de contenedor es global, no se scopea por proyecto.
+name: volumetrix-production
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: volumetrix_prod_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-volumetrix}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: volumetrix_prod_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Connection pooling en modo transaction — ver seccion "PgBouncer" en
+  # docs/02-arquitectura-y-db/Plan_Fase4_Infraestructura.md antes de
+  # apuntar DATABASE_URL de `api` aca en vez de directo a postgres:5432.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: volumetrix_prod_pgbouncer
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-volumetrix}
+      LISTEN_PORT: 6432
+      POOL_MODE: transaction
+      MAX_CLIENT_CONN: 200
+      DEFAULT_POOL_SIZE: 20
+      POSTGRES_USER: ${POSTGRES_USER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -p 6432 -U $$POSTGRES_USER"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../apps/api
+    container_name: volumetrix_prod_api
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    depends_on:
+      pgbouncer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_API_URL: https://api.volumetrixpa.com
+    container_name: volumetrix_prod_web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: volumetrix_prod_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./production/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    name: volumetrix_prod_postgres_data
+  redis_data:
+    name: volumetrix_prod_redis_data
+  caddy_data:
+    name: volumetrix_prod_caddy_data
+  caddy_config:
+    name: volumetrix_prod_caddy_config
