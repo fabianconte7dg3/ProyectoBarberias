@@ -16,7 +16,7 @@ export function BarberProfileCard({ empleado }: Props) {
       <div className="flex items-center justify-between px-1">
         <h2 className="text-base sm:text-lg font-bold text-foreground flex items-center gap-2">
           <Scissors size={18} className="text-primary" />
-          <span>2. Tu profesional de atención</span>
+          <span>Tu profesional de atención</span>
         </h2>
         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-semibold">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>

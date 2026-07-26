@@ -111,17 +111,23 @@ export default function ReservarPage() {
   const handleContinue = () => {
     if (!isValid || empleadoId === undefined) return;
 
+    // Nombre del empleado elegido (null si es "Cualquiera") — se persiste junto
+    // al id para que el resumen de confirmación pueda mostrarlo real, sin
+    // esperar a que el backend confirme la asignación.
+    const empleadoNombre = empleadoId ? (empleadosList.find((e) => e.id === empleadoId)?.nombre ?? null) : null;
+
     // Guardamos en estado global (incluyendo la duración real, necesaria para
-    // calcular los horarios disponibles en el siguiente paso)
+    // calcular los horarios disponibles en el siguiente paso, y el nombre/precio
+    // real del servicio o combo elegido para el resumen del último paso)
     if (comboId) {
       const combo = combosList.find((c) => c.id === comboId);
       const duracion = combo?.duracionAjustadaMinutos
         ?? combo?.servicios.reduce((total, cs) => total + cs.servicio.duracionMinutos, 0)
         ?? 30;
-      setComboYEmpleado(comboId, empleadoId, duracion);
+      setComboYEmpleado(comboId, empleadoId, duracion, combo?.nombre ?? '', combo?.precioTotal ?? '0.00', empleadoNombre);
     } else if (servicioId) {
       const servicio = serviciosList.find((s) => s.id === servicioId);
-      setServicioYEmpleado(servicioId, empleadoId, servicio?.duracionMinutos ?? 30);
+      setServicioYEmpleado(servicioId, empleadoId, servicio?.duracionMinutos ?? 30, servicio?.nombre ?? '', servicio?.precioBase ?? '0.00', empleadoNombre);
     } else {
       return;
     }

@@ -15,8 +15,8 @@ export function BottomAction({ disabled, onClick, children }: Props) {
           onClick={onClick}
           disabled={disabled}
           className={`w-full py-4 rounded-2xl font-bold text-lg shadow-xl transition-all flex justify-center items-center ${
-            disabled 
-              ? 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-80' 
+            disabled
+              ? 'bg-muted text-muted-foreground cursor-not-allowed opacity-80'
               : 'bg-primary text-primary-foreground hover:scale-[1.02] active:scale-[0.98]'
           }`}
         >

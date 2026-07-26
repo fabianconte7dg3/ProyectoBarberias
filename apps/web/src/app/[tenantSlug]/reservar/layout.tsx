@@ -1,18 +1,27 @@
 'use client';
 
-import { ReactNode } from 'react';
-import { useParams } from 'next/navigation';
+import { ReactNode, Suspense } from 'react';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import { useTenant } from '@/lib/tenant-context';
 import { PauseCircle } from 'lucide-react';
+import { BookingStepper } from '@/components/booking/BookingStepper';
 
-export default function ReservarLayout({ children }: { children: ReactNode }) {
+const PASOS = ['Servicio y Profesional', 'Fecha y Hora', 'Confirmación'];
+
+function ReservarLayoutContent({ children }: { children: ReactNode }) {
   const params = useParams();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const tenantSlug = params.tenantSlug as string;
   const tenant = useTenant();
   const nombreBarberia = tenant.nombreComercial || tenantSlug.replace('-', ' ');
 
+  const isConfirmar = pathname.endsWith('/confirmar');
+  const isSuccess = isConfirmar && searchParams.get('status') === 'success';
+  const currentStep = isConfirmar ? 2 : pathname.endsWith('/fecha') ? 1 : 0;
+
   return (
-    <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950 flex justify-center items-start sm:py-6 md:py-10 px-0 sm:px-4 w-full">
+    <div className="min-h-screen bg-muted flex justify-center items-start sm:py-6 md:py-10 px-0 sm:px-4 w-full">
 
       {/* Contenedor Responsivo Móvil / Desktop (Adapta de 100% móvil a tarjeta elegante en PC) */}
       <div className="w-full max-w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl bg-background min-h-screen sm:min-h-0 sm:rounded-3xl shadow-2xl relative overflow-x-hidden flex flex-col border-0 sm:border border-border transition-all">
@@ -44,6 +53,13 @@ export default function ReservarLayout({ children }: { children: ReactNode }) {
           </div>
         </header>
 
+        {/* Stepper del wizard — oculto en la pausa de auto-servicio y en la vista de éxito */}
+        {!tenant.killSwitchActivo && !isSuccess && (
+          <div className="px-4 sm:px-8 pt-4 sm:pt-5 pb-1 border-b border-border/60 bg-card/40">
+            <BookingStepper steps={PASOS} currentStep={currentStep} />
+          </div>
+        )}
+
         {/* Contenido Dinámico de Reserva — bloqueado por completo mientras la Pausa de
             Auto-Servicio esté activa (ver matriz-permisos-y-bloqueos.md §2). El backend
             ya rechaza cualquier POST público con 503 en este estado (KillSwitchGuard);
@@ -70,5 +86,13 @@ export default function ReservarLayout({ children }: { children: ReactNode }) {
       </div>
 
     </div>
+  );
+}
+
+export default function ReservarLayout({ children }: { children: ReactNode }) {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-xs font-bold text-muted-foreground">Cargando...</div>}>
+      <ReservarLayoutContent>{children}</ReservarLayoutContent>
+    </Suspense>
   );
 }

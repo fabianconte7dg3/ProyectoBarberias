@@ -2,6 +2,7 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import { format } from 'date-fns';
 import { useBookingStore } from '@/lib/store';
 import { useHydration } from '@/hooks/useHydration';
 import { BookingSummary } from '@/components/booking/BookingSummary';
@@ -26,7 +27,7 @@ function ConfirmarContent() {
   const isHydrated = useHydration();
 
   // Global State
-  const { servicioId, comboId, empleadoId, fecha, hora, reset } = useBookingStore();
+  const { servicioId, comboId, empleadoId, itemNombre, itemPrecio, empleadoNombre, fecha, hora, reset } = useBookingStore();
 
   // Local State
   const [nombre, setNombre] = useState('');
@@ -136,7 +137,7 @@ function ConfirmarContent() {
         </button>
         <div>
           <h1 className="text-base font-extrabold text-foreground">Confirmar Reserva</h1>
-          <p className="text-[11px] text-muted-foreground">Paso 3 de 3 — Datos de contacto</p>
+          <p className="text-[11px] text-muted-foreground">Datos de contacto</p>
         </div>
       </header>
 
@@ -152,13 +153,15 @@ function ConfirmarContent() {
           </div>
         )}
 
-        {/* Resumen de Servicio y Fecha */}
+        {/* Resumen de Servicio y Fecha — datos reales del store, elegidos en los
+            pasos anteriores (antes mostraba un placeholder genérico y un precio
+            fijo "15.00", bug encontrado y corregido en la Fase 6.6) */}
         <BookingSummary
-          servicioNombre={`${tenant.terminologiaServicio} Seleccionado`}
-          empleadoNombre={`${tenant.terminologiaEmpleado} Asignado`}
-          fecha={fecha || '2026-07-21'}
+          servicioNombre={itemNombre || tenant.terminologiaServicio}
+          empleadoNombre={empleadoNombre || `Cualquier ${tenant.terminologiaEmpleado.toLowerCase()} disponible`}
+          fecha={fecha || format(new Date(), 'yyyy-MM-dd')}
           hora={hora || '12:00'}
-          precio="15.00"
+          precio={itemPrecio || '0.00'}
         />
 
         {/* Formulario Cliente */}
@@ -172,7 +175,7 @@ function ConfirmarContent() {
             Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §6) */}
         {motivoRequerido && (
           <div>
-            <label htmlFor="motivo" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
+            <label htmlFor="motivo" className="block text-sm font-medium text-muted-foreground mb-1 ml-1">
               Motivo de la visita
             </label>
             <textarea
@@ -181,7 +184,7 @@ function ConfirmarContent() {
               onChange={(e) => setMotivo(e.target.value)}
               placeholder={`Ej. Chequeo de rutina, vacunación, síntoma que presenta...`}
               rows={3}
-              className="w-full p-4 bg-white border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors resize-none"
+              className="w-full p-4 bg-card border-2 border-border rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors resize-none text-foreground"
             />
           </div>
         )}

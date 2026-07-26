@@ -21,11 +21,11 @@ export function ClientForm({ nombre, telefono, onChange }: Props) {
 
   return (
     <div className="space-y-4 mb-28">
-      <h3 className="font-semibold text-gray-800 px-1">Tus Datos</h3>
-      
+      <h3 className="font-semibold text-foreground px-1">Tus Datos</h3>
+
       <div className="space-y-4">
         <div>
-          <label htmlFor="nombre" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
+          <label htmlFor="nombre" className="block text-sm font-medium text-muted-foreground mb-1 ml-1">
             Nombre y Apellido
           </label>
           <input
@@ -35,16 +35,16 @@ export function ClientForm({ nombre, telefono, onChange }: Props) {
             onChange={(e) => onChange('nombre', e.target.value)}
             placeholder="Ej. Juan Pérez"
             // CSS capitalize, pero guardamos el original
-            className="w-full p-4 bg-white border-2 border-gray-200 rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors capitalize"
+            className="w-full p-4 bg-card border-2 border-border rounded-xl focus:border-primary focus:ring-0 outline-none transition-colors capitalize text-foreground"
           />
         </div>
 
         <div>
-          <label htmlFor="telefono" className="block text-sm font-medium text-gray-700 mb-1 ml-1">
+          <label htmlFor="telefono" className="block text-sm font-medium text-muted-foreground mb-1 ml-1">
             WhatsApp
           </label>
           <div className="relative">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-medium">
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">
               +507
             </span>
             <input
@@ -54,15 +54,15 @@ export function ClientForm({ nombre, telefono, onChange }: Props) {
               value={telefono}
               onChange={(e) => onChange('telefono', e.target.value)}
               placeholder="6123 4567"
-              className={`w-full py-4 pr-4 pl-14 bg-white border-2 rounded-xl focus:ring-0 outline-none transition-colors ${
-                telefono.length > 0 && !isPhoneValid 
-                  ? 'border-red-400 focus:border-red-500' 
-                  : 'border-gray-200 focus:border-primary'
+              className={`w-full py-4 pr-4 pl-14 bg-card border-2 rounded-xl focus:ring-0 outline-none transition-colors text-foreground ${
+                telefono.length > 0 && !isPhoneValid
+                  ? 'border-destructive focus:border-destructive'
+                  : 'border-border focus:border-primary'
               }`}
             />
           </div>
           {telefono.length > 0 && !isPhoneValid && (
-            <p className="text-red-500 text-xs mt-1.5 ml-1 flex items-center">
+            <p className="text-destructive text-xs mt-1.5 ml-1 flex items-center">
               <Info size={12} className="mr-1" />
               Verifica el número ingresado
             </p>

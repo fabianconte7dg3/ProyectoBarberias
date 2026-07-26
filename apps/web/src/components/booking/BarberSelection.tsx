@@ -13,7 +13,7 @@ export function BarberSelection({ empleados, selectedId, onSelect }: Props) {
   const { terminologiaEmpleado } = useTenant();
   return (
     <div className="space-y-4 mt-8">
-      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">2. Elige a tu {terminologiaEmpleado.toLowerCase()}</h2>
+      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">Elige a tu {terminologiaEmpleado.toLowerCase()}</h2>
       
       {/* Grilla Responsiva para Empleados (Desktop y Mobile Grid) */}
       <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">

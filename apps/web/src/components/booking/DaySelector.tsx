@@ -17,7 +17,7 @@ export function DaySelector({ selectedDate, onSelect }: Props) {
 
   return (
     <div className="space-y-3 mt-4">
-      <h2 className="text-lg font-semibold px-1">1. ¿Qué día prefieres?</h2>
+      <h2 className="text-lg font-semibold px-1 text-foreground">¿Qué día prefieres?</h2>
       <div className="flex gap-3 overflow-x-auto pb-4 snap-x px-1 no-scrollbar">
         {days.map((date) => {
           const dateStr = format(date, 'yyyy-MM-dd');
@@ -31,13 +31,13 @@ export function DaySelector({ selectedDate, onSelect }: Props) {
               key={dateStr}
               onClick={() => onSelect(dateStr)}
               className={`snap-start flex-shrink-0 w-20 flex flex-col items-center justify-center py-4 rounded-2xl border-2 transition-all ${
-                isSelected 
-                  ? 'border-primary bg-primary text-primary-foreground shadow-md' 
-                  : 'border-gray-200 bg-white hover:border-primary/50 text-foreground'
+                isSelected
+                  ? 'border-primary bg-primary text-primary-foreground shadow-md'
+                  : 'border-border bg-card hover:border-primary/50 text-foreground'
               }`}
               aria-pressed={isSelected}
             >
-              <span className={`text-xs font-semibold mb-1 ${isSelected ? 'text-primary-foreground/80' : 'text-gray-500'}`}>
+              <span className={`text-xs font-semibold mb-1 ${isSelected ? 'text-primary-foreground/80' : 'text-muted-foreground'}`}>
                 {dayName}
               </span>
               <span className="text-2xl font-bold">{dayNumber}</span>

@@ -14,7 +14,7 @@ interface Props {
 export function ServiceSelection({ servicios, combos = [], selectedServicioId, selectedComboId, onSelectServicio, onSelectCombo }: Props) {
   return (
     <div className="space-y-4">
-      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">1. ¿Qué te vas a hacer hoy?</h2>
+      <h2 className="text-base sm:text-lg font-bold px-1 text-foreground">¿Qué te vas a hacer hoy?</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
         {servicios.map((s) => {
           const isSelected = selectedServicioId === s.id;

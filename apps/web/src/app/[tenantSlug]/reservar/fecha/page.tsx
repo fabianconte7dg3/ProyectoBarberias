@@ -152,7 +152,7 @@ export default function FechaPage() {
       {/* Botón Volver (Estilo nativo App) */}
       <button
         onClick={() => router.back()}
-        className="mb-2 flex items-center text-sm font-medium text-gray-500 hover:text-foreground active:scale-95 transition-all"
+        className="mb-2 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground active:scale-95 transition-all"
       >
         <ArrowLeft size={16} className="mr-1" />
         Volver a servicios

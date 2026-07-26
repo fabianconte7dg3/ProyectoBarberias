@@ -22,17 +22,17 @@ export function SuccessView({ tenantSlug }: Props) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] text-center animate-in zoom-in-95 duration-500 fade-in">
-      <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-        <CheckCircle2 size={40} className="text-green-600" />
+      <div className="w-20 h-20 bg-emerald-500/10 rounded-full flex items-center justify-center mb-6">
+        <CheckCircle2 size={40} className="text-emerald-600 dark:text-emerald-400" />
       </div>
 
-      <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Reserva Confirmada!</h2>
-      <p className="text-gray-500 mb-8 max-w-[280px]">
+      <h2 className="text-2xl font-bold text-foreground mb-2">¡Reserva Confirmada!</h2>
+      <p className="text-muted-foreground mb-8 max-w-[280px]">
         Te esperamos en {tenant.nombreComercial}. Si necesitas cancelar, por favor avísanos con tiempo.
       </p>
 
       <div className="space-y-3 w-full">
-        <a 
+        <a
           href={`https://wa.me/${localWhatsApp}?text=${whatsappMsg}`}
           target="_blank"
           rel="noopener noreferrer"
@@ -42,9 +42,9 @@ export function SuccessView({ tenantSlug }: Props) {
           Avisar por WhatsApp
         </a>
 
-        <Link 
+        <Link
           href={`/${tenantSlug}/reservar`}
-          className="flex items-center justify-center w-full p-4 bg-gray-100 text-gray-700 rounded-xl font-bold text-lg transition-all active:scale-95"
+          className="flex items-center justify-center w-full p-4 bg-secondary text-foreground rounded-xl font-bold text-lg transition-all active:scale-95"
         >
           Volver al Inicio
         </Link>
