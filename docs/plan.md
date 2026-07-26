@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.5/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.6/7)
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -543,10 +543,60 @@ encontrado) en
       que visitar `/admin/mi-silla` directo como `admin` redirige a `/admin/agenda` (mismo guard
       compartido que ya usan las páginas admin-only). `tsc --noEmit` limpio en ambos paquetes
 
-### 6.6 Rediseño Portal de Reserva Pública + Landing (Design System) 🔲 Pendiente
-- [ ] `reservar/**` (selección de profesional, fecha/hora, confirmación)
-- [ ] Landing page `/` — hoy sigue siendo el boilerplate de `create-next-app`
-      (`apps/web/src/app/page.tsx`); construir con el mockup `three.js` del export
+### 6.6 Rediseño Portal de Reserva Pública + Landing (Design System) ✅ Completo
+- [x] Punto de partida distinto a 6.4/6.5: `reservar/**` y `components/booking/**` **no** usaban
+      tokens semánticos — eran `bg-white`/`text-gray-*`/`border-gray-*` hardcoded, sin dark mode, más
+      cerca del punto de partida de Super Admin (6.2) que del panel de tenant. Se migraron todos a
+      tokens (`bg-card`, `text-foreground`, `text-muted-foreground`, `border-border`, `bg-muted`,
+      `text-destructive`) en `reservar/layout.tsx`, `reservar/fecha/page.tsx`,
+      `reservar/confirmar/page.tsx`, `ServiceSelection`, `BarberSelection`, `BarberProfileCard`,
+      `DaySelector`, `TimeSlotGrid`, `ClientForm`, `BookingSummary`, `SuccessView`, `BottomAction`
+- [x] Nuevo `components/booking/BookingStepper.tsx` — indicador de progreso (círculos numerados +
+      check al completar) montado en `reservar/layout.tsx`, visible en las 3 páginas reales del flujo
+      (`Servicio y Profesional` → `Fecha y Hora` → `Confirmación`), oculto en la pausa de
+      auto-servicio y en la vista de éxito. El mockup de Stitch mostraba 4 pasos separando
+      Servicio/Profesional — se mantuvieron combinados en una sola página como ya estaba (cambiar eso
+      es una restructuración de flujo, no un rediseño visual, fuera de alcance de esta fase)
+- [x] `TimeSlotGrid` agrupa los horarios ya calculados en Mañana/Tarde/Noche (puramente
+      presentacional, mismo criterio que el mockup) — verificado con horarios reales configurados
+      para un empleado de prueba, con las 3 franjas renderizando correctamente
+- [x] **Bug real encontrado y corregido, no solo cosmético**: `reservar/confirmar/page.tsx` llamaba a
+      `BookingSummary` con datos inventados — `` `${terminologiaServicio} Seleccionado` ``,
+      `` `${terminologiaEmpleado} Asignado` `` y un precio fijo `"15.00"` — en vez del servicio/combo,
+      empleado y precio reales elegidos en los pasos anteriores. `useBookingStore`
+      (`apps/web/src/lib/store.ts`) solo persistía los ids, no el nombre/precio. Se agregaron
+      `itemNombre`/`itemPrecio`/`empleadoNombre` al store (poblados en `reservar/page.tsx` al elegir,
+      desde los catálogos ya cargados) y `confirmar/page.tsx` ahora los lee del store. Verificado
+      end-to-end: el resumen de confirmación mostró el servicio, precio y empleado reales elegidos,
+      tanto para un servicio suelto (barbería) como para la terminología dinámica de veterinaria
+      (`Consulta` / `Veterinario`) con el campo "Motivo de la visita" correctamente presente
+- [x] Landing page `/` reescrita — el mockup `three.js` del export resultó ser JS roto de otra
+      pantalla pegado por error (lógica de un numpad de login, referencias a elementos DOM
+      inexistentes, sin escena Three.js real ni `screen.png` válido), confirmando lo que ya decía
+      `Plan_Rediseno_Visual_Stitch.md` ("No existe"). Se construyó una landing informativa con el
+      Design System (hero, 6 features grounded en funcionalidad real ya construida, grid de las 7
+      industrias reales del enum `industria_negocio` con las mismas etiquetas que
+      `CrearNegocioModal.tsx`, CTA de contacto) en vez de intentar reconstruir Three.js — **sin**
+      agregar la dependencia `three` (no estaba instalada) para un solo hero decorativo; se usó un
+      fondo con blobs de gradiente en CSS
+- [x] Logo real (`logo_short.png` del export, el único de los 5 assets de marca con canal alpha
+      transparente — los `_dark`/`_light`/`_full_*` tienen fondo sólido horneado) copiado a
+      `apps/web/public/logo-volumetrix.png`; SVGs boilerplate de `create-next-app`
+      (`next.svg`/`vercel.svg`/`file.svg`/`globe.svg`/`window.svg`) eliminados de `public/` por quedar
+      sin ningún uso tras reescribir `page.tsx`
+- [x] **CTA de contacto sin backing real, documentado igual que el gap de WhatsApp de `SuccessView`**:
+      no existe today ningún flujo de alta de tenant self-service ni canal de contacto público
+      verificado — el CTA usa `mailto:hola@volumetrixpa.com`, una dirección plausible sobre el
+      dominio de producción ya decidido en Fase 4, pero **no confirmada como buzón real
+      provisionado**. Mismo tratamiento que el número de WhatsApp hardcodeado en `SuccessView.tsx`
+      (Fase 2.4): no se inventó un formulario de captura de leads sin backend detrás
+- [x] Verificado end-to-end en navegador: flujo completo de reserva pública real en `qa-test`
+      (servicio → empleado → fecha con horarios reales configurados y agrupados por franja →
+      confirmación con datos reales → envío real → cita creada confirmada por API con
+      `origen: 'web_publica'`), flujo de veterinaria con terminología dinámica y motivo de la visita,
+      landing page sin errores de consola con el logo cargando correctamente, sin scroll horizontal
+      en 375px tanto en la landing como en el wizard de reserva. `tsc --noEmit` limpio en ambos
+      paquetes
 
 ### 6.7 Verificación y documentación 🔲 Pendiente
 - [ ] `tsc --noEmit` en ambos paquetes tras cada bloque de esta fase
