@@ -7,7 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-inter);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -27,6 +27,7 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-accent-foreground: var(--accent-foreground);
   --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
@@ -39,13 +40,17 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+
+  /* Escala de radios de docs/05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md — compartida por
+     los dos sistemas de diseño (Design System y Executive System dan la misma escala). El
+     `rounded` sin sufijo (4px) ya coincide con el default de Tailwind, no se sobreescribe. */
+  --radius-sm: 0.125rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.25rem;
+  --radius-4xl: 1.5rem;
 
   --animate-shake: shake 0.5s ease-in-out;
   @keyframes shake {
@@ -55,73 +60,162 @@
   }
 }
 
+/*
+ * Volumetrix Design System — superficie tenant (`[tenantSlug]/**`, booking público, landing).
+ * Fuente: docs/05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md §2 (export de Google Stitch,
+ * `volumetrix_design_system/DESIGN.md`). `--primary` se sobreescribe por tenant vía
+ * `colorPrimario` en `[tenantSlug]/layout.tsx` (white-labeling) — no tocar ese mecanismo.
+ */
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --background: #f3faff;
+  --foreground: #071e27;
+  --card: #ffffff;
+  --card-foreground: #071e27;
+  --popover: #ffffff;
+  --popover-foreground: #071e27;
+  --primary: #b0004a;
+  --primary-foreground: #ffffff;
+  --secondary: #006876;
+  --secondary-foreground: #ffffff;
+  --muted: #dbf1fe;
+  --muted-foreground: #5a4044;
+  --accent: #58e6ff;
+  --accent-foreground: #006573;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --border: #e3bdc3;
+  --input: #e3bdc3;
+  --ring: #006876;
+  --chart-1: #b0004a;
+  --chart-2: #006876;
+  --chart-3: #006630;
+  --chart-4: #d81b60;
+  --chart-5: #58e6ff;
+  --sidebar: #dbf1fe;
+  --sidebar-foreground: #071e27;
+  --sidebar-primary: #b0004a;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #58e6ff;
+  --sidebar-accent-foreground: #006573;
+  --sidebar-border: #e3bdc3;
+  --sidebar-ring: #006876;
 }
 
+/* Dark mode del Design System — deep charcoal (#121212), no negro puro, según el DESIGN.md. */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
+  --background: #121212;
+  --foreground: #dff4ff;
+  --card: #1e333c;
+  --card-foreground: #dff4ff;
+  --popover: #1e333c;
+  --popover-foreground: #dff4ff;
+  --primary: #ffb2bf;
+  --primary-foreground: #3f0016;
+  --secondary: #44d8f1;
+  --secondary-foreground: #001f25;
+  --muted: #1e333c;
+  --muted-foreground: #8e6f74;
+  --accent: #004e59;
+  --accent-foreground: #a1efff;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --ring: #44d8f1;
+  --chart-1: #b0004a;
+  --chart-2: #006876;
+  --chart-3: #006630;
+  --chart-4: #d81b60;
+  --chart-5: #58e6ff;
+  --sidebar: #1e333c;
+  --sidebar-foreground: #dff4ff;
+  --sidebar-primary: #ffb2bf;
+  --sidebar-primary-foreground: #3f0016;
+  --sidebar-accent: #004e59;
+  --sidebar-accent-foreground: #a1efff;
   --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --sidebar-ring: #44d8f1;
+}
+
+/*
+ * Volumetrix Executive System — superficie Super Admin (`super-admin/**`, ver
+ * `apps/web/src/app/super-admin/layout.tsx`). Fuente: mismo doc §2,
+ * `volumetrix_executive_system/DESIGN.md`. Nota: el YAML de ese archivo nombra sus roles
+ * al estilo Material (`primary`/`secondary`) pero la prosa del propio doc dice lo contrario
+ * de forma explícita — "Primary: Volumetrix Pink with white text", "Secondary: Deep Navy
+ * outline" — así que `--primary` toma el rosa (rol `secondary` del YAML) y `--secondary` el
+ * navy (rol `primary` del YAML), siguiendo la prosa, no la etiqueta literal del token.
+ */
+[data-surface="executive"] {
+  --background: #fbf8fa;
+  --foreground: #1b1b1d;
+  --card: #ffffff;
+  --card-foreground: #1b1b1d;
+  --popover: #ffffff;
+  --popover-foreground: #1b1b1d;
+  --primary: #b7004d;
+  --primary-foreground: #ffffff;
+  --secondary: #d8e3fb;
+  --secondary-foreground: #111c2d;
+  --muted: #f0edef;
+  --muted-foreground: #45474c;
+  --accent: #eae7e9;
+  --accent-foreground: #1b1b1d;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --border: #c5c6cd;
+  --input: #c5c6cd;
+  --ring: #b7004d;
+  --chart-1: #091426;
+  --chart-2: #b7004d;
+  --chart-3: #de2264;
+  --chart-4: #1e293b;
+  --chart-5: #8590a6;
+  /* Sidebar/headers en Deep Navy — "persistent structural elements", ver prosa del DESIGN.md */
+  --sidebar: #1e293b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #b7004d;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #38485d;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: #b7004d;
+}
+
+.dark[data-surface="executive"],
+.dark [data-surface="executive"] {
+  --background: #0f172a;
+  --foreground: #f3f0f2;
+  --card: #1e293b;
+  --card-foreground: #f3f0f2;
+  --popover: #1e293b;
+  --popover-foreground: #f3f0f2;
+  --primary: #ffb2bf;
+  --primary-foreground: #3f0016;
+  --secondary: #bcc7de;
+  --secondary-foreground: #111c2d;
+  --muted: #1e293b;
+  --muted-foreground: #8590a6;
+  --accent: #d3e4fe;
+  --accent-foreground: #0b1c30;
+  --destructive: #ba1a1a;
+  --destructive-foreground: #ffffff;
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: #ffb2bf;
+  --chart-1: #091426;
+  --chart-2: #b7004d;
+  --chart-3: #de2264;
+  --chart-4: #1e293b;
+  --chart-5: #8590a6;
+  --sidebar: #1e293b;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #ffb2bf;
+  --sidebar-primary-foreground: #3f0016;
+  --sidebar-accent: #3c475a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: oklch(1 0 0 / 12%);
+  --sidebar-ring: #ffb2bf;
 }
 
 @layer base {

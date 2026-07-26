@@ -26,7 +26,7 @@ export default async function TenantLayout({
   return (
     <div
       className="min-h-screen bg-background text-foreground w-full flex flex-col font-sans"
-      style={{ '--primary': tenant.colorPrimario || '#ef4444' } as React.CSSProperties}
+      style={{ '--primary': tenant.colorPrimario || '#b0004a' } as React.CSSProperties}
     >
       <TenantProvider tenant={tenant}>{children}</TenantProvider>
     </div>
