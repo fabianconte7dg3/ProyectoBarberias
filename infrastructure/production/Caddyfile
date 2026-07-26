@@ -9,8 +9,13 @@
 # necesita el registro DNS wildcard "*.volumetrixpa.com -> IP del
 # servidor" apuntado por el usuario, sin API keys de terceros.
 {
+	# Sin `ask`, on-demand TLS emitiria un certificado para CUALQUIER hostname
+	# que alguien apunte a la IP del servidor (abuso / agotamiento de rate
+	# limits de Let's Encrypt). Caddy llama a esta URL con ?domain=<host> antes
+	# de cada emision y solo procede si responde 200 — ver
+	# TenantsController.validarDominio / TenantsService.validarDominioParaTls.
 	on_demand_tls {
-		ask http://api:4000/health
+		ask http://api:4000/tenants/validar-dominio
 	}
 }
 
