@@ -39,4 +39,30 @@ export class TenantsService {
       return tenant;
     });
   }
+
+  /**
+   * Hosts fijos de la plataforma (dominio raíz, www, api) — siempre válidos
+   * para emisión de certificado, no representan un tenant.
+   */
+  private static readonly HOSTS_FIJOS = new Set([
+    'volumetrixpa.com',
+    'www.volumetrixpa.com',
+    'api.volumetrixpa.com',
+  ]);
+
+  /**
+   * Endpoint `ask` de Caddy on-demand TLS (Fase 4 — infraestructura/production/Caddyfile).
+   * Caddy llama `GET ?domain=<host>` antes de emitir cada certificado; sin esta
+   * validación, on-demand TLS emitiría un certificado para CUALQUIER hostname que
+   * alguien apunte a la IP del servidor (abuso / agotamiento de rate limits de
+   * Let's Encrypt). Solo autoriza los hosts fijos de la plataforma o un subdominio
+   * cuyo primer label sea el slug de un tenant activo real.
+   */
+  async validarDominioParaTls(domain: string): Promise<boolean> {
+    if (TenantsService.HOSTS_FIJOS.has(domain)) return true;
+
+    const slug = domain.split('.')[0];
+    const tenantResult = await this.db.execute(sql`SELECT id FROM auth_get_tenant_by_slug(${slug})`);
+    return Boolean(tenantResult.rows[0]?.id);
+  }
 }
