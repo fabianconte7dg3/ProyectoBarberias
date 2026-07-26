@@ -398,7 +398,7 @@ export default function AdminClientesPage() {
 
               <div className="bg-card border border-border p-4 rounded-2xl shadow-xs space-y-1">
                 <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider block">Opt-In Ley 81</span>
-                <div className="text-2xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">{optInMktCount}</div>
+                <div className="text-2xl font-extrabold text-secondary dark:text-secondary font-mono">{optInMktCount}</div>
                 <span className="text-[10px] text-muted-foreground block">Autorizan mensajería</span>
               </div>
 
@@ -437,7 +437,7 @@ export default function AdminClientesPage() {
                 <button
                   onClick={() => setFiltroMkt('ley81')}
                   className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                    filtroMkt === 'ley81' ? 'bg-blue-600 text-white' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                    filtroMkt === 'ley81' ? 'bg-secondary text-secondary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
                   }`}
                 >
                   Opt-In Ley 81 ({optInMktCount})
@@ -577,7 +577,7 @@ export default function AdminClientesPage() {
                               onClick={() => handleToggleMarketingDirect(c)}
                               className={`px-2.5 py-1 rounded-xl text-xs font-extrabold border transition-colors ${
                                 c.aceptaMarketing
-                                  ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20'
+                                  ? 'bg-secondary/10 text-secondary dark:text-secondary border-secondary/20 hover:bg-secondary/20'
                                   : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
                               }`}
                               title="Haz clic para cambiar permiso Ley 81"

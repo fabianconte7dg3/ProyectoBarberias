@@ -204,7 +204,7 @@ export default function AdminCajaPage() {
                 </span>
               )}
               {estadoCaja === 'sobrante' && (
-                <span className="px-3 py-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs font-bold flex items-center gap-1.5">
+                <span className="px-3 py-1 rounded-full bg-secondary/10 text-secondary dark:text-secondary border border-secondary/20 text-xs font-bold flex items-center gap-1.5">
                   <Sparkles size={14} />
                   <span>SOBRANTE (+${Math.abs(Number(diferencia)).toFixed(2)})</span>
                 </span>
@@ -264,7 +264,7 @@ export default function AdminCajaPage() {
                     ? 'text-emerald-600 dark:text-emerald-400' 
                     : diferenciaCentavos < 0 
                     ? 'text-rose-600 dark:text-rose-400' 
-                    : 'text-blue-600 dark:text-blue-400'
+                    : 'text-secondary dark:text-secondary'
                 }`}>
                   {diferenciaCentavos > 0 ? `+$${diferencia}` : `$${diferencia}`}
                 </span>

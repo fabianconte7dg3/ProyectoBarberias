@@ -506,7 +506,7 @@ export default function AdminDashboardPage() {
                 <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider block">
                   Ticket Promedio por Cobro
                 </span>
-                <div className="text-3xl font-extrabold text-blue-600 dark:text-blue-400 font-mono">
+                <div className="text-3xl font-extrabold text-secondary dark:text-secondary font-mono">
                   ${ticketPromedio}
                 </div>
                 <span className="text-[11px] text-muted-foreground block pt-1">
@@ -585,8 +585,8 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="bg-blue-500/5 border border-blue-500/20 p-4 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-2.5 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase">
+                  <div className="bg-secondary/5 border border-secondary/20 p-4 rounded-xl flex items-center justify-between">
+                    <div className="flex items-center gap-2.5 text-secondary dark:text-secondary font-bold text-xs uppercase">
                       <CreditCard size={18} />
                       <span>Mixto / Tarjeta</span>
                     </div>
@@ -769,7 +769,7 @@ export default function AdminDashboardPage() {
               {/* Gráfico 1 Staff: Recaudación Apilada (Servicios vs Productos) */}
               <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
                 <h2 className="text-base font-bold flex items-center gap-2 border-b border-border pb-3">
-                  <Layers size={18} className="text-blue-500" />
+                  <Layers size={18} className="text-secondary" />
                   <span>Producción por {terminologiaEmpleado}: {terminologiaServicio}s vs Retail ($)</span>
                 </h2>
 

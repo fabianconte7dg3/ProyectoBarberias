@@ -347,7 +347,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                 onClick={() => setMetodoPago('mixto')}
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'mixto'
-                    ? 'border-blue-500 bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-xs'
+                    ? 'border-secondary bg-secondary/10 text-secondary shadow-xs'
                     : 'border-border hover:bg-secondary text-muted-foreground'
                 }`}
               >

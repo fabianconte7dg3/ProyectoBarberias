@@ -261,9 +261,9 @@ export default function AdminDatosPage() {
                   <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block">Nuevos Creados</span>
                   <span className="text-xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400">{reporteResult.creados}</span>
                 </div>
-                <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                  <span className="text-[10px] uppercase font-bold text-blue-600 dark:text-blue-400 block">Actualizados (Merge)</span>
-                  <span className="text-xl font-extrabold font-mono text-blue-600 dark:text-blue-400">{reporteResult.actualizados}</span>
+                <div className="p-3 bg-secondary/10 border border-secondary/20 rounded-xl">
+                  <span className="text-[10px] uppercase font-bold text-secondary dark:text-secondary block">Actualizados (Merge)</span>
+                  <span className="text-xl font-extrabold font-mono text-secondary dark:text-secondary">{reporteResult.actualizados}</span>
                 </div>
                 <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl">
                   <span className="text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400 block">Rechazados / Errores</span>

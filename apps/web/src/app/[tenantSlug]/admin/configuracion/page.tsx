@@ -777,7 +777,7 @@ export default function AdminConfiguracionPage() {
         <div className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
-              <Calendar size={20} className="text-blue-500" />
+              <Calendar size={20} className="text-secondary" />
               <div>
                 <h2 className="text-base font-bold">Historial de Ausencias, Vacaciones & Licencias del Staff</h2>
                 <p className="text-xs text-muted-foreground">
@@ -815,7 +815,7 @@ export default function AdminConfiguracionPage() {
                   if (now >= ini && now <= fin) {
                     estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">EN CURSO</span>;
                   } else if (ini > now) {
-                    estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">PROGRAMADO</span>;
+                    estadoBadge = <span className="px-2 py-0.5 rounded uppercase font-bold text-[10px] bg-secondary/10 text-secondary dark:text-secondary border border-secondary/20">PROGRAMADO</span>;
                   }
 
                   return (
