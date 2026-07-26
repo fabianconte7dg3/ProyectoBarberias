@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.4/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.5/7)
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -487,12 +487,61 @@ encontrado) en
       dominio real**, solo razonado. Queda como riesgo a confirmar antes de depender de subdominios en
       producción (ver `Plan_Fase4_Infraestructura.md`)
 
-### 6.5 Vista "Mi Silla" para staff 🔲 Pendiente
-- [ ] Backend: confirmar si alcanza con filtrar el endpoint de agenda existente por el `empleadoId`
-      propio del staff logueado, o hace falta un endpoint dedicado
-- [ ] Frontend: nueva ruta (ej. `admin/mi-silla`), visible solo para roles `empleado`/`recepcion`, con
-      el visual del mockup `dashboard_del_barbero_mi_silla` del export de Stitch
-- [ ] Decidir si reemplaza el acceso de staff a la agenda completa o convive con ella
+### 6.5 Vista "Mi Silla" para staff ✅ Completo
+- [x] Backend: no hizo falta ningún endpoint nuevo. `GET /citas?fecha=` ya fuerza
+      `empleadoId = user.userId` cuando `user.rol === 'empleado'`
+      (`citas.service.ts:obtenerCitasAgenda`), y `GET /reportes/mi-desempeno` ya acepta
+      `desde`/`hasta` y siempre está scopeado al empleado autenticado — pedir ambos con
+      `desde=hasta=hoy` da exactamente los datos de "hoy" que pedía el mockup, sin nueva superficie
+      de API
+- [x] Frontend: nueva ruta `admin/mi-silla` (`[tenantSlug]/admin/mi-silla/page.tsx`), gateada con
+      `useAdminAuth({ requiredRole: 'empleado' })` — **solo `empleado`, no `recepcion`** (decisión
+      tomada al implementar, ver nota abajo)
+- [x] **Alcance ajustado del mockup a lo que hay datos reales para respaldar** (mismo criterio que
+      6.2 con los gráficos fantasma de Super Admin): se construyeron las 3 secciones con datos
+      reales — KPIs (Servicios/Comisiones/Propinas desde `mi-desempeno`, Tiempo Promedio calculado
+      client-side desde `finEstimado - inicioEstimado` de las citas completadas), Cola de Clientes
+      (tarjeta destacada "En Silla" con barra de progreso + Finalizar → abre `CobrarCitaModal`
+      existente; pendientes con botón "Pasar a Silla" y menú de Ausente/Cancelar), y Servicios de
+      Hoy Completados (tabla, badge "Pagado" porque `estado='completada'` solo se alcanza tras un
+      cobro real). **Deliberadamente no se copiaron** del mockup: "Metas del Día" (implica una meta
+      diaria por empleado que no existe en el schema) e "Inventario de Puesto" (implica inventario
+      por-silla/por-empleado, cuando `productos` es inventario a nivel de tenant) — ambos habrían
+      sido UI con datos inventados
+- [x] **Decisión: `empleado` únicamente, no `recepcion`** (el plan original decía
+      "empleado`/`recepcion`", ajustado al implementar). `citas.empleadoId` nunca apunta a un
+      usuario `recepcion` — ni el flujo de creación de citas, ni el filtro "Solo Mis Citas" de
+      `admin/agenda`, tratan a recepción como profesional asignable. Una "Mi Silla" para recepción
+      siempre estaría vacía; se queda con la vista operativa completa de `admin/agenda`, igual que
+      hoy
+- [x] **Decisión: convive con la agenda completa, no la reemplaza.** `empleado` ve ambos links en el
+      nav (`AdminHeader`) — Mi Silla como vista enfocada del día, Agenda para el caso de querer ver
+      la grilla completa o "Ver Todo el Equipo" (toggle que ya existía). El login con PIN de
+      `empleado` ahora aterriza en `/admin/mi-silla` (antes `/admin/agenda`, sin cambios para
+      `admin`/`recepcion`) — cambio en `admin/login/page.tsx`
+- [x] **`AdminHeader` ajustado para soportar páginas de fecha fija**: `selectedDate`/`onDateChange`
+      pasaron a opcionales — si no se pasan, el navegador de fechas (prev/hoy/siguiente) simplemente
+      no se renderiza, en vez de forzar una fecha ficticia en una página que solo opera sobre "hoy"
+- [x] **Bug real encontrado y corregido durante la verificación** (no estaba en el alcance original,
+      pero bloqueaba cualquier tenant con al menos un servicio completado hoy): `servicioPrecio`/
+      `comboPrecio` llegan del API como **strings** (Drizzle serializa columnas `decimal` como
+      string, no `number`, pese a que el tipo `CitaAgenda` los declara `number | null`), y la tabla
+      de "Servicios de Hoy" llamaba `.toFixed(2)` directo sobre ese valor → `TypeError` en cuanto
+      había una sola cita completada, tumbando toda la página (Next.js caía al error boundary por
+      defecto, sin componente `error.tsx` propio). Solo se manifestaba con datos reales — el estado
+      vacío (sin citas) no lo disparaba, por eso una verificación solo del caso vacío no lo hubiera
+      encontrado. Corregido envolviendo con `Number(...)` antes de `.toFixed()`
+- [x] Verificado end-to-end con datos reales del tenant `qa-test` (citas creadas vía API para hoy en
+      los 3 estados relevantes + un cobro real): estado vacío, tarjeta "En Silla" con barra de
+      progreso y WhatsApp, botón "Finalizar" abre `CobrarCitaModal` pre-rellenado (cliente/servicio/
+      total correctos) y lo cierra sin romper estado, menú "Opciones" de un pendiente (Marcar
+      Ausente/Cancelar), botón "Pasar a Silla" transiciona `programada → en_curso` con UI optimista
+      y persiste en el backend, KPIs se refrescan tras un cobro real (Yappy, que confirmó además que
+      la cita correctamente se queda en `en_curso` hasta el webhook — comportamiento correcto y
+      preexistente de `TransaccionesService.cobrarCita`, no algo que Mi Silla necesitara manejar
+      distinto). Confirmado también que `admin`/`recepcion` no ven el link "Mi Silla" en el nav y
+      que visitar `/admin/mi-silla` directo como `admin` redirige a `/admin/agenda` (mismo guard
+      compartido que ya usan las páginas admin-only). `tsc --noEmit` limpio en ambos paquetes
 
 ### 6.6 Rediseño Portal de Reserva Pública + Landing (Design System) 🔲 Pendiente
 - [ ] `reservar/**` (selección de profesional, fecha/hora, confirmación)
