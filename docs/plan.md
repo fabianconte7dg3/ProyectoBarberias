@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.2/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.3/7)
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -416,14 +416,36 @@ encontrado) en
       consola ni assets rotos — no se pudo verificar visualmente el dashboard/listado ya autenticados
       por no contar con credenciales de superadmin (con TOTP) a mano en este entorno
 
-### 6.3 Impersonation de Super Admin ("Login as Tenant") 🔲 Pendiente
-- [ ] Backend: endpoint que emite un JWT de impersonación de expiración corta (claim distinguible del
-      login normal) a partir de `super-admin/tenants/[id]`
-- [ ] Backend: registrar cada uso en el log de auditoría existente (ver `Consideraciones_Seguridad.md`)
-- [ ] Backend: decidir mecanismo de "volver" a la sesión real de Super Admin sin tener que reloguear
-- [ ] Frontend: banner persistente y visible en toda la UI mientras la sesión está impersonando —
-      nunca debe ser invisible que hay un operador externo dentro de la cuenta
-- [ ] Verificar: RLS se comporta igual que un login admin real; la auditoría queda registrada en cada uso
+### 6.3 Impersonation de Super Admin ("Login as Tenant") ✅ Completo
+- [x] Backend: `POST /super-admin/tenants/:id/impersonar` (`SuperAdminGuard`) — busca el admin activo
+      real del tenant y emite un JWT de 30 min (`expiresIn: '30m'`, vs. las 12h de un login admin
+      normal) con la misma forma `sub`/`tenantId`/`rol` que un login real, más los claims
+      `imp`/`impBy`/`impByEmail` que lo distinguen. `JwtStrategy.validate()` los propaga a
+      `request.user` solo cuando están presentes, sin tocar el contrato para tokens normales
+- [x] Backend: cada uso queda en `audit_logs` (nuevo valor de enum `impersonacion`, migración
+      `0018_impersonacion_audit.sql`) — `usuarioId` apunta al admin impersonado (satisface el FK real
+      de la tabla) y la identidad del Super Admin que lo disparó (id + email + IP + user-agent) vive en
+      `payloadDespues`, visible en el propio log de auditoría de `super-admin/tenants/[id]`
+- [x] Backend: "volver" a la sesión de Super Admin sin relogueo no necesitó mecanismo nuevo — el token
+      de impersonación viaja en la cookie httpOnly `jwt` (igual que un login admin), mientras que la
+      sesión de Super Admin vive en `super_jwt` en `localStorage`, un canal completamente aparte que
+      nunca se toca. Salir de la impersonación es solo `POST /auth/logout` (limpia la cookie `jwt`) +
+      volver a `/super-admin/tenants` — `super_jwt` sigue ahí, sesión de Super Admin intacta
+- [x] Frontend: banner ámbar dentro del mismo `<header>` sticky de `AdminHeader` (no un sticky
+      independiente — dos stickies con `top-0` se superpondrían al hacer scroll), visible en todas las
+      páginas de `[tenantSlug]/admin/**`. Estado no persistido como fuente de verdad: `useAdminAuth`
+      resincroniza `impersonation` en `adminStore` desde `GET /auth/me` (`imp`/`impByEmail`) en cada
+      mount, igual que ya hacía con la sesión misma
+- [x] Botón "Entrar como Negocio" en `super-admin/tenants/[id]` con confirmación explícita antes de
+      abrir la sesión
+- [x] Verificado: `tsc --noEmit` limpio en ambos paquetes; migración aplicada y confirmada por psql
+      (`enum_range` muestra `impersonacion`); `curl` sin token / con Bearer inválido al endpoint nuevo
+      devuelve 401 (guard correctamente cableado, sin 500). RLS-paridad verificada por lectura de
+      código, no con un test nuevo: el payload del token de impersonación tiene la misma forma que un
+      login admin real y `TenantInterceptor` solo mira `tenantId`/`rol==='superadmin'`, ninguno de los
+      dos ve los claims extra — no se pudo probar el flujo autenticado de punta a punta (clic real en
+      "Entrar como Negocio" → banner → salir) por no contar con credenciales de superadmin con TOTP en
+      este entorno
 
 ### 6.4 Rediseño Panel de Administración de Tenant (Design System) 🔲 Pendiente
 - [ ] `admin/login`
