@@ -79,6 +79,7 @@ docs/
 - [Perfil Operativo & Flujo](./05-diseno-y-ux/Perfil_Operativo_Flujo.md) — Experiencia operativa del staff y del cliente.
 - [Estructura del CRM](./05-diseno-y-ux/Estructura_CRM.md) — Cómo funciona el CRM silencioso en la práctica.
 - [Pantallas del MVP](./05-diseno-y-ux/Pantallas_Figma.md) — Las 9 pantallas del MVP y la identidad visual (paleta, tipografía) — ya construidas.
+- [Rediseño Visual — Google Stitch (PRD + Design System)](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) — 24 pantallas exportadas + 2 sistemas de diseño (tenant / Super Admin) + impersonation de Super Admin y vista "Mi Silla". 🔶 Priorizado (2026-07-26) — desglose ejecutable en `plan.md` Fase 6, ejecución no iniciada.
 
 ### 📍 [06. Referencias Técnicas](./06-referencias-tecnicas/)
 - [Arquitectura de Datos — Guía de Setup](./06-referencias-tecnicas/README_Arquitectura_Datos.md) — Cómo dejar el patrón RLS/Drizzle funcionando en un entorno nuevo (corregido: ya no instruye usar `drizzle-kit`, prohibido en este proyecto).

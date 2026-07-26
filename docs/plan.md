@@ -350,3 +350,84 @@ encontrado) en
 - [ ] Validar que el modelo de precios (por cantidad de empleados, ver
       [`Estrategia_Precios.md`](./01-vision-y-plan/Estrategia_Precios.md)) funciona igual en otros verticales
 - [ ] Definir la estrategia de lanzamiento del segundo vertical
+- [ ] Sucursales / multi-sede — feature del PRD de Google Stitch, deliberadamente diferida (no priorizada
+      en la decisión del 2026-07-26, ver [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md)
+      §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
+- [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
+
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.1/7)
+
+> Decidido con el usuario el 2026-07-26 (ver
+> [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
+> analysis completo de las 24 pantallas exportadas): (1) el rediseño visual va primero, con reemplazo
+> total de los tokens de tema actuales (shadcn neutro) por los dos sistemas de diseño de Stitch; (2) de
+> las 4 features de negocio nuevas del PRD, se construyen ahora **impersonation de Super Admin** y
+> **vista "Mi Silla" para staff** — sucursales y perfil de cuenta propia quedan en el backlog de Fase 5;
+> (3) sin prioridad de superficie fija — el orden de abajo es el orden técnico más práctico (fundamento →
+> Super Admin, donde además se agrega impersonation → panel de tenant, donde además se agrega Mi Silla →
+> portal público + landing).
+
+### 6.1 Fundamento del sistema de diseño ✅ Completo
+- [x] Reemplazar los tokens de `apps/web/src/app/globals.css` (hoy shadcn neutro/oklch) por los dos
+      sistemas de Stitch: **Volumetrix Design System** (superficie tenant: `[tenantSlug]/**`, activo por
+      defecto en `:root`) y **Volumetrix Executive System** (superficie `super-admin/**`, scopeado vía
+      `[data-surface="executive"]` en el nuevo `apps/web/src/app/super-admin/layout.tsx`) — paletas,
+      tipografía Inter (reemplaza Geist Sans en `apps/web/src/app/layout.tsx`; Geist Mono se mantiene
+      para `font-mono`, usado en 24 archivos), radios (4px estándar / 8px contenedores, escala fija en
+      vez del `calc()` derivado de un solo `--radius`)
+- [x] Confirmar que el mecanismo de white-label por tenant (`colorPrimario` → CSS var `--primary`,
+      ver `CLAUDE.md` §Frontend) sigue funcionando sobre los nuevos tokens — verificado en navegador
+      (`qa-test.localhost:3000/reservar`, `--primary` resuelve al fallback de marca nuevo `#b0004a`,
+      ya no al rojo genérico `#ef4444` de antes)
+- [x] Dark mode: navy `#0f172a` (Executive) / charcoal `#121212` (Design System), no negro puro, según
+      ambos `DESIGN.md` — implementado, no verificable en navegador porque el dark mode de la app usa
+      selector de clase (`.dark`) y no hay ningún toggle/`ThemeProvider` que la aplique todavía (deuda
+      preexistente, no introducida por este cambio)
+- [x] Verificado: `tsc --noEmit` limpio en `apps/web`; en navegador, superficie tenant resuelve a Design
+      System (`background:#f3faff`, `primary:#b0004a`) y superficie Super Admin resuelve a Executive
+      System (`background:#fbf8fa`, `primary:#b7004d`, `sidebar:#1e293b`) de forma independiente; sin
+      errores nuevos en consola
+
+### 6.2 Rediseño Super Admin (Executive System) 🔲 Pendiente
+- [ ] `super-admin/login`
+- [ ] `super-admin` (dashboard global)
+- [ ] `super-admin/tenants` (listado)
+- [ ] `super-admin/tenants/[id]` (detalle) — superficie donde también se agrega el botón de
+      impersonation (ver 6.3)
+
+### 6.3 Impersonation de Super Admin ("Login as Tenant") 🔲 Pendiente
+- [ ] Backend: endpoint que emite un JWT de impersonación de expiración corta (claim distinguible del
+      login normal) a partir de `super-admin/tenants/[id]`
+- [ ] Backend: registrar cada uso en el log de auditoría existente (ver `Consideraciones_Seguridad.md`)
+- [ ] Backend: decidir mecanismo de "volver" a la sesión real de Super Admin sin tener que reloguear
+- [ ] Frontend: banner persistente y visible en toda la UI mientras la sesión está impersonando —
+      nunca debe ser invisible que hay un operador externo dentro de la cuenta
+- [ ] Verificar: RLS se comporta igual que un login admin real; la auditoría queda registrada en cada uso
+
+### 6.4 Rediseño Panel de Administración de Tenant (Design System) 🔲 Pendiente
+- [ ] `admin/login`
+- [ ] `admin/dashboard`
+- [ ] `admin/agenda`
+- [ ] `admin/caja` + `CobrarCitaModal`
+- [ ] `admin/empleados`
+- [ ] `admin/configuracion`
+- [ ] `admin/clientes`
+- [ ] `admin/productos`
+- [ ] `admin/datos`
+
+### 6.5 Vista "Mi Silla" para staff 🔲 Pendiente
+- [ ] Backend: confirmar si alcanza con filtrar el endpoint de agenda existente por el `empleadoId`
+      propio del staff logueado, o hace falta un endpoint dedicado
+- [ ] Frontend: nueva ruta (ej. `admin/mi-silla`), visible solo para roles `empleado`/`recepcion`, con
+      el visual del mockup `dashboard_del_barbero_mi_silla` del export de Stitch
+- [ ] Decidir si reemplaza el acceso de staff a la agenda completa o convive con ella
+
+### 6.6 Rediseño Portal de Reserva Pública + Landing (Design System) 🔲 Pendiente
+- [ ] `reservar/**` (selección de profesional, fecha/hora, confirmación)
+- [ ] Landing page `/` — hoy sigue siendo el boilerplate de `create-next-app`
+      (`apps/web/src/app/page.tsx`); construir con el mockup `three.js` del export
+
+### 6.7 Verificación y documentación 🔲 Pendiente
+- [ ] `tsc --noEmit` en ambos paquetes tras cada bloque de esta fase
+- [ ] Smoke test en navegador de cada superficie re-diseñada antes de darla por cerrada
+- [ ] Actualizar `walkthrough.md`/`spec.md` y marcar esta fase completa al cerrar
