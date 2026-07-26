@@ -1,0 +1,102 @@
+# Copia de docker-compose.production.yml para un entorno de staging
+# separado. Sin datos reales — placeholder listo para cuando exista un
+# servidor de staging real (ver docs/02-arquitectura-y-db/
+# Plan_Fase4_Infraestructura.md, seccion "Fuera de esta pasada").
+#
+# Nombre de proyecto y container_name con prefijo `_staging` explicito
+# por la misma razon que produccion usa `_prod`: un container_name es
+# global, no se scopea por proyecto — necesario para poder correr dev +
+# staging + produccion en la misma maquina sin colisiones.
+name: volumetrix-staging
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: volumetrix_staging_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-volumetrix}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: volumetrix_staging_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    build:
+      context: ../apps/api
+    container_name: volumetrix_staging_api
+    restart: unless-stopped
+    env_file:
+      - .env.staging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:4000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  web:
+    build:
+      context: ../apps/web
+      args:
+        NEXT_PUBLIC_API_URL: https://api.staging.volumetrixpa.com
+    container_name: volumetrix_staging_web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: volumetrix_staging_caddy
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+      - "8443:443"
+    volumes:
+      - ./staging/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+      web:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+    name: volumetrix_staging_postgres_data
+  redis_data:
+    name: volumetrix_staging_redis_data
+  caddy_data:
+    name: volumetrix_staging_caddy_data
+  caddy_config:
+    name: volumetrix_staging_caddy_config

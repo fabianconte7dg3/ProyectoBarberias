@@ -1,0 +1,31 @@
+# Caddyfile de staging — placeholder, sin desplegar todavia.
+#
+# PENDIENTE antes de usar esto en un servidor real: TenantsService.
+# HOSTS_FIJOS (apps/api/src/tenants/tenants.service.ts) solo reconoce
+# volumetrixpa.com/www/api como hosts fijos validos para el ask endpoint
+# de on-demand TLS — no conoce staging.volumetrixpa.com todavia. Un
+# subdominio de TENANT (barberia-jose.staging.volumetrixpa.com) SI
+# valida correctamente (el primer label sigue siendo el slug real), pero
+# el dominio raiz/www/api de staging necesitaria agregarse a HOSTS_FIJOS
+# antes de depender de esto. No se agrega ahora porque el esquema de
+# subdominios de staging todavia no esta decidido (ver Plan_Fase4).
+{
+	on_demand_tls {
+		ask http://api:4000/tenants/validar-dominio
+	}
+}
+
+staging.volumetrixpa.com, www.staging.volumetrixpa.com {
+	reverse_proxy web:3000
+}
+
+api.staging.volumetrixpa.com {
+	reverse_proxy api:4000
+}
+
+*.staging.volumetrixpa.com {
+	tls {
+		on_demand
+	}
+	reverse_proxy web:3000
+}
