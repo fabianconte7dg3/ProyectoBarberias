@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus,
-  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database, Link2, Check, Share2, ShieldAlert
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database, Link2, Check, Share2, ShieldAlert, Armchair
 } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
@@ -15,8 +15,10 @@ interface AdminHeaderProps {
   tenantSlug: string;
   userName: string;
   userRole: string;
-  selectedDate: Date;
-  onDateChange: (date: Date) => void;
+  // Ausentes en páginas de fecha fija (ej. Mi Silla, que solo opera sobre
+  // "hoy") — el navegador de fechas completo no aplica ahí y se omite.
+  selectedDate?: Date;
+  onDateChange?: (date: Date) => void;
   onLogout: () => void;
   onNewCitaClick: () => void;
   onMiDesempenoClick?: () => void;
@@ -37,7 +39,7 @@ export function AdminHeader({
   const router = useRouter();
   const pathname = usePathname();
   const { terminologiaEmpleado } = useTenant();
-  const isSelectedToday = isToday(selectedDate);
+  const isSelectedToday = selectedDate ? isToday(selectedDate) : true;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const impersonation = useAdminStore((state) => state.impersonation);
@@ -61,9 +63,13 @@ export function AdminHeader({
   };
 
   const isAdmin = userRole === 'admin';
+  const isEmpleado = userRole === 'empleado';
 
   const navLinks = [
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
+    ...(isEmpleado ? [
+      { label: 'Mi Silla', href: `/${tenantSlug}/admin/mi-silla`, icon: Armchair },
+    ] : []),
     ...(isAdmin ? [
       { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/empleados`, icon: Users },
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
@@ -121,40 +127,43 @@ export function AdminHeader({
           </div>
         </div>
 
-        {/* 2. Navegador de Fechas (Centrado en Pantallas Medianas / Grandes) */}
-        <div className="flex items-center justify-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm order-3 w-full sm:order-none sm:w-auto">
-          <button
-            onClick={() => onDateChange(subDays(selectedDate, 1))}
-            className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            title="Día anterior"
-          >
-            <ChevronLeft size={16} />
-          </button>
-
-          <div className="flex items-center gap-1.5 px-2 sm:px-3">
-            <CalendarIcon size={14} className="text-primary shrink-0" />
-            <span className="text-xs sm:text-sm font-bold capitalize whitespace-nowrap">
-              {format(selectedDate, "EEE d 'de' MMM", { locale: es })}
-            </span>
-          </div>
-
-          <button
-            onClick={() => onDateChange(addDays(selectedDate, 1))}
-            className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            title="Día siguiente"
-          >
-            <ChevronRight size={16} />
-          </button>
-
-          {!isSelectedToday && (
+        {/* 2. Navegador de Fechas (Centrado en Pantallas Medianas / Grandes) —
+            ausente en páginas de fecha fija como Mi Silla (ver AdminHeaderProps) */}
+        {selectedDate && onDateChange && (
+          <div className="flex items-center justify-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm order-3 w-full sm:order-none sm:w-auto">
             <button
-              onClick={() => onDateChange(new Date())}
-              className="text-[11px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-0.5"
+              onClick={() => onDateChange(subDays(selectedDate, 1))}
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Día anterior"
             >
-              Hoy
+              <ChevronLeft size={16} />
             </button>
-          )}
-        </div>
+
+            <div className="flex items-center gap-1.5 px-2 sm:px-3">
+              <CalendarIcon size={14} className="text-primary shrink-0" />
+              <span className="text-xs sm:text-sm font-bold capitalize whitespace-nowrap">
+                {format(selectedDate, "EEE d 'de' MMM", { locale: es })}
+              </span>
+            </div>
+
+            <button
+              onClick={() => onDateChange(addDays(selectedDate, 1))}
+              className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+              title="Día siguiente"
+            >
+              <ChevronRight size={16} />
+            </button>
+
+            {!isSelectedToday && (
+              <button
+                onClick={() => onDateChange(new Date())}
+                className="text-[11px] font-bold px-2 py-1 rounded-md bg-primary/10 text-primary hover:bg-primary/20 transition-colors ml-0.5"
+              >
+                Hoy
+              </button>
+            )}
+          </div>
+        )}
 
         {/* 3. Menú Navegación Desktop & Acciones (Solo en pantallas xl 1280px+) */}
         <div className="hidden xl:flex items-center gap-1.5 shrink-0">

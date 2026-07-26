@@ -73,7 +73,10 @@ export default function AdminLoginPage() {
       });
 
       login(response.usuario, tenantSlug);
-      router.push(`/${tenantSlug}/admin/agenda`);
+      // El staff tipo `empleado` aterriza en su vista de trabajo dedicada
+      // (Fase 6.5); admin/recepción siguen yendo a la agenda operativa.
+      const destino = response.usuario.rol === 'empleado' ? 'mi-silla' : 'agenda';
+      router.push(`/${tenantSlug}/admin/${destino}`);
     } catch (err: any) {
       console.error('Login error', err);
       setIsError(true);
@@ -145,10 +148,10 @@ export default function AdminLoginPage() {
             </div>
             <div className="flex gap-2 shrink-0">
               <button
-                onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
+                onClick={() => router.push(`/${tenantSlug}/admin/${currentUser.rol === 'empleado' ? 'mi-silla' : 'agenda'}`)}
                 className="px-3 py-1.5 bg-emerald-600 text-white text-[11px] font-bold rounded-lg hover:bg-emerald-700 transition-colors"
               >
-                Mi Agenda
+                {currentUser.rol === 'empleado' ? 'Mi Silla' : 'Mi Agenda'}
               </button>
               <button
                 onClick={handleLogout}
