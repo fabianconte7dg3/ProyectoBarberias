@@ -23,6 +23,29 @@ services:
       - redis_data:/data
     restart: unless-stopped
 
+  # Solo para verificar empiricamente que drizzle-orm/node-postgres es
+  # compatible con PgBouncer en pool_mode=transaction (ver
+  # docs/02-arquitectura-y-db/Plan_Fase4_Infraestructura.md, seccion
+  # PgBouncer) — no arranca con `docker compose up` normal, hay que pedirlo
+  # explicito: `docker compose --profile pgbouncer-test up -d pgbouncer`.
+  # pgbouncer.ini/userlist.txt montados explicitos (no la auto-config de la
+  # imagen vía DATABASE_URL) porque los tests conectan con DOS usuarios
+  # reales distintos (postgres/app_user) — la auto-config solo conoce el
+  # usuario de una sola DATABASE_URL. Los passwords en userlist.txt son los
+  # mismos de siempre en local (ver DATABASE_URL de apps/api/.env), no un
+  # secreto nuevo.
+  pgbouncer:
+    image: edoburu/pgbouncer:latest
+    container_name: volumetrix_pgbouncer_test
+    profiles: ["pgbouncer-test"]
+    volumes:
+      - ./pgbouncer-test/pgbouncer.ini:/etc/pgbouncer/pgbouncer.ini:ro
+      - ./pgbouncer-test/userlist.txt:/etc/pgbouncer/userlist.txt:ro
+    ports:
+      - "6432:6432"
+    depends_on:
+      - postgres
+
 volumes:
   postgres_data:
   redis_data:

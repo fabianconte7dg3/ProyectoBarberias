@@ -4,19 +4,26 @@ import * as schema from '../../../src/database/schema';
 
 const DB_NAME = 'volumetrix_test';
 
+// Por defecto apunta directo a Postgres (5432). Para la verificación empírica
+// de compatibilidad con PgBouncer en pool_mode=transaction (Fase 4 —
+// docs/02-arquitectura-y-db/Plan_Fase4_Infraestructura.md), correr con
+// `TEST_DB_PORT=6432` apuntando al servicio `pgbouncer` del profile
+// `pgbouncer-test` de infrastructure/docker-compose.yml.
+const DB_PORT = process.env.TEST_DB_PORT ?? '5432';
+
 /**
  * Superusuario (BYPASSRLS implícito) — solo para armar fixtures (tenant, empleado, servicio,
  * cliente) sin pelear con RLS. Nunca se usa para ejecutar el código bajo prueba: eso corre
  * siempre por appDb, igual que en producción. Ver docs/02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md.
  */
 export const superPool = new Pool({
-  connectionString: `postgresql://postgres:password@localhost:5432/${DB_NAME}`,
+  connectionString: `postgresql://postgres:password@localhost:${DB_PORT}/${DB_NAME}`,
 });
 export const superDb = drizzle(superPool, { schema });
 
 /** Idéntico al DATABASE_URL real de apps/api/.env, apuntando a volumetrix_test. RLS aplica completo. */
 export const appPool = new Pool({
-  connectionString: `postgresql://app_user:app_password@localhost:5432/${DB_NAME}`,
+  connectionString: `postgresql://app_user:app_password@localhost:${DB_PORT}/${DB_NAME}`,
 });
 export const appDb = drizzle(appPool, { schema });
 
