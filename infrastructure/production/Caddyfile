@@ -1,0 +1,41 @@
+# Caddyfile de produccion — Volumetrix (volumetrixpa.com)
+#
+# TLS: on-demand por subdominio (cada host emite su propio certificado
+# individual la primera vez que se ve, via HTTP-01), NO certificado
+# wildcard. Un wildcard real (*.volumetrixpa.com) requeriria DNS-01
+# challenge con credenciales de API de un proveedor DNS (Cloudflare,
+# Route53, etc.) que todavia no se ha elegido — queda documentado como
+# optimizacion posterior, no implementado aqui. On-demand TLS solo
+# necesita el registro DNS wildcard "*.volumetrixpa.com -> IP del
+# servidor" apuntado por el usuario, sin API keys de terceros.
+{
+	on_demand_tls {
+		ask http://api:4000/health
+	}
+}
+
+# Dominio raiz + www: landing (app/page.tsx) y panel de super-admin
+# (app/super-admin/**), ambos servidos por el contenedor `web` tal cual
+# — proxy.ts no reescribe nada para estos hosts (ver RESERVED_SUBDOMAINS
+# y ROOT_HOSTS en apps/web/src/proxy.ts).
+volumetrixpa.com, www.volumetrixpa.com {
+	reverse_proxy web:3000
+}
+
+# Backend NestJS — el navegador llama directo a este host
+# (NEXT_PUBLIC_API_URL, ver apps/web/src/lib/api.ts), no hay proxy interno
+# de Next.js de por medio.
+api.volumetrixpa.com {
+	reverse_proxy api:4000
+}
+
+# Un subdominio por tenant (barberia-jose.volumetrixpa.com, ...). proxy.ts
+# en el contenedor `web` reescribe internamente a /[tenantSlug]/... segun
+# el primer label del Host — Caddy no necesita saber nada de tenants,
+# solo enrutar cualquier host no reservado al mismo contenedor `web`.
+*.volumetrixpa.com {
+	tls {
+		on_demand
+	}
+	reverse_proxy web:3000
+}
