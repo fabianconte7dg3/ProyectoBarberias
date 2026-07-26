@@ -57,6 +57,7 @@ export function useAdminAuth({
   const router = useRouter();
   const currentUser = useAdminStore((state) => state.user);
   const logout = useAdminStore((state) => state.logout);
+  const setImpersonation = useAdminStore((state) => state.setImpersonation);
 
   // Guard para ejecutar el efecto solo una vez (evita re-disparos por storage events)
   const sessionChecked = useRef(false);
@@ -83,8 +84,12 @@ export function useAdminAuth({
     // todavía no terminó de rehidratar desde localStorage cuando este efecto
     // corre; redirigir en ese instante cerraba sesiones válidas por una
     // carrera de hidratación, no por falta de sesión real.
-    fetchApi<{ userId: string; tenantId: string; rol: string }>('/auth/me')
+    fetchApi<{ userId: string; tenantId: string; rol: string; imp?: boolean; impByEmail?: string }>('/auth/me')
       .then((me) => {
+        // Fase 6.3: el JWT es la única fuente de verdad de si esta sesión es
+        // una impersonación de Super Admin — se resincroniza en cada mount.
+        setImpersonation(me.imp ? { active: true, superAdminEmail: me.impByEmail || 'desconocido' } : null);
+
         if (requiredRole && me.rol !== requiredRole) {
           router.push(`/${tenantSlug}/admin/agenda`);
         }

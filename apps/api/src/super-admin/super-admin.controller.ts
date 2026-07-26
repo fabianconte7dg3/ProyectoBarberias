@@ -119,6 +119,34 @@ export class SuperAdminController {
   }
 
   @Public()
+  @UseGuards(SuperAdminGuard)
+  @HttpCode(HttpStatus.OK)
+  @Post('tenants/:id/impersonar')
+  async impersonarTenant(
+    @Param('id') id: string,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const superAdmin = req.user as { sub: string; email: string };
+    const ip = (req.headers['x-forwarded-for'] as string) || req.ip || '127.0.0.1';
+    const userAgent = (req.headers['user-agent'] as string) || 'unknown';
+    const { accessToken, ...body } = await this.superAdminService.impersonarTenant(id, superAdmin, { ip, userAgent });
+
+    // Cookie httpOnly `jwt`, igual que un login admin real — nunca se devuelve
+    // el token en el body de la respuesta (endpoint sensible, sin necesidad de
+    // que el JS del cliente lo lea).
+    res.cookie('jwt', accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 30 * 60 * 1000,
+    });
+
+    return body;
+  }
+
+  @Public()
   @HttpCode(HttpStatus.OK)
   @Post('activar-admin')
   async activarAdmin(@Body() body: ActivateAdminDto) {

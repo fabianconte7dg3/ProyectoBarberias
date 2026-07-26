@@ -8,11 +8,24 @@ export interface AdminUser {
   // El token JWT NO se guarda aquí, vive en la cookie httpOnly
 }
 
+/**
+ * Estado de impersonación de Super Admin ("Login as Tenant", Fase 6.3).
+ * Es solo una caché visual, igual que `user` — la fuente de verdad real es
+ * el claim `imp`/`impByEmail` del JWT httpOnly, re-verificado en cada mount
+ * por `useAdminAuth` vía GET /auth/me.
+ */
+export interface ImpersonationInfo {
+  active: boolean;
+  superAdminEmail: string;
+}
+
 interface AdminState {
   user: AdminUser | null;
   tenantSlug: string | null;
-  login: (user: AdminUser, tenantSlug: string) => void;
+  impersonation: ImpersonationInfo | null;
+  login: (user: AdminUser, tenantSlug: string, impersonation?: ImpersonationInfo | null) => void;
   logout: () => void;
+  setImpersonation: (info: ImpersonationInfo | null) => void;
 }
 
 /**
@@ -25,8 +38,10 @@ export const useAdminStore = create<AdminState>()(
     (set) => ({
       user: null,
       tenantSlug: null,
-      login: (user, tenantSlug) => set({ user, tenantSlug }),
-      logout: () => set({ user: null }),
+      impersonation: null,
+      login: (user, tenantSlug, impersonation = null) => set({ user, tenantSlug, impersonation }),
+      logout: () => set({ user: null, impersonation: null }),
+      setImpersonation: (impersonation) => set({ impersonation }),
     }),
     {
       name: 'admin-storage',

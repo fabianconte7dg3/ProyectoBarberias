@@ -74,6 +74,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       userId: payload.sub,
       tenantId: payload.tenantId,
       rol: payload.rol,
+      // Impersonation (Fase 6.3): se propagan estos claims solo si el JWT los
+      // trae (tokens de login normal no los tienen) para que GET /auth/me
+      // exponga el aviso al frontend sin tocar el resto del contrato.
+      ...(payload.imp ? { imp: true, impBy: payload.impBy, impByEmail: payload.impByEmail } : {}),
     };
   }
 }

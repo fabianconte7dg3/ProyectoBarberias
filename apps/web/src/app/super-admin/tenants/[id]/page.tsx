@@ -3,6 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
+import { useAdminStore } from '@/lib/adminStore';
 import {
   Users,
   RefreshCw,
@@ -10,6 +11,7 @@ import {
   ArrowLeft,
   History,
   ExternalLink,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface TenantDetail {
@@ -77,6 +79,31 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
     loadDetail();
   }, [id]);
 
+  const [impersonando, setImpersonando] = useState(false);
+
+  const handleImpersonar = async () => {
+    if (!detail) return;
+    const confirmado = confirm(
+      `¿Entrar como administrador de ${detail.barberia.nombreComercial}? Se abre una sesión real de administrador de este negocio, con un aviso permanente visible mientras esté activa. Queda registrado en la auditoría.`
+    );
+    if (!confirmado) return;
+
+    setImpersonando(true);
+    try {
+      const res = await fetchApi<{
+        tenantSlug: string;
+        usuario: { id: string; nombreCompleto: string; rol: 'admin' | 'empleado' | 'recepcion' };
+        superAdminEmail: string;
+      }>(`/super-admin/tenants/${id}/impersonar`, { method: 'POST' });
+
+      useAdminStore.getState().login(res.usuario, res.tenantSlug, { active: true, superAdminEmail: res.superAdminEmail });
+      router.push(`/${res.tenantSlug}/admin/agenda`);
+    } catch (err: any) {
+      alert('Error al iniciar la impersonación: ' + err.message);
+      setImpersonando(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -129,6 +156,16 @@ export default function TenantDetailPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleImpersonar}
+            disabled={impersonando}
+            className="px-3.5 py-2 bg-primary hover:opacity-90 text-primary-foreground text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 disabled:opacity-50"
+            title="Abrir una sesión de administrador real de este negocio"
+          >
+            <ShieldCheck size={14} />
+            <span>{impersonando ? 'Iniciando sesión...' : 'Entrar como Negocio'}</span>
+          </button>
+
           <a
             href={`/${barberia.slug}/admin`}
             target="_blank"

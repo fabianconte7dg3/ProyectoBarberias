@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus, 
-  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database, Link2, Check, Share2
+import {
+  Calendar as CalendarIcon, ChevronLeft, ChevronRight, LogOut, Plus,
+  UserCheck, Lock, TrendingUp, Settings, Menu, X, Calendar, ShoppingBag, Users, Award, Database, Link2, Check, Share2, ShieldAlert
 } from 'lucide-react';
 import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
 import { es } from 'date-fns/locale';
 import { useTenant } from '@/lib/tenant-context';
 import { buildTenantPublicUrl } from '@/lib/tenant-url';
+import { useAdminStore } from '@/lib/adminStore';
+import { fetchApi } from '@/lib/api';
 
 interface AdminHeaderProps {
   tenantSlug: string;
@@ -38,12 +40,24 @@ export function AdminHeader({
   const isSelectedToday = isToday(selectedDate);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const impersonation = useAdminStore((state) => state.impersonation);
+  const storeLogout = useAdminStore((state) => state.logout);
 
   const handleCopyLink = () => {
     const publicUrl = buildTenantPublicUrl(tenantSlug, '/reservar');
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);
+  };
+
+  const handleExitImpersonation = async () => {
+    try {
+      await fetchApi('/auth/logout', { method: 'POST' });
+    } catch {
+      // Ignorar: igual limpiamos localmente y volvemos a SuperAdmin.
+    }
+    storeLogout();
+    router.push('/super-admin/tenants');
   };
 
   const isAdmin = userRole === 'admin';
@@ -63,7 +77,27 @@ export function AdminHeader({
 
   return (
     <header className="w-full bg-card/95 backdrop-blur-md border-b border-border sticky top-0 z-40 shadow-xs">
-      
+
+      {/* Fase 6.3: aviso permanente mientras la sesión es una impersonación de
+          Super Admin — vive dentro del mismo <header> sticky para que nunca
+          quede tapado por él al hacer scroll (dos sticky independientes se
+          superpondrían). Nunca debe ser invisible. */}
+      {impersonation?.active && (
+        <div className="w-full bg-amber-500 text-amber-950 px-4 py-2 flex flex-wrap items-center justify-center gap-3 text-xs font-bold">
+          <ShieldAlert size={16} className="shrink-0" />
+          <span>
+            Operando por impersonación de Super Admin ({impersonation.superAdminEmail})
+          </span>
+          <button
+            onClick={handleExitImpersonation}
+            className="flex items-center gap-1.5 px-3 py-1 bg-amber-950/10 hover:bg-amber-950/20 rounded-lg border border-amber-950/20 transition-colors"
+          >
+            <LogOut size={14} />
+            <span>Salir de la impersonación</span>
+          </button>
+        </div>
+      )}
+
       {/* Container Principal Desktop / Mobile Header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 sm:gap-4">
         

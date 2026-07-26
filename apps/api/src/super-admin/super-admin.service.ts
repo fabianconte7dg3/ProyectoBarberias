@@ -467,6 +467,78 @@ FECHA: ${new Date().toISOString()}
   }
 
   /**
+   * Impersonation ("Login as Tenant"): emite un JWT de corta duración con la
+   * identidad del admin real del tenant, para que Soporte pueda operar la
+   * cuenta sin conocer su contraseña. El token es indistinguible de un login
+   * admin real para RLS/TenantInterceptor (misma forma: sub/tenantId/rol) —
+   * solo lleva claims extra (imp/impBy/impByEmail) que JwtStrategy propaga a
+   * request.user para que el frontend pueda mostrar el aviso permanente.
+   */
+  async impersonarTenant(
+    tenantId: string,
+    superAdmin: { sub: string; email: string },
+    meta: { ip: string; userAgent: string },
+  ) {
+    const adminUser = await runInTenantScope(this.db, tenantId, async (tx) => {
+      const [barberia] = await tx
+        .select({ slug: schema.barberias.slug, nombreComercial: schema.barberias.nombreComercial })
+        .from(schema.barberias)
+        .where(eq(schema.barberias.id, tenantId))
+        .limit(1);
+
+      if (!barberia) throw new NotFoundException('Negocio no encontrado.');
+
+      const [admin] = await tx
+        .select({ id: schema.usuarios.id, nombreCompleto: schema.usuarios.nombreCompleto, rol: schema.usuarios.rol })
+        .from(schema.usuarios)
+        .where(and(eq(schema.usuarios.tenantId, tenantId), eq(schema.usuarios.rol, 'admin'), eq(schema.usuarios.activo, true)))
+        .limit(1);
+
+      if (!admin) throw new NotFoundException('Este negocio no tiene un administrador activo para impersonar.');
+
+      return { ...admin, slug: barberia.slug, nombreComercial: barberia.nombreComercial };
+    });
+
+    const payload = {
+      sub: adminUser.id,
+      tenantId,
+      rol: adminUser.rol,
+      imp: true,
+      impBy: superAdmin.sub,
+      impByEmail: superAdmin.email,
+    };
+
+    const accessToken = this.jwtService.sign(payload, { expiresIn: '30m' });
+
+    // El registro queda en usuarios.id del admin impersonado (satisface el FK de
+    // audit_logs.usuario_id) — la identidad del SuperAdmin que lo disparó vive en
+    // el payload jsonb, no hay FK a plataforma_admins en esta tabla.
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId: adminUser.id,
+      tablaAfectada: 'usuarios',
+      registroId: adminUser.id,
+      accion: 'impersonacion',
+      payloadDespues: {
+        superAdminId: superAdmin.sub,
+        superAdminEmail: superAdmin.email,
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+      },
+      ipOrigen: meta.ip,
+      userAgent: meta.userAgent,
+    });
+
+    return {
+      message: `Sesión de impersonación iniciada para ${adminUser.nombreCompleto} (${adminUser.nombreComercial}).`,
+      accessToken,
+      tenantSlug: adminUser.slug,
+      usuario: { id: adminUser.id, nombreCompleto: adminUser.nombreCompleto, rol: adminUser.rol },
+      superAdminEmail: superAdmin.email,
+    };
+  }
+
+  /**
    * Cambiar Estado de Suscripción con Audit Log
    */
   async cambiarEstadoTenant(tenantId: string, estado: 'activo' | 'suspendido_pago' | 'cancelado') {
