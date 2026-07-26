@@ -311,22 +311,35 @@ encontrado) en
       `'empleado' → terminologiaEmpleado`; `admin`/`recepcion` no tienen término dinámico en el esquema
       (roles de plataforma, no del vertical) así que quedan como "Administrador"/"Recepción" genérico.
 
-## Fase 4 — Infraestructura de Producción 🔲 Pendiente
+## Fase 4 — Infraestructura de Producción 🔶 Parcial
 
-> Hoy todo corre en Docker local, sin CI/CD ni entorno separado de staging. Plan de escalado por fases
-> (costos, umbrales, cuándo agregar cada pieza):
+> Detalle completo, decisiones técnicas y hallazgos reales (colisión de nombres de contenedor entre dev
+> y producción, `middleware.ts` renombrado a `proxy.ts` en Next 16, auth de PgBouncer con dos roles):
+> [`Plan_Fase4_Infraestructura.md`](./02-arquitectura-y-db/Plan_Fase4_Infraestructura.md). Plan de
+> escalado por fases (costos, umbrales, cuándo agregar cada pieza):
 > [`Escalabilidad_y_Crecimiento.md`](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md).
 
-- [ ] Dominio, DNS por tenant y SSL/TLS
-- [ ] Entornos separados: staging vs producción
-- [ ] CI/CD con GitHub Actions (correr `tsc --noEmit` + tests en cada PR — hoy no hay ni ramas de feature,
-      todo el desarrollo ocurre directo sobre `master`)
-- [ ] Backups automáticos con Point-in-Time Recovery
-- [ ] PgBouncer para connection pooling — **verificar antes de activarlo** que el driver de Drizzle
-      (`node-postgres`) no use prepared statements con nombre, que sí tienen problemas conocidos con el
-      modo *transaction pooling* de PgBouncer (el patrón `SET LOCAL` que ya usa `TenantInterceptor` sí es
-      compatible, eso ya está bien resuelto — ver `README_Arquitectura_Datos.md`)
-- [ ] Monitoreo y alertas de disponibilidad
+- [x] Dominio, DNS por tenant y SSL/TLS — `volumetrixpa.com`, subdominio por tenant vía
+      `apps/web/src/proxy.ts` (reescribe `<slug>.volumetrixpa.com` → `/[tenantSlug]/...` internamente) +
+      Caddy on-demand TLS con `ask` validado contra tenants reales (`GET /tenants/validar-dominio`).
+      Verificado en navegador real. Pendiente de decisión externa: proveedor DNS si más adelante se
+      quiere certificado wildcard en vez de on-demand por subdominio (no es necesario para operar, es
+      una optimización).
+- [ ] Entornos separados: staging vs producción — `docker-compose.staging.yml` + Caddyfile +
+      `.env.staging.example` listos como placeholder, sin servidor de staging real todavía.
+- [x] CI/CD con GitHub Actions — `tsc --noEmit` + tests en cada PR y push a `master`
+      (`.github/workflows/ci.yml`). `npm test` de `apps/api` queda fuera a propósito (12/13 specs
+      boilerplate rotos, ver Fase 3 abajo) — solo corren `test:integration` (real) y el `test` de
+      `apps/web` (real).
+- [ ] Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh` (snapshot manual vía
+      `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron — falta destino de
+      backup elegido (S3 o similar) y WAL archiving continuo.
+- [x] PgBouncer para connection pooling — agregado a `docker-compose.production.yml`
+      (`pool_mode=transaction`). La verificación pendiente ya se hizo: la suite real de integration
+      tests (RLS/idempotencia/comisiones) corrida completa a través de PgBouncer, 13/13 en verde —
+      `drizzle-orm/node-postgres` es compatible, confirmado empíricamente, no solo en teoría.
+- [ ] Monitoreo y alertas de disponibilidad — `GET /health` (sin tocar DB) ya existe como requisito
+      técnico común a cualquier proveedor, pero no se eligió servicio de monitoreo todavía.
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 

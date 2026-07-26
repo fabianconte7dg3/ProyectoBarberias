@@ -86,7 +86,11 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
   de hecho están rotos (`npm test` normal falla 12/13) — ver
   [`Plan_Fase3_Suite_Tests.md`](../02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) y
   [`spec.md`](../spec.md) §10.
-- **Infraestructura:** todo corre en Docker local; nada de dominio/SSL/CI-CD/staging todavía.
+- **Infraestructura:** dominio (`volumetrixpa.com`) con subdominio por tenant y SSL on-demand vía Caddy,
+  CI/CD (GitHub Actions) y PgBouncer verificado empíricamente ya están implementados — ver
+  [`Plan_Fase4_Infraestructura.md`](../02-arquitectura-y-db/Plan_Fase4_Infraestructura.md). Staging real,
+  backups con destino real y monitoreo con servicio real quedan como placeholders, pendientes de
+  decisión externa (proveedor DNS/backup/monitoreo, servidor de staging).
 
 ## Por dónde seguir
 
