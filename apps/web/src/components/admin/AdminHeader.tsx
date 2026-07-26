@@ -7,6 +7,7 @@ import { format, addDays, subDays, isToday } from 'date-fns';
 import { useRouter, usePathname } from 'next/navigation';
 import { es } from 'date-fns/locale';
 import { useTenant } from '@/lib/tenant-context';
+import { buildTenantPublicUrl } from '@/lib/tenant-url';
 
 interface AdminHeaderProps {
   tenantSlug: string;
@@ -39,7 +40,7 @@ export function AdminHeader({
   const [copiedLink, setCopiedLink] = useState(false);
 
   const handleCopyLink = () => {
-    const publicUrl = `${window.location.origin}/${tenantSlug}/reservar`;
+    const publicUrl = buildTenantPublicUrl(tenantSlug, '/reservar');
     navigator.clipboard.writeText(publicUrl);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2500);

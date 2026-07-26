@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, UserPlus, CheckCircle2, AlertTriangle, Copy, Check } from 'lucide-react';
 import { fetchApi } from '@/lib/api';
 import { useTenant } from '@/lib/tenant-context';
+import { buildTenantPublicUrl } from '@/lib/tenant-url';
 
 interface InviteEmpleadoModalProps {
   isOpen: boolean;
@@ -51,8 +52,8 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
     }
   };
 
-  const activationUrl = activationToken 
-    ? `${window.location.origin}/${tenantSlug}/activar?token=${activationToken}`
+  const activationUrl = activationToken
+    ? buildTenantPublicUrl(tenantSlug, `/activar?token=${activationToken}`)
     : '';
 
   const handleCopyLink = () => {
