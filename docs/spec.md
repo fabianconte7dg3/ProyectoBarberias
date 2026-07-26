@@ -136,6 +136,12 @@ base de datos, no solo de aplicación.
   (`GET /tenants/publico/:slug`) no expone hoy ningún campo de WhatsApp/contacto. Requiere decidir qué
   campo exponer (¿`telefonoNegocio`? ¿el número de `whatsapp_config`?) y si es información sensible del
   negocio antes de corregirlo.
+- **CTA de contacto de la landing page (`/`) usa un email no verificado.** Encontrado al construir la
+  landing en la Fase 6.6: no existe hoy ningún flujo de alta de tenant self-service ni canal de
+  contacto público confirmado, así que el CTA usa `mailto:hola@volumetrixpa.com` — una dirección
+  plausible sobre el dominio de producción ya decidido en la Fase 4, pero no confirmada como buzón
+  real provisionado. Mismo tipo de gap que el punto anterior: requiere que el usuario confirme o
+  provisione el canal de contacto real antes de depender de ese botón en producción.
 
 ## 8. Arquitectura y stack tecnológico
 

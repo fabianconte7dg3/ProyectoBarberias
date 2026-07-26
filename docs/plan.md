@@ -355,7 +355,7 @@ encontrado) en
       §5.1). Requiere diseño de esquema propio (tabla `sucursales`, FKs opcionales) antes de retomarla.
 - [ ] Perfil de cuenta propia (autogestión de usuario) — mismo PRD, misma decisión, diferida por ahora.
 
-## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla 🔶 Parcial (6.6/7)
+## Fase 6 — Rediseño Visual Volumetrix (Google Stitch) + Impersonation y Mi Silla ✅ Completo
 
 > Decidido con el usuario el 2026-07-26 (ver
 > [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) para el gap
@@ -598,7 +598,16 @@ encontrado) en
       en 375px tanto en la landing como en el wizard de reserva. `tsc --noEmit` limpio en ambos
       paquetes
 
-### 6.7 Verificación y documentación 🔲 Pendiente
-- [ ] `tsc --noEmit` en ambos paquetes tras cada bloque de esta fase
-- [ ] Smoke test en navegador de cada superficie re-diseñada antes de darla por cerrada
-- [ ] Actualizar `walkthrough.md`/`spec.md` y marcar esta fase completa al cerrar
+### 6.7 Verificación y documentación ✅ Completo
+- [x] `tsc --noEmit` en ambos paquetes tras cada bloque de esta fase — se hizo en cada sub-fase (6.1 a
+      6.6) y se repitió al cierre: limpio en `apps/api` y `apps/web`
+- [x] Smoke test en navegador de cada superficie re-diseñada antes de darla por cerrada — hecho por
+      sub-fase con datos reales (`qa-test`/`veterinaria-piloto`), documentado en cada sección de
+      arriba. Al cerrar la fase se repitió un chequeo de regresión dirigido específicamente al único
+      componente compartido que cambió en 6.5 (`AdminHeader`, `selectedDate`/`onDateChange` pasaron a
+      opcionales) — `admin/agenda` (que sí los pasa) siguió renderizando el navegador de fechas y las
+      citas reales sin cambios
+- [x] Actualizar `walkthrough.md`/`spec.md` y marcar esta fase completa al cerrar — sección nueva en
+      `walkthrough.md` resumiendo la Fase 6, gap del `mailto:` de la landing registrado en `spec.md`
+      §7 junto al gap ya existente del WhatsApp simulado, y banner/enlaces de
+      `Plan_Rediseno_Visual_Stitch.md` actualizados de "ejecución no iniciada" a completado

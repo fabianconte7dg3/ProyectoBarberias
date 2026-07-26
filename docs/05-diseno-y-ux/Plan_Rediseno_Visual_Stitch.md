@@ -1,11 +1,12 @@
-> **🔶 Priorizado (2026-07-26), ejecución no iniciada.** Este documento registra un sistema de diseño y
-> PRD nuevos que el usuario compartió (vía MCP `stitch` de Google + un export estático local), **no
-> implementados todavía en código**. No reemplaza a [`Pantallas_Figma.md`](./Pantallas_Figma.md) (que
-> documenta las 9 pantallas del MVP ya construidas) — lo complementa como la siguiente iteración visual/de
-> producto. El desglose ejecutable de tareas vive en
-> [`docs/plan.md` Fase 6](../plan.md#fase-6--rediseño-visual-volumetrix-google-stitch--impersonation-y-mi-silla-pendiente);
-> este documento es el análisis de fondo que sustenta esas decisiones (ver §6 para el resumen de qué se
-> decidió y por qué).
+> **✅ Ejecutado (2026-07-26).** Este documento registró el sistema de diseño y PRD que el usuario
+> compartió (vía MCP `stitch` de Google + un export estático local) antes de implementarse — hoy las 7
+> sub-fases de `docs/plan.md` Fase 6 que ejecutan estas decisiones ya están completas. No reemplaza a
+> [`Pantallas_Figma.md`](./Pantallas_Figma.md) (que documenta las 9 pantallas del MVP original) — es la
+> siguiente iteración visual/de producto sobre esas mismas pantallas. El desglose ejecutable de tareas,
+> con el detalle real de qué se construyó y qué se ajustó del mockup original al implementar, vive en
+> [`docs/plan.md` Fase 6](../plan.md#fase-6--rediseño-visual-volumetrix-google-stitch--impersonation-y-mi-silla--completo);
+> este documento sigue siendo el análisis de fondo que sustentó esas decisiones (ver §6 para el resumen
+> de qué se decidió y por qué).
 
 ## 1. Fuente de este material
 
@@ -76,7 +77,7 @@ cada una:
 | `super_admin_listado_de_tenants` | `super-admin/tenants` | Existe, visual distinto |
 | `super_admin_detalle_del_tenant` | `super-admin/tenants/[id]` | Existe, visual distinto |
 | `dashboard_de_administrador_m_tricas_hoy` | `admin/dashboard` | Existe, visual distinto |
-| `dashboard_del_barbero_mi_silla` | — | **No existe.** Hoy el staff no-admin usa la misma agenda que el admin (con permisos), no una vista diaria dedicada. Lo más cercano es `MiDesempenoModal` (un modal de métricas personales, no una pantalla) |
+| `dashboard_del_barbero_mi_silla` | `admin/mi-silla` | **Existe desde Fase 6.5**, con alcance ajustado a datos reales (sin "Metas del Día" ni "Inventario de Puesto", que no tienen backing en el schema) — convive con `admin/agenda`, no la reemplaza; solo visible para rol `empleado` |
 | `agenda_vista_de_calendario_veterinaria` | `admin/agenda` | Existe, variante visual por industria no aplicada |
 | `caja_pos_cobro_con_yappy` | `admin/caja` + `CobrarCitaModal` | Existe, visual distinto |
 | `cat_logo_de_servicios_y_portafolio` | dentro de `admin/configuracion` | Existe como sección, no pantalla dedicada |
@@ -92,7 +93,7 @@ cada una:
 | `booking_p_blico_selecci_n_de_profesional` | `reservar` (paso del wizard) | Existe, visual distinto |
 | `booking_p_blico_selecci_n_de_fecha_y_hora` | `reservar` (paso del wizard, `TimeSlotGrid`) | Existe, visual distinto |
 | `booking_p_blico_formulario_de_cliente_veterinaria` | `reservar/confirmar` | Existe genérico (campos por industria vía `notas`), no un formulario dedicado veterinaria |
-| `three.js` | — | **No existe.** `apps/web/src/app/page.tsx` sigue siendo el boilerplate de `create-next-app` (logo de Next.js, texto "To get started, edit the page.tsx file") — no hay landing page real todavía |
+| `three.js` | `apps/web/src/app/page.tsx` | **Existe desde Fase 6.6**, pero no como el mockup: el export resultó ser JS roto de otra pantalla (lógica de un numpad de login) sin ninguna escena Three.js real detrás. Se construyó una landing informativa con el Design System, sin agregar la dependencia `three` |
 
 ## 5. Features de negocio nuevas detectadas (requieren diseño de esquema, no solo UI)
 
@@ -140,6 +141,6 @@ nuevas. Se resolvieron las 4 preguntas abiertas vía `AskUserQuestion`:
 ## 7. Siguiente paso
 
 El desglose ejecutable (checkboxes por pantalla/sub-fase) vive en
-[`docs/plan.md` Fase 6](../plan.md#fase-6--rediseño-visual-volumetrix-google-stitch--impersonation-y-mi-silla-pendiente).
+[`docs/plan.md` Fase 6](../plan.md#fase-6--rediseño-visual-volumetrix-google-stitch--impersonation-y-mi-silla--completo).
 Sigue el flujo normal del proyecto: commits atómicos por sub-fase, `tsc --noEmit` tras cada bloque, smoke
 test en navegador antes de cerrar cada pantalla — mismo patrón usado en todas las fases anteriores.

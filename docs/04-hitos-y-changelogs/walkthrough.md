@@ -70,6 +70,37 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
   temporalmente `apps/api` (dependencias borradas del disco, no solo destrackeadas) y su corrección:
   [`Auditoria_Metodologia_Desarrollo_IA.md`](../01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md).
 
+## Rediseño visual completo (Fase 6, 2026-07-26)
+
+Documentado en detalle en
+[`Plan_Rediseno_Visual_Stitch.md`](../05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) (análisis de
+fondo) y `docs/plan.md` Fase 6 (desglose ejecutable, sub-fase por sub-fase):
+
+- **Dos sistemas de diseño, no uno:** el theme neutro de shadcn se reemplazó por completo en
+  `globals.css` — **Volumetrix Design System** (rosa `#b0004a`/teal `#006876`, superficie
+  `[tenantSlug]/**`: panel de tenant + portal de reserva + landing) y **Volumetrix Executive System**
+  (navy/rosa, superficie `super-admin/**`, scopeado vía `[data-surface="executive"]`). El white-labeling
+  por tenant (`colorPrimario` sobreescribiendo `--primary`) se preservó intacto sobre los tokens nuevos.
+- **Super Admin (6.2)** partió de `slate`/`zinc`/`blue` hardcoded por todas partes — el trabajo más
+  grande de recoloreo de la fase, más una sidebar nueva y separar el listado de tenants a su propia
+  ruta. **Panel de tenant (6.4)** partió ya usando tokens semánticos (heredó el Design System solo con
+  6.1), así que fue en gran parte limpieza de acentos `blue-*` sueltos.
+- **Impersonation de Super Admin ("Login as Tenant", 6.3):** JWT de 30 min con claims `imp`/`impBy`,
+  log de auditoría, banner ámbar persistente mientras la sesión está impersonando.
+- **"Mi Silla" para staff (6.5):** vista de trabajo dedicada para rol `empleado` (cola de clientes del
+  día, KPIs, cobro), reutilizando los endpoints ya existentes (`GET /citas`, `GET
+  /reportes/mi-desempeno`) sin necesitar superficie de API nueva. Convive con `admin/agenda`, no la
+  reemplaza.
+- **Portal de reserva pública + landing (6.6):** wizard de reserva restyled con un stepper de progreso
+  real; se encontró y corrigió un bug real en el camino — el resumen de confirmación mostraba datos
+  inventados (`"{terminología} Seleccionado"`, precio fijo `"15.00"`) en vez del servicio/empleado/
+  precio real elegido. Landing page nueva en `/` (antes boilerplate de `create-next-app`) — el mockup
+  `three.js` del export resultó ser JS roto de otra pantalla, así que se construyó sin esa dependencia.
+- **Patrón repetido en varias sub-fases:** cuando el mockup de Stitch mostraba datos que no existen en
+  el modelo (ratings de profesionales, gráficos de MRR, "Metas del Día" por empleado, IVA en el
+  booking), se dejó fuera a propósito — UI con datos inventados es peor que no tener esa UI. Cada
+  omisión está documentada en `docs/plan.md` Fase 6, sub-fase por sub-fase.
+
 ## Estado actual, de un vistazo
 
 - **Producto:** 100% funcional para barberías (flujo completo validado: reserva pública → agenda →
@@ -79,6 +110,10 @@ Documentado en detalle en `docs/02-arquitectura-y-db/Plan_Multi_Industria_*.md`:
   [`spec.md`](../spec.md) §7.
 - **Marca:** "Volumetrix" en código y UI (rebrand ejecutado 2026-07-25) — ver [`plan.md`](../plan.md)
   Fase 1.
+- **Diseño visual:** rediseño completo con los dos sistemas de Stitch (Design System / Executive
+  System) en las 24 superficies mapeadas — panel de tenant, Super Admin, portal de reserva pública y
+  landing — más impersonation de Super Admin y la vista "Mi Silla" para staff (rebrand ejecutado
+  2026-07-26) — ver [`plan.md`](../plan.md) Fase 6.
 - **Tests automatizados:** cobertura real en los módulos críticos desde la Fase 3 (2026-07-25) — RLS
   multi-tenant, idempotencia de citas, cálculo de comisiones (`apps/api`, integration tests contra
   Postgres real vía `npm run test:integration`) y `calcularSlotsDisponibles`/`ProfileSelector`
