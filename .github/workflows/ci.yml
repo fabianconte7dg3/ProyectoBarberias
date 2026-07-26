@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: apps/api
+        run: npm ci
+
+      - name: Type-check
+        working-directory: apps/api
+        run: npx tsc --noEmit
+
+      # Reutiliza el compose de dev tal cual (no `services:` nativo de
+      # GitHub Actions) porque bootstrap-test-db.sh hace
+      # `docker exec -i volumetrix_postgres ...` con el nombre de
+      # contenedor explicito del compose de dev — con `services:` el
+      # contenedor tendria un nombre generado y el script se romperia.
+      - name: Levantar Postgres + Redis (compose de dev)
+        run: docker compose -f infrastructure/docker-compose.yml up -d postgres redis
+
+      - name: Esperar a que Postgres este listo
+        run: |
+          for i in $(seq 1 30); do
+            docker exec volumetrix_postgres pg_isready -U postgres && break
+            sleep 2
+          done
+
+      # npm test (jest unitario, *.spec.ts) queda fuera de CI a proposito:
+      # 12/13 de los specs boilerplate de `nest generate` estan rotos hoy
+      # (deuda documentada, diferida a Fase 3 en docs/plan.md). Incluirlo
+      # aca dejaria el pipeline rojo desde el primer PR — se corre
+      # test:integration (las 3 suites reales de RLS/idempotencia/
+      # comisiones) en su lugar, que si estan verdes.
+      - name: Integration tests (RLS, idempotencia, comisiones)
+        working-directory: apps/api
+        run: npm run test:integration
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Instalar dependencias
+        working-directory: apps/web
+        run: npm ci
+
+      - name: Type-check
+        working-directory: apps/web
+        run: npx tsc --noEmit
+
+      - name: Tests (Vitest)
+        working-directory: apps/web
+        run: npm test
