@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { useTenant } from '@/lib/tenant-context';
 import { requierePaciente } from '@/lib/industrias';
 import {
-  ArrowLeft, Search, Plus, UserCheck, ShieldCheck, AlertTriangle,
+  Search, Plus, UserCheck, ShieldCheck, AlertTriangle,
   MessageSquare, Edit, Ban, RefreshCw, X, Check, Mail, Phone, Calendar, DollarSign, Lock, ShieldAlert,
   PawPrint, FileClock
 } from 'lucide-react';
@@ -48,11 +48,9 @@ interface NotaClinicaMetadata {
 
 export default function AdminClientesPage() {
   const params = useParams();
-  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
 
   const currentUser = useAdminStore((state) => state.user);
-  const logoutStore = useAdminStore((state) => state.logout);
   const { industria, configCamposPersonalizados, terminologiaCliente } = useTenant();
   const mostrarPacientes = requierePaciente(industria);
 
@@ -323,57 +321,23 @@ export default function AdminClientesPage() {
 
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin Estándar */}
-      {currentUser && (
-        <AdminHeader
-          tenantSlug={tenantSlug}
-          userName={currentUser.nombreCompleto}
-          userRole={currentUser.rol}
-          selectedDate={new Date()}
-          onDateChange={() => {}}
-          onLogout={() => {
-            logoutStore();
-            router.push(`/${tenantSlug}/admin/login`);
-          }}
-          onNewCitaClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-        />
-      )}
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
 
-      {/* Sub-Header CRM */}
-      <div className="border-b border-border bg-card/60 px-4 sm:px-6 py-4">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <button
-              onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-              className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
-                <UserCheck size={20} className="text-primary" />
-                <span>CRM & Base de Clientes</span>
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                Directorio de clientes, historial de consumo (LTV), ausencias y consentimientos Ley 81
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={handleOpenCreateModal}
-            className="w-full sm:w-auto px-4 py-2 bg-primary text-primary-foreground font-bold rounded-xl text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-xs"
-          >
-            <Plus size={16} />
-            <span>Registrar Nuevo Cliente</span>
-          </button>
-        </div>
-      </div>
+      <AdminPageHeader
+        title="Clientes"
+        description="Directorio de clientes, historial de consumo (LTV), ausencias y consentimientos Ley 81"
+      >
+        <button
+          onClick={handleOpenCreateModal}
+          className="px-4 py-2 bg-primary text-primary-foreground font-bold rounded-xl text-xs flex items-center justify-center gap-2 hover:opacity-90 transition-opacity shadow-xs"
+        >
+          <Plus size={16} />
+          <span>Registrar Nuevo Cliente</span>
+        </button>
+      </AdminPageHeader>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
         {loading && clientesList.length === 0 ? (
           <div className="py-12 flex flex-col items-center justify-center gap-3 text-muted-foreground">

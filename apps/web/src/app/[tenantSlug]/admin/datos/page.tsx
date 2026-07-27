@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { 
-  ArrowLeft, Download, Upload, ShieldCheck, AlertTriangle, FileSpreadsheet, 
+import {
+  Download, Upload, ShieldCheck, AlertTriangle,
   Users, Package, DollarSign, CheckCircle2, RefreshCw, Info, Lock
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
 interface ReporteImportacion {
   totalFilas: number;
@@ -20,7 +21,6 @@ interface ReporteImportacion {
 
 export default function AdminDatosPage() {
   const params = useParams();
-  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
 
   const currentUser = useAdminStore((state) => state.user);
@@ -96,36 +96,20 @@ export default function AdminDatosPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-            className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
-              <FileSpreadsheet size={20} className="text-primary" />
-              <span>Centro de Gestión de Datos & Migración</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Importación masiva con Merge Seguro y Exportación Sanitizada anti-inyección CSV
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
 
-        <div className="hidden sm:flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-bold">
+      <AdminPageHeader
+        title="Datos"
+        description="Importación masiva con Merge Seguro y Exportación Sanitizada anti-inyección CSV"
+      >
+        <div className="flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 rounded-xl text-emerald-600 dark:text-emerald-400 text-xs font-bold">
           <ShieldCheck size={16} />
           <span>Protección Ley 81 & OWASP Activa</span>
         </div>
-      </header>
+      </AdminPageHeader>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-8">
+      <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-8">
         
         {/* SECCIÓN 1: PLANTILLAS OFICIALES */}
         <section className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-4">

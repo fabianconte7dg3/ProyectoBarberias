@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { 
-  ArrowLeft, TrendingUp, DollarSign, QrCode, CreditCard, Users, 
+import {
+  DollarSign, QrCode, CreditCard, Users,
   AlertTriangle, RefreshCw, Calendar, Award, Receipt, ChevronDown, Check, Scissors, ShoppingBag, Package, PieChart as PieChartIcon, ShieldAlert, BarChart3, Layers
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, subMonths } from 'date-fns';
 import { useTenant } from '@/lib/tenant-context';
 import {
@@ -265,73 +266,54 @@ export default function AdminDashboardPage() {
   })).filter(p => p.value > 0) : [];
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-4 w-full md:w-auto">
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
+
+      <AdminPageHeader
+        title="Dashboard"
+        description={`Período: ${fechaDesde} al ${fechaHasta}`}
+      >
+        <div className="relative" ref={dropdownRef}>
           <button
-            onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-            className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground transition-all shadow-xs"
           >
-            <ArrowLeft size={20} />
+            <Calendar size={15} className="text-emerald-500" />
+            <span>{PRESETS_LABEL[preset]}</span>
+            <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
-              <TrendingUp size={20} className="text-emerald-500" />
-              <span>Analítica Ejecutiva & Finanzas</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Período: <strong className="text-foreground">{fechaDesde}</strong> al <strong className="text-foreground">{fechaHasta}</strong>
-            </p>
-          </div>
+
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2">
+              {presetsList.map((p) => {
+                const isActive = preset === p;
+                return (
+                  <button
+                    key={p}
+                    onClick={() => handlePresetSelect(p)}
+                    className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
+                      isActive
+                        ? 'bg-primary/10 text-primary font-bold'
+                        : 'text-foreground hover:bg-secondary'
+                    }`}
+                  >
+                    <span>{PRESETS_LABEL[p]}</span>
+                    {isActive && <Check size={14} className="text-primary shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
 
-        {/* Desplegable de Estilo Personalizado */}
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              className="flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground transition-all shadow-xs"
-            >
-              <Calendar size={15} className="text-emerald-500" />
-              <span>{PRESETS_LABEL[preset]}</span>
-              <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
-
-            {isDropdownOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-card border border-border rounded-2xl shadow-xl z-50 p-1.5 space-y-0.5 animate-in fade-in slide-in-from-top-2">
-                {presetsList.map((p) => {
-                  const isActive = preset === p;
-                  return (
-                    <button
-                      key={p}
-                      onClick={() => handlePresetSelect(p)}
-                      className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                        isActive
-                          ? 'bg-primary/10 text-primary font-bold'
-                          : 'text-foreground hover:bg-secondary'
-                      }`}
-                    >
-                      <span>{PRESETS_LABEL[p]}</span>
-                      {isActive && <Check size={14} className="text-primary shrink-0" />}
-                    </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-
-          <button
-            onClick={() => loadDashboard(fechaDesde, fechaHasta)}
-            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
-            title="Actualizar datos"
-          >
-            <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
-            <span className="hidden sm:inline">Actualizar</span>
-          </button>
-        </div>
-      </header>
+        <button
+          onClick={() => loadDashboard(fechaDesde, fechaHasta)}
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+          title="Actualizar datos"
+        >
+          <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+          <span className="hidden sm:inline">Actualizar</span>
+        </button>
+      </AdminPageHeader>
 
       {/* Sub-Dashboards Tabs Navigation */}
       <div className="border-b border-border bg-card/50 px-4 sm:px-6">
@@ -389,7 +371,7 @@ export default function AdminDashboardPage() {
       </div>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
         {/* Banner Alerta Stock Bajo */}
         {(data?.productosStockBajoCount || 0) > 0 && (

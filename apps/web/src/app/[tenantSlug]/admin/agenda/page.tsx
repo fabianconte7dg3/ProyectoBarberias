@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { format } from 'date-fns';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { AdminHeader } from '@/components/admin/AdminHeader';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
+import { DateNavigator } from '@/components/admin/DateNavigator';
 import { TimelineGrid } from '@/components/admin/TimelineGrid';
 import { ListaTurnosView } from '@/components/admin/ListaTurnosView';
 import { CitaAgenda } from '@/components/admin/CitaCard';
@@ -14,7 +15,7 @@ import { QuickWalkInModal } from '@/components/admin/QuickWalkInModal';
 import { CobrarCitaModal } from '@/components/admin/CobrarCitaModal';
 import { MiDesempenoModal } from '@/components/admin/MiDesempenoModal';
 import { VentaMostradorModal } from '@/components/admin/VentaMostradorModal';
-import { User, Users, Filter, LayoutGrid, List, Plus } from 'lucide-react';
+import { User, Users, Filter, LayoutGrid, List, Plus, Award, ShoppingBag } from 'lucide-react';
 
 interface Empleado {
   id: string;
@@ -24,11 +25,9 @@ interface Empleado {
 
 export default function AdminAgendaPage() {
   const params = useParams();
-  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
 
   const currentUser = useAdminStore((state) => state.user);
-  const logout = useAdminStore((state) => state.logout);
 
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [empleados, setEmpleados] = useState<Empleado[]>([]);
@@ -135,17 +134,6 @@ export default function AdminAgendaPage() {
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await fetchApi('/auth/logout', { method: 'POST' });
-    } catch (e) {
-      console.error('Logout error', e);
-    } finally {
-      logout();
-      router.push(`/${tenantSlug}/admin/login`);
-    }
-  };
-
   if (!currentUser || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -173,19 +161,33 @@ export default function AdminAgendaPage() {
   const horaProximaFormateada = proximaCita ? format(new Date(proximaCita.inicioEstimado), 'hh:mm a') : '';
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      {/* Header con Controles */}
-      <AdminHeader
-        tenantSlug={tenantSlug}
-        userName={currentUser.nombreCompleto}
-        userRole={currentUser.rol}
-        selectedDate={selectedDate}
-        onDateChange={(date) => setSelectedDate(date)}
-        onLogout={handleLogout}
-        onNewCitaClick={() => setIsWalkInOpen(true)}
-        onMiDesempenoClick={() => setIsMiDesempenoOpen(true)}
-        onVentaMostradorClick={() => setIsVentaMostradorOpen(true)}
-      />
+    <div className="min-h-screen min-w-0 flex flex-col bg-background text-foreground">
+      <AdminPageHeader title="Agenda" description="Vista operativa de citas del día">
+        <DateNavigator selectedDate={selectedDate} onDateChange={setSelectedDate} />
+        <button
+          onClick={() => setIsMiDesempenoOpen(true)}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 text-xs font-extrabold rounded-xl transition-colors shadow-xs"
+          title="Ver mis comisiones e ingresos"
+        >
+          <Award size={15} />
+          <span>Mi Desempeño</span>
+        </button>
+        <button
+          onClick={() => setIsVentaMostradorOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-xs transition-colors"
+          title="Venta rápida de productos de mostrador"
+        >
+          <ShoppingBag size={15} />
+          <span>Venta Mostrador</span>
+        </button>
+        <button
+          onClick={() => setIsWalkInOpen(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground font-bold text-xs rounded-xl shadow-xs hover:opacity-90 transition-opacity"
+        >
+          <Plus size={15} />
+          <span>Nueva Cita</span>
+        </button>
+      </AdminPageHeader>
 
       {/* Banner de Bienvenida Personalizado (Solo-preneur / Personalizado) */}
       <div className="bg-gradient-to-r from-primary/10 via-card to-background border-b border-border px-4 py-3 sm:px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
@@ -214,15 +216,6 @@ export default function AdminAgendaPage() {
             </p>
           </div>
         </div>
-
-        {/* Acceso rápido a nueva cita */}
-        <button
-          onClick={() => setIsWalkInOpen(true)}
-          className="text-xs font-bold px-3.5 py-1.5 rounded-xl bg-primary text-primary-foreground shadow-xs hover:opacity-90 transition-opacity self-end sm:self-auto flex items-center gap-1.5 shrink-0"
-        >
-          <Plus size={14} />
-          <span>Nueva Cita</span>
-        </button>
       </div>
 
       {/* Sub-header de Filtros y Alternador de Vista */}
@@ -293,7 +286,7 @@ export default function AdminAgendaPage() {
       </div>
 
       {/* Main Content View (Parrilla o Lista) */}
-      <main className="flex-1 flex flex-col">
+      <main className="flex-1 min-w-0 flex flex-col">
         {tipoVistaGrid === 'parrilla' ? (
           <TimelineGrid
             empleados={empleadosFiltrados}

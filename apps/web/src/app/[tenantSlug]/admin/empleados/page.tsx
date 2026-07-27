@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { 
-  Users, UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2, ArrowLeft 
+import {
+  UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { InviteEmpleadoModal } from '@/components/admin/InviteEmpleadoModal';
 import { useTenant } from '@/lib/tenant-context';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
 interface UsuarioStaff {
   id: string;
@@ -25,7 +26,6 @@ interface UsuarioStaff {
 
 export default function AdminEmpleadosPage() {
   const params = useParams();
-  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
   const { nombreComercial, terminologiaEmpleado, terminologiaServicio } = useTenant();
 
@@ -118,49 +118,31 @@ export default function AdminEmpleadosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4 shadow-xs">
-        <div className="flex items-center gap-4 w-full md:w-auto">
-          <button
-            onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-            className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-lg sm:text-xl font-extrabold tracking-tight flex items-center gap-2">
-              <Users size={20} className="text-primary" />
-              <span>Gestión de {terminologiaEmpleado}s & Equipo de Staff</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Administra el equipo de {nombreComercial}, comisiones por venta y horarios laborales.
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
 
-        <div className="flex items-center gap-3 w-full md:w-auto justify-end">
-          <button
-            onClick={() => setIsInviteModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
-          >
-            <UserPlus size={16} />
-            <span>+ Invitar Nuevo {terminologiaEmpleado}</span>
-          </button>
+      <AdminPageHeader
+        title={`${terminologiaEmpleado}s`}
+        description={`Administra el equipo de ${nombreComercial}, comisiones por venta y horarios laborales.`}
+      >
+        <button
+          onClick={() => setIsInviteModalOpen(true)}
+          className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-colors shadow-xs"
+        >
+          <UserPlus size={16} />
+          <span>+ Invitar Nuevo {terminologiaEmpleado}</span>
+        </button>
 
-          <button
-            onClick={loadStaff}
-            className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border rounded-xl transition-colors"
-            title="Refrescar lista"
-          >
-            <RefreshCw size={16} />
-          </button>
-        </div>
-      </header>
+        <button
+          onClick={loadStaff}
+          className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border rounded-xl transition-colors"
+          title="Refrescar lista"
+        >
+          <RefreshCw size={16} />
+        </button>
+      </AdminPageHeader>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
+      <main className="flex-1 min-w-0 max-w-6xl w-full mx-auto p-4 sm:p-6 space-y-6">
         
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl text-destructive text-sm font-medium flex items-center gap-3">

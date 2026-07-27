@@ -5,10 +5,11 @@ import { useParams, useRouter } from 'next/navigation';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
-import { 
-  ArrowLeft, DollarSign, Lock, AlertTriangle, CheckCircle2, 
+import {
+  DollarSign, Lock, AlertTriangle, CheckCircle2,
   HelpCircle, Receipt, ShieldAlert, Sparkles, RefreshCw
 } from 'lucide-react';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
 interface BalanceState {
   fecha: string;
@@ -22,7 +23,6 @@ export default function AdminCajaPage() {
   const tenantSlug = params.tenantSlug as string;
 
   const currentUser = useAdminStore((state) => state.user);
-  const logout = useAdminStore((state) => state.logout);
 
   const [balance, setBalance] = useState<BalanceState | null>(null);
   const [efectivoDeclarado, setEfectivoDeclarado] = useState<string>('');
@@ -111,28 +111,9 @@ export default function AdminCajaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-            className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-              <Lock size={18} className="text-emerald-500" />
-              <span>Arqueo y Cierre de Caja</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              Auditoría financiera diaria · Exclusivo Administración
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
 
+      <AdminPageHeader title="Caja" description="Auditoría financiera diaria · Exclusivo Administración">
         <button
           onClick={fetchBalance}
           className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
@@ -140,10 +121,10 @@ export default function AdminCajaPage() {
           <RefreshCw size={14} />
           <span>Actualizar</span>
         </button>
-      </header>
+      </AdminPageHeader>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-4xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 min-w-0 max-w-4xl w-full mx-auto p-6 space-y-6">
         
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl text-destructive text-sm font-medium flex items-center gap-3">

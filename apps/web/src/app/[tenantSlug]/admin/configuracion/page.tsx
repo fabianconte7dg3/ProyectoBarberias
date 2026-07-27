@@ -6,11 +6,12 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
-  ArrowLeft, Settings, Scissors, Users, ShieldAlert, Plus, Edit2, Trash2,
+  Scissors, Users, ShieldAlert, Plus, Edit2, Trash2,
   CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar, Layers
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { useTenant } from '@/lib/tenant-context';
+import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
 interface Servicio {
   id: string;
@@ -325,28 +326,12 @@ export default function AdminConfiguracionPage() {
   const now = new Date();
 
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans">
-      
-      {/* Header Admin */}
-      <header className="border-b border-border bg-card px-4 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-2 shadow-xs">
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-            className="p-2 rounded-xl hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft size={20} />
-          </button>
-          <div>
-            <h1 className="text-xl font-bold tracking-tight flex items-center gap-2">
-              <Settings size={20} className="text-primary" />
-              <span>Configuración del Local</span>
-            </h1>
-            <p className="text-xs text-muted-foreground">
-              {terminologiaServicio}s · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable
-            </p>
-          </div>
-        </div>
+    <div className="min-h-screen min-w-0 bg-background text-foreground flex flex-col font-sans">
 
+      <AdminPageHeader
+        title="Configuración"
+        description={`${terminologiaServicio}s · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable`}
+      >
         <button
           onClick={loadData}
           className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border"
@@ -354,10 +339,10 @@ export default function AdminConfiguracionPage() {
           <RefreshCw size={14} />
           <span>Actualizar</span>
         </button>
-      </header>
+      </AdminPageHeader>
 
       {/* Main Content */}
-      <main className="flex-1 max-w-5xl w-full mx-auto p-6 space-y-6">
+      <main className="flex-1 min-w-0 max-w-5xl w-full mx-auto p-6 space-y-6">
         
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl text-destructive text-sm font-medium flex items-center gap-3">
