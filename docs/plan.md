@@ -782,8 +782,8 @@ datos reales" de toda la Fase 6):
   [Fase 6-G](#fase-6-g--división-de-configuración-identidad-del-negocio-vs-operación--completo)
 - ~~"Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)~~ — hecho en
   [Fase 6-F](#fase-6-f--finanzas-y-reportes-como-sección-de-nav-propia--completo)
-- Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos (gap estructural real,
-  confirmado en la investigación, no solo de color)
+- ~~Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos~~ — hecho en
+  [Fase 6-H](#fase-6-h--panel-de-resumen-lateral-sticky-en-la-reserva-pública--completo)
 - Sucursales/multi-sede y Perfil de cuenta propia — ya diferidos en Fase 5, confirmado sin código
   existente
 
@@ -1017,3 +1017,57 @@ documenta como gap real, mismo criterio que el resto de la Fase 6.
       catálogo, equipo/comisiones, ausencias, auditoría — incluida la entrada de auditoría anterior del
       kill-switch, intacta). Datos de prueba (RUC/color/logo) revertidos a `NULL` en `qa-test` tras la
       verificación.
+
+## Fase 6-H — Panel de resumen lateral sticky en la reserva pública ✅ Completo
+
+> Último ítem de la lista original "fuera de este pase" de la Fase 6-B, ejecutado a pedido explícito del
+> usuario (2026-07-27). Referencia Stitch: `booking_p_blico_selecci_n_de_fecha_y_hora/` — su `code.html`
+> confirma el gap estructural exacto que había quedado apuntado en la Fase 6-B: `<div class="flex flex-col
+> lg:flex-row gap-xl">` con contenido principal (`flex-grow`) + `<aside class="w-full lg:w-[350px]">`
+> conteniendo un `<div class="sticky top-[100px] ...">` con "Resumen de Cita" (servicio, profesional,
+> fecha/hora con placeholder "Selecciona un día y hora..." cuando falta, y total). Hoy el flujo real es un
+> solo card centrado (`reservar/layout.tsx`, `max-w-4xl`) sin ninguna columna lateral — el gap es real, no
+> solo de color.
+
+**Decisiones (deviaciones deliberadas del mock, no fabricación 1:1):**
+- El mock es una landing de marketing completa (header/nav/footer propios, sin el "card" flotante). La
+  Fase 6.6 ya decidió deliberadamente el shell tipo app-móvil (header con identidad del tenant + stepper +
+  `BottomAction` fijo abajo) como el shell del flujo de reserva — no se revierte esa decisión ya
+  implementada; solo se agrega la columna lateral que faltaba dentro de ese mismo shell.
+- El mock incluye un botón "Siguiente" propio dentro del sidebar. Se omite deliberadamente: ya existe
+  `BottomAction` como única fuente de verdad para la validación/navegación de cada paso — duplicar el
+  botón en el sidebar habría creado dos rutas de acción con reglas de habilitado/deshabilitado que
+  mantener sincronizadas, sin beneficio real.
+- El sidebar solo se agrega a los pasos 1 (`reservar/page.tsx`) y 2 (`reservar/fecha/page.tsx`), donde hoy
+  no existe ningún resumen. El paso 3 (`confirmar/page.tsx`) ya tiene `BookingSummary` inline con los
+  mismos datos — agregar el sidebar ahí habría duplicado la misma información dos veces en la misma
+  pantalla en desktop.
+- Breakpoint elegido: `xl:` (≥1280px), no `lg:` como el mock. El shell real (`max-w-4xl` ⇒ 896px de ancho
+  interno) es más angosto que el `max-w-[1200px]` de la landing del mock; con `lg:` (1024px) el contenido
+  principal habría quedado demasiado angosto (~490px) compartiendo espacio con un sidebar de 320px. Se
+  ensanchó el shell a `xl:max-w-6xl` y el sidebar solo aparece desde `xl:`, dejando el comportamiento
+  actual sin cambios en mobile/tablet/desktop angosto (<1280px) — verificado sin overflow horizontal en
+  ninguno de los anchos probados (390px, 1024px, 1280px, 1440px).
+
+- [x] `BookingSidebarSummary.tsx` (nuevo) — servicio/combo (ícono, nombre, duración, precio) con
+      placeholder "Selecciona un {terminologiaServicio}..." si aún no se elige; profesional
+      (tri-estado: `undefined` = pendiente, `null` = "Cualquiera", string = nombre) con placeholder propio;
+      fecha y hora con placeholder "Aún no seleccionas día y hora..." hasta que ambas estén disponibles;
+      total. `sticky top-24` para quedar fijo mientras el usuario hace scroll en el paso.
+- [x] `reservar/page.tsx` (paso 1): layout `xl:flex xl:gap-8`, datos del resumen derivados del estado
+      local (`servicioId`/`comboId`/`empleadoId` + lookup en `serviciosList`/`combosList`/`empleadosList`)
+      porque el store global recién se llena al presionar "Continuar" — el sidebar necesita reflejar la
+      selección en vivo, antes de ese punto.
+- [x] `reservar/fecha/page.tsx` (paso 2): mismo layout; datos de servicio/profesional ya vienen resueltos
+      del store (`itemNombre`/`itemPrecio`/`empleadoNombre`), fecha/hora del estado local en vivo
+      (`selectedDate`/`selectedTime`, antes de confirmar el paso).
+- [x] `reservar/layout.tsx`: `max-w-4xl` → `xl:max-w-6xl` para dar espacio real a la columna lateral solo
+      en pantallas anchas.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/web`. Navegador real en `qa-test` a 1440px: sidebar
+      visible, actualiza en vivo al elegir servicio ("Servicio de Prueba", 30 min, $10.00) y profesional
+      ("QA Admin" / "Cualquier barbero disponible"), placeholders correctos antes de elegir cada campo;
+      en el paso de fecha/hora, servicio y profesional persisten desde el store y la fecha/hora se
+      completa en vivo al elegir un slot ("lunes 27 de julio · 04:00 PM"). A 1024px (`lg`, por debajo de
+      `xl`) el sidebar permanece oculto (`display: none` confirmado por JS) sin overflow; a 1280px (`xl`)
+      aparece (`display: block`); a 390px (mobile) oculto y sin overflow — flujo mobile intacto sin
+      cambios de comportamiento.
