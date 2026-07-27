@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ServiceSelection } from '@/components/booking/ServiceSelection';
 import { BarberSelection } from '@/components/booking/BarberSelection';
 import { BarberProfileCard } from '@/components/booking/BarberProfileCard';
+import { BookingSidebarSummary } from '@/components/booking/BookingSidebarSummary';
 import { BottomAction } from '@/components/ui/BottomAction';
 import { Servicio, Empleado, ComboPublico, reservaSeleccionSchema } from '@/lib/types';
 import { ArrowRight, RefreshCw } from 'lucide-react';
@@ -148,31 +149,56 @@ export default function ReservarPage() {
 
   const isSoloPreneur = empleadosList.length === 1;
 
-  return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-      
-      {/* Paso 1: Selección de Servicio o Combo */}
-      <ServiceSelection
-        servicios={serviciosList}
-        combos={combosList}
-        selectedServicioId={servicioId}
-        selectedComboId={comboId}
-        onSelectServicio={handleSelectServicio}
-        onSelectCombo={handleSelectCombo}
-      />
+  // Datos reales para el resumen lateral — misma lógica de lookup que handleContinue,
+  // derivados del estado local en vez del store (que recién se llena al continuar).
+  const comboSeleccionado = comboId ? combosList.find((c) => c.id === comboId) : undefined;
+  const servicioSeleccionado = servicioId ? serviciosList.find((s) => s.id === servicioId) : undefined;
+  const resumenNombre = comboSeleccionado?.nombre ?? servicioSeleccionado?.nombre;
+  const resumenDuracion = comboSeleccionado
+    ? (comboSeleccionado.duracionAjustadaMinutos ?? comboSeleccionado.servicios.reduce((t, cs) => t + cs.servicio.duracionMinutos, 0))
+    : servicioSeleccionado?.duracionMinutos;
+  const resumenPrecio = comboSeleccionado?.precioTotal ?? servicioSeleccionado?.precioBase;
+  const resumenEmpleadoNombre = empleadoId === undefined
+    ? undefined
+    : (empleadoId ? empleadosList.find((e) => e.id === empleadoId)?.nombre ?? null : null);
 
-      {/* Paso 2: Tarjeta de Perfil para Solo-preneur vs Selector Multiempleado */}
-      <div className={`transition-opacity duration-500 ${(servicioId || comboId) ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
-        {isSoloPreneur && empleadosList[0] ? (
-          <BarberProfileCard empleado={empleadosList[0]} />
-        ) : (
-          <BarberSelection 
-            empleados={empleadosList} 
-            selectedId={empleadoId} 
-            onSelect={setEmpleadoId} 
-          />
-        )}
+  return (
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20 xl:flex xl:gap-8 xl:items-start">
+
+      <div className="flex-1 min-w-0">
+        {/* Paso 1: Selección de Servicio o Combo */}
+        <ServiceSelection
+          servicios={serviciosList}
+          combos={combosList}
+          selectedServicioId={servicioId}
+          selectedComboId={comboId}
+          onSelectServicio={handleSelectServicio}
+          onSelectCombo={handleSelectCombo}
+        />
+
+        {/* Paso 2: Tarjeta de Perfil para Solo-preneur vs Selector Multiempleado */}
+        <div className={`transition-opacity duration-500 ${(servicioId || comboId) ? 'opacity-100' : 'opacity-30 pointer-events-none'}`}>
+          {isSoloPreneur && empleadosList[0] ? (
+            <BarberProfileCard empleado={empleadosList[0]} />
+          ) : (
+            <BarberSelection
+              empleados={empleadosList}
+              selectedId={empleadoId}
+              onSelect={setEmpleadoId}
+            />
+          )}
+        </div>
       </div>
+
+      {/* Resumen lateral sticky — solo desktop ancho, mismo rol que el BottomAction en mobile */}
+      <aside className="hidden xl:block w-[320px] shrink-0">
+        <BookingSidebarSummary
+          servicioNombre={resumenNombre}
+          duracionMinutos={resumenDuracion}
+          precio={resumenPrecio}
+          empleadoNombre={resumenEmpleadoNombre}
+        />
+      </aside>
 
       {/* Acción Flotante */}
       <BottomAction disabled={!isValid} onClick={handleContinue}>

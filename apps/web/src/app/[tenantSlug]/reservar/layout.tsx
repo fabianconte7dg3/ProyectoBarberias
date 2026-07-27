@@ -24,7 +24,7 @@ function ReservarLayoutContent({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-muted flex justify-center items-start sm:py-6 md:py-10 px-0 sm:px-4 w-full">
 
       {/* Contenedor Responsivo Móvil / Desktop (Adapta de 100% móvil a tarjeta elegante en PC) */}
-      <div className="w-full max-w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl bg-background min-h-screen sm:min-h-0 sm:rounded-3xl shadow-2xl relative overflow-x-hidden flex flex-col border-0 sm:border border-border transition-all">
+      <div className="w-full max-w-full sm:max-w-xl md:max-w-3xl lg:max-w-4xl xl:max-w-6xl bg-background min-h-screen sm:min-h-0 sm:rounded-3xl shadow-2xl relative overflow-x-hidden flex flex-col border-0 sm:border border-border transition-all">
 
         {/* Header público responsivo del tenant */}
         <header className="flex flex-col sm:flex-row items-center justify-between p-6 sm:p-8 bg-primary text-primary-foreground shadow-sm gap-4">

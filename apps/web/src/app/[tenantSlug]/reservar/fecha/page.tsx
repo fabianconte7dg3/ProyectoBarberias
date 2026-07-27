@@ -5,6 +5,7 @@ import { useBookingStore } from '@/lib/store';
 import { useHydration } from '@/hooks/useHydration';
 import { DaySelector } from '@/components/booking/DaySelector';
 import { TimeSlotGrid } from '@/components/booking/TimeSlotGrid';
+import { BookingSidebarSummary } from '@/components/booking/BookingSidebarSummary';
 import { BottomAction } from '@/components/ui/BottomAction';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { format } from 'date-fns';
@@ -26,6 +27,9 @@ export default function FechaPage() {
   const fechaStore = useBookingStore(state => state.fecha);
   const horaStore = useBookingStore(state => state.hora);
   const setFechaYHora = useBookingStore(state => state.setFechaYHora);
+  const itemNombre = useBookingStore(state => state.itemNombre);
+  const itemPrecio = useBookingStore(state => state.itemPrecio);
+  const empleadoNombre = useBookingStore(state => state.empleadoNombre);
 
   // Estado Local (inicializado con store si existe, sino 'Hoy')
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
@@ -148,30 +152,45 @@ export default function FechaPage() {
   }
 
   return (
-    <div className="animate-in slide-in-from-right-8 fade-in duration-500 relative">
-      {/* Botón Volver (Estilo nativo App) */}
-      <button
-        onClick={() => router.back()}
-        className="mb-2 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground active:scale-95 transition-all"
-      >
-        <ArrowLeft size={16} className="mr-1" />
-        Volver a servicios
-      </button>
+    <div className="animate-in slide-in-from-right-8 fade-in duration-500 relative xl:flex xl:gap-8 xl:items-start">
 
-      <DaySelector
-        selectedDate={selectedDate}
-        onSelect={handleDateSelect}
-      />
+      <div className="flex-1 min-w-0">
+        {/* Botón Volver (Estilo nativo App) */}
+        <button
+          onClick={() => router.back()}
+          className="mb-2 flex items-center text-sm font-medium text-muted-foreground hover:text-foreground active:scale-95 transition-all"
+        >
+          <ArrowLeft size={16} className="mr-1" />
+          Volver a servicios
+        </button>
 
-      {selectedDate && (
-        <TimeSlotGrid
-          slots={slots}
-          selectedTime={selectedTime}
-          onSelect={setSelectedTime}
-          duracionMinutos={duracionMinutos}
-          loading={loadingSlots}
+        <DaySelector
+          selectedDate={selectedDate}
+          onSelect={handleDateSelect}
         />
-      )}
+
+        {selectedDate && (
+          <TimeSlotGrid
+            slots={slots}
+            selectedTime={selectedTime}
+            onSelect={setSelectedTime}
+            duracionMinutos={duracionMinutos}
+            loading={loadingSlots}
+          />
+        )}
+      </div>
+
+      {/* Resumen lateral sticky — servicio/profesional ya elegidos, fecha/hora en vivo */}
+      <aside className="hidden xl:block w-[320px] shrink-0">
+        <BookingSidebarSummary
+          servicioNombre={itemNombre}
+          duracionMinutos={duracionMinutos}
+          precio={itemPrecio}
+          empleadoNombre={empleadoNombre}
+          fecha={selectedDate}
+          hora={selectedTime}
+        />
+      </aside>
 
       <BottomAction disabled={!isValid} onClick={handleContinue}>
         <span>Confirmar Fecha</span>
