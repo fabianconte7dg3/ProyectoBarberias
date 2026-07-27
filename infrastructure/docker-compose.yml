@@ -12,6 +12,9 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Solo corre en un volumen vacio (primer arranque real) — ver el propio
+      # script para el porque. No-op contra el volumen local ya existente.
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
     restart: unless-stopped
 
   redis:
