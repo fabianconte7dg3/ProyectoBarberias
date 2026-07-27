@@ -771,7 +771,8 @@ encontrado) en
 
 **Explícitamente fuera de este pase** (documentado, no ejecutado — mismo criterio de "no fabricar UI sin
 datos reales" de toda la Fase 6):
-- Catálogo de Servicios como página visual propia (hoy enterrado en `configuracion`)
+- ~~Catálogo de Servicios como página visual propia (hoy enterrado en `configuracion`)~~ — hecho en
+  [Fase 6-C](#fase-6-c--catálogo-de-servicios-como-página-propia--completo)
 - Perfil de Cliente como página propia con tabs (hoy modal desde la tabla de `clientes`)
 - Historial Clínico como página dedicada — **la restricción de privacidad de la Fase 2.1 (solo el
   profesional autor ve el contenido clínico completo) se mantiene**, no se replica el mock que muestra
@@ -782,3 +783,41 @@ datos reales" de toda la Fase 6):
   confirmado en la investigación, no solo de color)
 - Sucursales/multi-sede y Perfil de cuenta propia — ya diferidos en Fase 5, confirmado sin código
   existente
+
+## Fase 6-C — Catálogo de Servicios como página propia ✅ Completo
+
+> Primer ítem de la lista "fuera de este pase" de la Fase 6-B, ejecutado a pedido explícito del usuario
+> (2026-07-27). Referencia Stitch: `cat_logo_de_servicios_y_portafolio/` (título del mock: "Catálogo de
+> Servicios y Portafolio"). El mock incluye elementos sin respaldo real en el schema — filtro de
+> categorías (`servicios` no tiene columna de categoría; cada tenant opera una sola `industria`, no
+> varias categorías simultáneas), foto por servicio (no hay columna de imagen), pestañas
+> "Recientes"/"Populares" (no hay `createdAt` en `servicios` ni métrica de popularidad en ningún lado) y
+> texto "última edición hace N días" (mismo motivo). Todos esos elementos se omitieron — mismo criterio
+> de "no fabricar UI sin datos reales" del resto de la Fase 6. Lo que sí es real se construyó tal cual:
+> estado Activo/Inactivo (columna `activo`), precio y duración (ordenamiento real por esos campos), y
+> CRUD completo.
+
+- [x] Backend: `UpdateServicioDto` gana `activo?: boolean`; `servicios.service.ts` — `update()` ahora
+      puede alternar `activo`, `findOne()` ya no exige `activo=true` (bloqueaba reactivar un servicio
+      desactivado), `findAll()` retorna todos (antes solo activos) — mismo patrón que
+      `productos.service.ts`. Único consumidor no-admin de `GET /servicios`
+      (`QuickWalkInModal.tsx`) actualizado con `.filter(s => s.activo)` client-side para no ofrecer
+      servicios inactivos al agendar — mismo patrón ya usado por `VentaMostradorModal.tsx` con productos.
+- [x] Frontend: `apps/web/src/app/[tenantSlug]/admin/servicios/page.tsx` (nueva) — grid de tarjetas de
+      servicio (estado, precio, duración, Editar + Activar/Desactivar), filtro real "Estado de
+      Visibilidad" (Activos/Inactivos con conteos reales), 4 tabs de orden reales (Nombre A-Z, Precio
+      ↑/↓, Duración), modal crear/editar. Sección de Combos migrada verbatim desde `configuracion` (sin
+      cambios de lógica, solo de ubicación) — combos dependen de la lista de servicios y estaban
+      desconectados de su propia fuente en `configuracion`.
+- [x] `AdminSidebar.tsx`: nuevo ítem "{terminologiaServicio}s" (solo admin), entre
+      `{terminologiaEmpleado}s` y Productos.
+- [x] `configuracion/page.tsx`: quitadas las secciones "Catálogo de Servicios" y "Combos de Servicios"
+      (formularios, estado y handlers completos) y reemplazadas por una tarjeta de enlace "Gestionar
+      Servicios" → `/admin/servicios` — mismo patrón ya usado ahí para Productos desde antes de la Fase
+      6-B. Imports muertos (`Scissors`, `Layers`, `Trash2`) removidos.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real con datos de
+      `qa-test`: nav "Servicios" visible; ciclo completo activar→desactivar→reactivar confirmado contra
+      la API real (conteos Activos/Inactivos cambian en vivo); edición de precio confirmada end-to-end
+      (`$10→$11→$10`, con mensaje de éxito); combos siguen funcionando idénticos; tarjeta de enlace en
+      `configuracion` navega correctamente; cero overflow horizontal en mobile (375px, `scrollWidth ===
+      clientWidth`). Datos de QA restaurados a su estado original tras la prueba.
