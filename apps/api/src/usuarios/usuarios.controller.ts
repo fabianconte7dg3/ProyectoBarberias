@@ -3,6 +3,7 @@ import { UsuariosService } from './usuarios.service';
 import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
 import { UpdateComisionDto } from './dto/update-comision.dto';
+import { UpdateIdentidadDto } from './dto/update-identidad.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -26,6 +27,23 @@ export class UsuariosController {
     @Headers('user-agent') userAgent: string
   ) {
     return this.usuariosService.toggleKillSwitch(req.user.tenantId, req.user.userId, activo, ip, userAgent);
+  }
+
+  @Roles('admin')
+  @Get('configuracion/identidad')
+  obtenerIdentidad(@Req() req: any) {
+    return this.usuariosService.obtenerIdentidad(req.user.tenantId);
+  }
+
+  @Roles('admin')
+  @Patch('configuracion/identidad')
+  actualizarIdentidad(
+    @Body() dto: UpdateIdentidadDto,
+    @Req() req: any,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.usuariosService.actualizarIdentidad(req.user.tenantId, req.user.userId, dto, ip, userAgent);
   }
 
   @Public()

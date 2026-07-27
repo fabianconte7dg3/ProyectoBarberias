@@ -29,9 +29,18 @@ function ReservarLayoutContent({ children }: { children: ReactNode }) {
         {/* Header público responsivo del tenant */}
         <header className="flex flex-col sm:flex-row items-center justify-between p-6 sm:p-8 bg-primary text-primary-foreground shadow-sm gap-4">
           <div className="flex items-center gap-4 text-center sm:text-left">
-            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary-foreground/20 flex items-center justify-center text-2xl sm:text-3xl font-extrabold border-2 border-primary-foreground/30 uppercase shrink-0">
-              {nombreBarberia.charAt(0)}
-            </div>
+            {tenant.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={tenant.logoUrl}
+                alt={nombreBarberia}
+                className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-cover border-2 border-primary-foreground/30 shrink-0"
+              />
+            ) : (
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-primary-foreground/20 flex items-center justify-center text-2xl sm:text-3xl font-extrabold border-2 border-primary-foreground/30 uppercase shrink-0">
+                {nombreBarberia.charAt(0)}
+              </div>
+            )}
             <div>
               <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight capitalize">{nombreBarberia}</h1>
               <p className="text-xs sm:text-sm text-primary-foreground/80 font-medium">Reserva de cita en línea</p>

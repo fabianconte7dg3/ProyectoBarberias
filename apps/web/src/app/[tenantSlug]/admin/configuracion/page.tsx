@@ -7,7 +7,8 @@ import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
   Users, ShieldAlert, Plus, Edit2,
-  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar
+  CheckCircle2, AlertTriangle, RefreshCw, Lock, Save, UserPlus, ShoppingBag, X, Clock, FileText, History, Calendar,
+  Building2, Settings2, Image as ImageIcon
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { useTenant } from '@/lib/tenant-context';
@@ -49,6 +50,16 @@ interface BloqueoHistorial {
   };
 }
 
+interface IdentidadNegocio {
+  nombreComercial: string;
+  ruc: string | null;
+  telefonoNegocio: string | null;
+  colorPrimario: string | null;
+  logoUrl: string | null;
+}
+
+type ConfigTab = 'operacion' | 'identidad';
+
 export default function AdminConfiguracionPage() {
   const params = useParams();
   const router = useRouter();
@@ -61,6 +72,11 @@ export default function AdminConfiguracionPage() {
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [historialBloqueos, setHistorialBloqueos] = useState<BloqueoHistorial[]>([]);
   const [killSwitchActivo, setKillSwitchActivo] = useState(false);
+
+  const [activeTab, setActiveTab] = useState<ConfigTab>('operacion');
+  const [identidad, setIdentidad] = useState<IdentidadNegocio | null>(null);
+  const [identidadForm, setIdentidadForm] = useState({ nombreComercial: '', ruc: '', telefonoNegocio: '', colorPrimario: '#b0004a', logoUrl: '' });
+  const [savingIdentidad, setSavingIdentidad] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -86,19 +102,55 @@ export default function AdminConfiguracionPage() {
     setLoading(true);
     setError('');
     try {
-      const [resStaff, resAudit, resBloqueos] = await Promise.all([
+      const [resStaff, resAudit, resBloqueos, resIdentidad] = await Promise.all([
         fetchApi<UsuarioStaff[]>('/usuarios'),
         fetchApi<AuditLog[]>('/audit?limit=25'),
         fetchApi<BloqueoHistorial[]>('/horarios/bloqueos-historial'),
+        fetchApi<IdentidadNegocio>('/usuarios/configuracion/identidad'),
       ]);
       setStaff(resStaff || []);
       setAuditLogs(resAudit || []);
       setHistorialBloqueos(resBloqueos || []);
+      setIdentidad(resIdentidad);
+      setIdentidadForm({
+        nombreComercial: resIdentidad.nombreComercial || '',
+        ruc: resIdentidad.ruc || '',
+        telefonoNegocio: resIdentidad.telefonoNegocio || '',
+        colorPrimario: resIdentidad.colorPrimario || '#b0004a',
+        logoUrl: resIdentidad.logoUrl || '',
+      });
     } catch (err: any) {
       console.error('Error cargando configuración:', err);
       setError(err.message || 'Error al conectar con la configuración.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 0. Actualizar Identidad del Negocio (nombre comercial, RUC, teléfono, color, logo)
+  const handleSaveIdentidad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSavingIdentidad(true);
+    setError('');
+    setSuccessMsg('');
+
+    try {
+      const res = await fetchApi<IdentidadNegocio>('/usuarios/configuracion/identidad', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          nombreComercial: identidadForm.nombreComercial.trim(),
+          ruc: identidadForm.ruc.trim() || undefined,
+          telefonoNegocio: identidadForm.telefonoNegocio.trim() || undefined,
+          colorPrimario: identidadForm.colorPrimario,
+          logoUrl: identidadForm.logoUrl.trim() || undefined,
+        }),
+      });
+      setIdentidad(res);
+      setSuccessMsg('Identidad del negocio actualizada. Los cambios se reflejarán en el portal público al recargar.');
+    } catch (err: any) {
+      setError(err.message || 'Error al actualizar la identidad del negocio.');
+    } finally {
+      setSavingIdentidad(false);
     }
   };
 
@@ -183,7 +235,7 @@ export default function AdminConfiguracionPage() {
 
       <AdminPageHeader
         title="Configuración"
-        description={`${terminologiaServicio}s · Inventario · Comisiones · Horarios & Vacaciones · Auditoría Inmutable`}
+        description="Identidad de marca y operación del negocio"
       >
         <button
           onClick={loadData}
@@ -194,9 +246,38 @@ export default function AdminConfiguracionPage() {
         </button>
       </AdminPageHeader>
 
+      {/* Tabs: Identidad del Negocio vs. Operación */}
+      <div className="border-b border-border bg-card/50 px-4 sm:px-6">
+        <div className="max-w-5xl mx-auto flex items-center gap-2 overflow-x-auto text-xs font-bold py-2">
+          <button
+            onClick={() => setActiveTab('identidad')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'identidad'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Building2 size={16} />
+            <span>Identidad del Negocio</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('operacion')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
+              activeTab === 'operacion'
+                ? 'bg-primary text-primary-foreground shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+            }`}
+          >
+            <Settings2 size={16} />
+            <span>Operación</span>
+          </button>
+        </div>
+      </div>
+
       {/* Main Content */}
       <main className="flex-1 min-w-0 max-w-5xl w-full mx-auto p-6 space-y-6">
-        
+
         {error && (
           <div className="p-4 bg-destructive/10 border border-destructive/30 rounded-2xl text-destructive text-sm font-medium flex items-center gap-3">
             <AlertTriangle size={20} className="shrink-0" />
@@ -211,6 +292,118 @@ export default function AdminConfiguracionPage() {
           </div>
         )}
 
+        {/* TAB: IDENTIDAD DEL NEGOCIO */}
+        {activeTab === 'identidad' && (
+          <form onSubmit={handleSaveIdentidad} className="bg-card border border-border rounded-2xl p-6 shadow-xs space-y-5 animate-in fade-in duration-200">
+            <div className="flex items-center gap-2 border-b border-border pb-3">
+              <Building2 size={20} className="text-primary" />
+              <div>
+                <h2 className="text-base font-bold">Identidad del Negocio</h2>
+                <p className="text-xs text-muted-foreground">
+                  Nombre comercial, datos fiscales y marca visual que ven tus clientes en el portal de reserva.
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <label className="space-y-1.5">
+                <span className="text-xs font-bold uppercase text-muted-foreground">Nombre Comercial</span>
+                <input
+                  type="text"
+                  required
+                  value={identidadForm.nombreComercial}
+                  onChange={(e) => setIdentidadForm({ ...identidadForm, nombreComercial: e.target.value })}
+                  className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-xl text-sm font-semibold"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-bold uppercase text-muted-foreground">RUC</span>
+                <input
+                  type="text"
+                  value={identidadForm.ruc}
+                  onChange={(e) => setIdentidadForm({ ...identidadForm, ruc: e.target.value })}
+                  placeholder="Sin especificar"
+                  className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-xl text-sm font-mono"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-bold uppercase text-muted-foreground">Teléfono del Negocio</span>
+                <input
+                  type="text"
+                  value={identidadForm.telefonoNegocio}
+                  onChange={(e) => setIdentidadForm({ ...identidadForm, telefonoNegocio: e.target.value })}
+                  placeholder="Sin especificar"
+                  className="w-full px-3 py-2 bg-secondary/30 border border-border rounded-xl text-sm font-mono"
+                />
+              </label>
+
+              <label className="space-y-1.5">
+                <span className="text-xs font-bold uppercase text-muted-foreground">Color Primario de Marca</span>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="color"
+                    value={identidadForm.colorPrimario}
+                    onChange={(e) => setIdentidadForm({ ...identidadForm, colorPrimario: e.target.value })}
+                    className="w-10 h-10 rounded-lg border border-border cursor-pointer bg-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={identidadForm.colorPrimario}
+                    onChange={(e) => setIdentidadForm({ ...identidadForm, colorPrimario: e.target.value })}
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                    className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-xl text-sm font-mono uppercase"
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground block">
+                  Controla el color principal de todo el portal de reserva y del panel de administración.
+                </span>
+              </label>
+
+              <label className="space-y-1.5 sm:col-span-2">
+                <span className="text-xs font-bold uppercase text-muted-foreground">URL del Logo</span>
+                <div className="flex items-center gap-3">
+                  {identidadForm.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={identidadForm.logoUrl}
+                      alt="Logo del negocio"
+                      className="w-12 h-12 rounded-xl object-cover border border-border shrink-0"
+                      onError={(e) => { (e.target as HTMLImageElement).style.visibility = 'hidden'; }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-xl border border-dashed border-border flex items-center justify-center text-muted-foreground shrink-0">
+                      <ImageIcon size={18} />
+                    </div>
+                  )}
+                  <input
+                    type="url"
+                    value={identidadForm.logoUrl}
+                    onChange={(e) => setIdentidadForm({ ...identidadForm, logoUrl: e.target.value })}
+                    placeholder="https://..."
+                    className="flex-1 px-3 py-2 bg-secondary/30 border border-border rounded-xl text-sm"
+                  />
+                </div>
+                <span className="text-[11px] text-muted-foreground block">
+                  Se muestra en el encabezado del portal público de reserva en lugar de la inicial del nombre.
+                </span>
+              </label>
+            </div>
+
+            <button
+              type="submit"
+              disabled={savingIdentidad}
+              className="flex items-center gap-2 px-4 py-2.5 bg-primary text-primary-foreground text-xs font-bold rounded-xl transition-colors shadow-xs hover:opacity-90 disabled:opacity-60"
+            >
+              <Save size={14} />
+              <span>{savingIdentidad ? 'Guardando...' : 'Guardar Identidad del Negocio'}</span>
+            </button>
+          </form>
+        )}
+
+        {activeTab === 'operacion' && (
+        <>
         {/* 1. SECCIÓN: Kill-Switch de Emergencia */}
         <div className="bg-card border border-rose-500/30 rounded-2xl p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between border-b border-border pb-3">
@@ -562,6 +755,8 @@ export default function AdminConfiguracionPage() {
             </table>
           </div>
         </div>
+        </>
+        )}
 
       </main>
 

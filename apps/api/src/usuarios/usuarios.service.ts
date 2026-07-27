@@ -111,6 +111,74 @@ export class UsuariosService {
     };
   }
 
+  async obtenerIdentidad(tenantId: string) {
+    const txDb = TenantContext.getDb();
+    const [barberia] = await txDb.select({
+      nombreComercial: schema.barberias.nombreComercial,
+      ruc: schema.barberias.ruc,
+      telefonoNegocio: schema.barberias.telefonoNegocio,
+      colorPrimario: schema.barberias.colorPrimario,
+      logoUrl: schema.barberias.logoUrl,
+    })
+      .from(schema.barberias)
+      .where(eq(schema.barberias.id, tenantId));
+
+    if (!barberia) {
+      throw new NotFoundException('Negocio no encontrado.');
+    }
+
+    return barberia;
+  }
+
+  async actualizarIdentidad(
+    tenantId: string,
+    adminId: string,
+    cambios: { nombreComercial?: string; ruc?: string; telefonoNegocio?: string; colorPrimario?: string; logoUrl?: string },
+    ipOrigen?: string,
+    userAgent?: string,
+  ) {
+    const txDb = TenantContext.getDb();
+
+    const [barberiaActual] = await txDb.select({
+      nombreComercial: schema.barberias.nombreComercial,
+      ruc: schema.barberias.ruc,
+      telefonoNegocio: schema.barberias.telefonoNegocio,
+      colorPrimario: schema.barberias.colorPrimario,
+      logoUrl: schema.barberias.logoUrl,
+    })
+      .from(schema.barberias)
+      .where(eq(schema.barberias.id, tenantId));
+
+    if (!barberiaActual) {
+      throw new NotFoundException('Negocio no encontrado.');
+    }
+
+    const [barberiaActualizada] = await txDb.update(schema.barberias)
+      .set(cambios)
+      .where(eq(schema.barberias.id, tenantId))
+      .returning({
+        nombreComercial: schema.barberias.nombreComercial,
+        ruc: schema.barberias.ruc,
+        telefonoNegocio: schema.barberias.telefonoNegocio,
+        colorPrimario: schema.barberias.colorPrimario,
+        logoUrl: schema.barberias.logoUrl,
+      });
+
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId: adminId,
+      tablaAfectada: 'barberias',
+      registroId: tenantId,
+      accion: 'actualizar_identidad',
+      payloadAntes: barberiaActual,
+      payloadDespues: cambios,
+      ipOrigen,
+      userAgent,
+    });
+
+    return barberiaActualizada;
+  }
+
   async updateComision(usuarioId: string, porcentaje: number, porcentajeProducto?: number, adminId?: string, ipOrigen?: string, userAgent?: string) {
     const txDb = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();
