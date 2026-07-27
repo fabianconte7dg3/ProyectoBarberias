@@ -371,9 +371,34 @@ encontrado) en
 - [ ] Entornos separados: staging vs producción — `docker-compose.staging.yml` + Caddyfile +
       `.env.staging.example` listos como placeholder, sin servidor de staging real todavía.
 - [x] CI/CD con GitHub Actions — `tsc --noEmit` + tests en cada PR y push a `master`
-      (`.github/workflows/ci.yml`). `npm test` de `apps/api` queda fuera a propósito (12/13 specs
-      boilerplate rotos, ver Fase 3 abajo) — solo corren `test:integration` (real) y el `test` de
-      `apps/web` (real).
+      (`.github/workflows/ci.yml`). `npm test` de `apps/api` queda fuera del workflow a propósito
+      (son unit tests sin DB — `test:integration`, que sí corre, es la cobertura real de RLS/
+      idempotencia/comisiones contra Postgres).
+  - **Hallazgo real (2026-07-26): CI nunca había pasado en verde desde que se agregó** — las 3
+    corridas que existían hasta ese momento fallaron, incluidas las de antes de este hallazgo. Causa
+    raíz: el rol `app_user` (del que depende *todo* el aislamiento RLS vía `SET LOCAL ROLE app_user`
+    en `TenantInterceptor`/`runInTenantScope`) nunca se creaba en ningún script versionado —
+    `CREATE ROLE app_user ...` en
+    [`0001_rls_policies.sql:94`](../apps/api/src/database/migrations/0001_rls_policies.sql) está
+    **comentado**, pensado para correrse a mano una sola vez; eso se hizo hace tiempo contra el
+    Postgres local persistente (por eso funcionaba en dev), pero un Postgres realmente nuevo — el
+    volumen efímero de cada corrida de CI — no tiene el rol, y `GRANT ... TO app_user` de
+    `0003_financiero.sql` fallaba con `role "app_user" does not exist"`. Segundo bug encontrado en el
+    camino: `bootstrap-test-db.sh` tenía un candado de "21 archivos .sql esperados" que quedó
+    desactualizado cuando `0018_impersonacion_audit.sql` (Fase 6.3) se agregó sin sumarlo al script.
+  - **Corregido:** nuevo `infrastructure/postgres-init/01-create-app-user.sql` (bloque `DO` idempotente,
+    misma credencial `app_user`/`app_password` ya versionada en
+    `infrastructure/pgbouncer-test/userlist.txt`), montado en `docker-compose.yml` vía
+    `docker-entrypoint-initdb.d` — mecanismo nativo de la imagen de Postgres, solo corre en un volumen
+    vacío (no toca el volumen local ya existente del equipo, no toca ninguna migración histórica).
+    Verificado en un contenedor Postgres aislado y descartable (volumen nuevo, sin relación con
+    `volumetrix_postgres`) que el rol se crea correctamente. `bootstrap-test-db.sh` actualizado para
+    aplicar `0018` y esperar 22 archivos. `test:integration` corrido localmente tras el fix: 13/13 en
+    verde. **No se tocó `docker-compose.production.yml`**: ahí `POSTGRES_USER=app_user` ya crea el rol
+    automáticamente vía el propio mecanismo de la imagen — pero como superusuario, lo que en teoría
+    haría *bypass* de RLS en producción (contradice el propio comentario de diseño en
+    `0001_rls_policies.sql`). Es un hallazgo separado, no resuelto en este pase — requiere decidir un
+    modelo de owner/app-role separado para producción antes de un primer despliegue real.
 - [ ] Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh` (snapshot manual vía
       `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron — falta destino de
       backup elegido (S3 o similar) y WAL archiving continuo.
