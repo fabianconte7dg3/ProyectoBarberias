@@ -4,7 +4,7 @@ import { runInTenantScope } from '../database/tenant/tenant.utils';
 import { DRIZZLE_POOL_DB } from '../database/tenant/database.constants';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import * as schema from '../database/schema';
-import { eq, and, asc, sql } from 'drizzle-orm';
+import { eq, asc, sql } from 'drizzle-orm';
 import { CreateServicioDto } from './dto/create-servicio.dto';
 import { UpdateServicioDto } from './dto/update-servicio.dto';
 
@@ -31,7 +31,6 @@ export class ServiciosService {
   async findAll() {
     const db = TenantContext.getDb();
     return db.query.servicios.findMany({
-      where: eq(schema.servicios.activo, true),
       orderBy: [asc(schema.servicios.nombre)],
     });
   }
@@ -52,7 +51,7 @@ export class ServiciosService {
   async findOne(id: string) {
     const db = TenantContext.getDb();
     const servicio = await db.query.servicios.findFirst({
-      where: and(eq(schema.servicios.id, id), eq(schema.servicios.activo, true)),
+      where: eq(schema.servicios.id, id),
     });
 
     if (!servicio) {
@@ -64,14 +63,15 @@ export class ServiciosService {
 
   async update(id: string, dto: UpdateServicioDto) {
     const db = TenantContext.getDb();
-    
-    // Validar que exista y esté activo
+
+    // Validar que exista (activo o inactivo — update() es también el mecanismo de reactivación)
     await this.findOne(id);
 
     const [servicioActualizado] = await db.update(schema.servicios).set({
       ...(dto.nombre && { nombre: dto.nombre }),
       ...(dto.duracionMinutos !== undefined && { duracionMinutos: dto.duracionMinutos }),
       ...(dto.precioBase !== undefined && { precioBase: dto.precioBase.toString() }),
+      ...(dto.activo !== undefined && { activo: dto.activo }),
     })
     .where(eq(schema.servicios.id, id))
     .returning();

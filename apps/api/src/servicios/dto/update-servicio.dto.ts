@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, Min } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, Min } from 'class-validator';
 
 export class UpdateServicioDto {
   @IsOptional()
@@ -14,4 +14,8 @@ export class UpdateServicioDto {
   @IsNumber()
   @Min(0)
   precioBase?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  activo?: boolean;
 }

@@ -15,6 +15,7 @@ interface Servicio {
   nombre: string;
   duracionMinutos: number;
   precioBase: number;
+  activo: boolean;
 }
 
 interface Paciente {
@@ -80,11 +81,13 @@ export function QuickWalkInModal({
 
   useEffect(() => {
     if (isOpen) {
-      // 1. Cargar lista de servicios
+      // 1. Cargar lista de servicios (solo activos — /servicios ahora retorna
+      // también inactivos para que el catálogo admin pueda reactivarlos)
       fetchApi<Servicio[]>('/servicios')
         .then((data) => {
-          setServicios(data);
-          if (data.length > 0) setServicioId(data[0].id);
+          const activos = data.filter((s) => s.activo);
+          setServicios(activos);
+          if (activos.length > 0) setServicioId(activos[0].id);
         })
         .catch((err) => console.error('Error cargando servicios:', err));
 

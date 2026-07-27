@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import {
   LayoutDashboard, Calendar, UserCheck, Users, ShoppingBag, Lock, Database,
-  Settings, Armchair, LogOut, Menu, X, Link2, Check,
+  Settings, Armchair, LogOut, Menu, X, Link2, Check, Sparkles,
 } from 'lucide-react';
 import { useTenant } from '@/lib/tenant-context';
 import { buildTenantPublicUrl } from '@/lib/tenant-url';
@@ -22,7 +22,7 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
-  const { terminologiaEmpleado } = useTenant();
+  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
   const currentUser = useAdminStore((state) => state.user);
   const logoutStore = useAdminStore((state) => state.logout);
   const isImpersonating = useAdminStore((state) => state.impersonation?.active ?? false);
@@ -39,6 +39,7 @@ export function AdminSidebar() {
     ...(isAdmin ? [
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/empleados`, icon: Users },
+      { label: `${terminologiaServicio}s`, href: `/${tenantSlug}/admin/servicios`, icon: Sparkles },
       { label: 'Productos', href: `/${tenantSlug}/admin/productos`, icon: ShoppingBag },
       { label: 'Caja', href: `/${tenantSlug}/admin/caja`, icon: Lock },
       { label: 'Datos', href: `/${tenantSlug}/admin/datos`, icon: Database },
