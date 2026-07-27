@@ -6,10 +6,11 @@ import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import {
-  UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2
+  UserPlus, Clock, Edit2, ShieldCheck, AlertTriangle, RefreshCw, Save, X, Scissors, Award, CheckCircle2, KeyRound
 } from 'lucide-react';
 import { HorariosModal } from '@/components/admin/HorariosModal';
 import { InviteEmpleadoModal } from '@/components/admin/InviteEmpleadoModal';
+import { ResetPinModal } from '@/components/admin/ResetPinModal';
 import { useTenant } from '@/lib/tenant-context';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
 
@@ -39,6 +40,7 @@ export default function AdminEmpleadosPage() {
   // Modales
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [horariosModalEmpleado, setHorariosModalEmpleado] = useState<{ id: string; nombre: string } | null>(null);
+  const [resetPinUsuario, setResetPinUsuario] = useState<{ id: string; nombreCompleto: string } | null>(null);
 
   // Edición rápida de comisión
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
@@ -288,14 +290,24 @@ export default function AdminEmpleadosPage() {
                 </div>
 
                 {/* Acciones Rápidas en Footer */}
-                {u.rol === 'empleado' && (
+                {u.rol !== 'admin' && (
                   <div className="pt-2 border-t border-border flex items-center gap-2">
+                    {u.rol === 'empleado' && (
+                      <button
+                        onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
+                        className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      >
+                        <Clock size={15} className="text-primary" />
+                        <span>Horarios</span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
-                      className="w-full py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      onClick={() => setResetPinUsuario({ id: u.id, nombreCompleto: u.nombreCompleto })}
+                      className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      title="Resetear PIN de acceso"
                     >
-                      <Clock size={15} className="text-primary" />
-                      <span>Horarios & Vacaciones</span>
+                      <KeyRound size={15} className="text-primary" />
+                      <span>Resetear PIN</span>
                     </button>
                   </div>
                 )}
@@ -323,6 +335,14 @@ export default function AdminEmpleadosPage() {
           onClose={() => setHorariosModalEmpleado(null)}
         />
       )}
+
+      {/* Modal Resetear PIN */}
+      <ResetPinModal
+        isOpen={!!resetPinUsuario}
+        usuario={resetPinUsuario}
+        onClose={() => setResetPinUsuario(null)}
+        onSuccess={loadStaff}
+      />
     </div>
   );
 }

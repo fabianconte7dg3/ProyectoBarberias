@@ -179,6 +179,56 @@ export class UsuariosService {
     return barberiaActualizada;
   }
 
+  /**
+   * Reseteo de PIN de staff por el admin (Fase 6-I) — cubre el caso de un
+   * empleado/recepción que olvidó su PIN y no puede loguearse para cambiarlo
+   * él mismo. También sirve para activar de una vez a alguien que aún no
+   * había usado su enlace de invitación (mismo efecto que `activateStaff`
+   * sobre `activo`/`tokenActivacion`, sin depender del token).
+   */
+  async resetPin(usuarioId: string, adminId: string, nuevoPin: string, ipOrigen?: string, userAgent?: string) {
+    const txDb = TenantContext.getDb();
+    const tenantId = TenantContext.getTenantId();
+
+    const [usuario] = await txDb.select({
+      id: schema.usuarios.id,
+      nombreCompleto: schema.usuarios.nombreCompleto,
+      rol: schema.usuarios.rol,
+    })
+      .from(schema.usuarios)
+      .where(and(eq(schema.usuarios.id, usuarioId), eq(schema.usuarios.tenantId, tenantId)));
+
+    if (!usuario) {
+      throw new NotFoundException('Integrante del equipo no encontrado.');
+    }
+
+    if (usuario.rol === 'admin') {
+      throw new BadRequestException('Los administradores no usan PIN de acceso; no aplica el reseteo.');
+    }
+
+    const pinHash = await bcrypt.hash(nuevoPin, 10);
+
+    await txDb.update(schema.usuarios)
+      .set({ pinAcceso: pinHash, activo: true, tokenActivacion: null, tokenExpiraEn: null })
+      .where(eq(schema.usuarios.id, usuarioId));
+
+    // El PIN nunca se guarda en el log de auditoría, ni siquiera hasheado —
+    // solo se registra que ocurrió el reseteo y sobre quién.
+    await this.auditService.logAction({
+      tenantId,
+      usuarioId: adminId,
+      tablaAfectada: 'usuarios',
+      registroId: usuarioId,
+      accion: 'reset_pin_staff',
+      payloadAntes: { nombreCompleto: usuario.nombreCompleto },
+      payloadDespues: { pinReseteado: true },
+      ipOrigen,
+      userAgent,
+    });
+
+    return { message: `PIN de ${usuario.nombreCompleto} actualizado correctamente.` };
+  }
+
   async updateComision(usuarioId: string, porcentaje: number, porcentajeProducto?: number, adminId?: string, ipOrigen?: string, userAgent?: string) {
     const txDb = TenantContext.getDb();
     const tenantId = TenantContext.getTenantId();

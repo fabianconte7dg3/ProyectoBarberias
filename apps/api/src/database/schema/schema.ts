@@ -40,7 +40,7 @@ export const accionAuditEnum = pgEnum('accion_audit', [
   'login', 'logout', 'cobro', 'update_intento', 'delete_intento',
   'kill_switch', 'cambio_comision', 'cierre_emergencia', 'conciliacion_yappy',
   'crear_tenant', 'cambiar_estado_tenant', 'cambiar_plan_tenant', 'kill_switch_plataforma',
-  'impersonacion', 'actualizar_identidad',
+  'impersonacion', 'actualizar_identidad', 'reset_pin_staff',
 ]);
 export const estadoWhatsappEnum = pgEnum('estado_whatsapp', [
   'conectado', 'desconectado', 'pendiente_qr', 'suspendido',

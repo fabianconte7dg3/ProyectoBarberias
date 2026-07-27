@@ -4,6 +4,7 @@ import { InviteStaffDto } from './dto/invite-staff.dto';
 import { ActivateStaffDto } from './dto/activate-staff.dto';
 import { UpdateComisionDto } from './dto/update-comision.dto';
 import { UpdateIdentidadDto } from './dto/update-identidad.dto';
+import { ResetPinDto } from './dto/reset-pin.dto';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { Public } from '../common/decorators/public.decorator';
@@ -50,6 +51,18 @@ export class UsuariosController {
   @Post('activar')
   activateStaff(@Body() dto: ActivateStaffDto) {
     return this.usuariosService.activateStaff(dto);
+  }
+
+  @Roles('admin')
+  @Post(':id/reset-pin')
+  resetPin(
+    @Param('id') id: string,
+    @Body() dto: ResetPinDto,
+    @Req() req: any,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.usuariosService.resetPin(id, req.user.userId, dto.nuevoPin, ip, userAgent);
   }
 
   @Roles('admin')
