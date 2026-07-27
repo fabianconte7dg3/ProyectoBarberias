@@ -779,7 +779,8 @@ datos reales" de toda la Fase 6):
   [Fase 6-E](#fase-6-e--historial-clínico-como-página-dedicada--completo), respetando la restricción de
   privacidad de la Fase 2.1
 - División de Configuración en identidad de marca vs. operación
-- "Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)
+- ~~"Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)~~ — hecho en
+  [Fase 6-F](#fase-6-f--finanzas-y-reportes-como-sección-de-nav-propia--completo)
 - Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos (gap estructural real,
   confirmado en la investigación, no solo de color)
 - Sucursales/multi-sede y Perfil de cuenta propia — ya diferidos en Fase 5, confirmado sin código
@@ -910,3 +911,55 @@ datos reales" de toda la Fase 6):
       contenido de "Vet Empleado" — la restricción de privacidad de la Fase 2.1 queda confirmada en
       vivo, no solo por inspección de código. Nav "Historial Clínico" ausente en `qa-test` (barbería, no
       requiere paciente). Cero overflow horizontal en mobile (375px).
+
+## Fase 6-F — Finanzas y Reportes como sección de nav propia ✅ Completo
+
+> Cuarto y último ítem "de nav propia" de la lista "fuera de este pase" de la Fase 6-B, ejecutado a
+> pedido explícito del usuario (2026-07-27). Referencia Stitch: `finanzas_y_reportes_panel_de_control_
+> financiero/` — su propio sidebar trae "Dashboard" y "Financials" como ítems de nav separados, lo que
+> confirma la intención estructural: hoy esos dos viven fusionados en una sola página
+> (`admin/dashboard/page.tsx`), con "Finanzas & Recaudación" como el primer tab de un sub-dashboard de 4.
+
+**Lo que el mock pide que NO tiene datos reales (omitido, mismo criterio de toda la Fase 6):**
+- KPI "Beneficio Neto" — requiere una tabla de gastos/costos operativos que no existe en el schema
+  (`transacciones` solo registra ingresos cobrados, nunca egresos).
+- KPI "Cuentas por Cobrar" — el modelo es POS: una `transaccion` solo se crea al momento de cobrar
+  (`cobrarCita`/`cobrarGrupo`/venta de mostrador), nunca en estado "pendiente" o "vencido"; no existe el
+  concepto de factura emitida-pero-no-cobrada.
+- Tabla "Facturación Reciente" con badges Pagado/Pendiente/Vencido — mismo motivo que el punto anterior.
+- Gráfico "Ingresos vs Gastos" — mismo motivo que "Beneficio Neto" (no hay lado de gastos).
+- "Rentabilidad por Servicio" — el mock la presenta como % de rentabilidad real (ingreso menos costo);
+  sin costos registrados por servicio eso no se puede calcular. (El dashboard ya tiene un ranking
+  equivalente y honesto — "{Servicio}s Más Demandados" por recaudación — en el tab "Ventas & Productos",
+  sin tocar.)
+
+**Lo que sí tiene datos reales y se extrajo tal cual del tab "Finanzas & Recaudación" del dashboard:**
+- [x] Backend: sin cambios — se reutiliza `GET /reportes/dashboard?desde&hasta`
+      (`apps/api/src/reportes/reportes.service.ts`), que ya calcula `ingresosTotales`,
+      `ingresosServicios`/`ingresosProductos`, `totalTransacciones`, `desgloseMetodosPago` y
+      `tendenciaDiaria` para el mismo rango de fechas — no se justificaba un endpoint nuevo solo para
+      separar la presentación.
+- [x] Frontend: `apps/web/src/app/[tenantSlug]/admin/finanzas/page.tsx` (nueva) — página propia con su
+      propio selector de rango de fechas (mismos presets que el dashboard: hoy/ayer/7 días/30
+      días/mes/año/personalizado), 3 tarjetas KPI (Ingresos Totales, Operaciones Cobradas, Ticket
+      Promedio), gráfico de área de tendencia diaria, y desglose + donut de métodos de pago (Efectivo/
+      Yappy/Mixto) — contenido idéntico al tab que reemplaza, sin fabricar nada nuevo.
+- [x] Botón "Exportar Reporte" del mock mapeado a una función real ya existente: `GET
+      /datos/exportar/transacciones?desde&hasta` (usado hoy en `admin/datos`), con el mismo rango de
+      fechas seleccionado en la página — en vez de inventar un botón decorativo.
+- [x] `dashboard/page.tsx`: eliminado el tab "Finanzas & Recaudación" (`SubDashboardTab` pierde
+      `'finanzas'`, tab por defecto pasa a `'ventas'`), junto con los imports de íconos/gráficos que solo
+      usaba ese bloque (`DollarSign`, `QrCode`, `CreditCard`, `Receipt`, `PieChart as PieChartIcon`,
+      `BarChart3`, `AreaChart`, `Area`) y las variables derivadas que quedaron huérfanas
+      (`ticketPromedio`, `pieDataMetodosPago`, `COLORS_METODOS_PAGO`). Quedan 3 tabs: "Servicios &
+      Productos" (ventas), "Rendimiento de Staff", "Riesgo CRM & Inventario" — sin cambios de contenido.
+- [x] `AdminSidebar.tsx`: nuevo ítem "Finanzas" (solo admin) entre Productos y Caja — agrupado junto a
+      Caja/Datos como la sección "financiero/reportes", siguiendo la nota ya dejada en la Fase 6-B.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real en `qa-test`:
+      `/admin/finanzas` carga con datos reales ($70.00 total, 5 operaciones, $14.00 ticket promedio,
+      Efectivo $60/Yappy $10/Mixto $0, tendencia diaria graficada), el ítem "Finanzas" aparece en el
+      sidebar entre Productos y Caja, y el botón "Exportar Reporte" dispara la misma descarga (`window.
+      open` a un endpoint con `Content-Disposition: attachment`) que el botón ya-verificado "Exportar
+      Transacciones CSV" de `admin/datos` — confirmado que ambos se comportan igual, no es una
+      regresión. `admin/dashboard` ya no muestra el tab "Finanzas & Recaudación"; el tab por defecto
+      ahora es "Servicios & Productos" con datos reales sin cambios.
