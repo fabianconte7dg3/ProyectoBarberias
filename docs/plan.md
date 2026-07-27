@@ -1071,3 +1071,47 @@ documenta como gap real, mismo criterio que el resto de la Fase 6.
       `xl`) el sidebar permanece oculto (`display: none` confirmado por JS) sin overflow; a 1280px (`xl`)
       aparece (`display: block`); a 390px (mobile) oculto y sin overflow — flujo mobile intacto sin
       cambios de comportamiento.
+
+## Fase 6-I — Reseteo de PIN de staff por el admin ✅ Completo
+
+> Pedido explícito del usuario (2026-07-27): "los perfiles de el staff quiero que el propietario del
+> negocio tenga la forma de restaurar los pines por si se le olvida a alguno". No existía ningún mecanismo
+> para esto — investigación previa confirmó que el único camino para fijar un `pinAcceso` era
+> `activateStaff` (vía el enlace de invitación de un solo uso, `POST /usuarios/activar`), y que no había
+> ningún endpoint `PATCH`/`POST` que permitiera a un admin resetear el PIN de un empleado/recepción ya
+> activo. Distinto del "Perfil de cuenta propia (autogestión de usuario)" diferido en la Fase 5 —
+> eso es sobre el usuario logueado editando su propio perfil vía `/usuarios/me`; esto es el admin
+> actuando sobre la cuenta de otro, para el caso concreto de un PIN olvidado.
+
+- [x] Backend: nuevo valor de enum `reset_pin_staff` en `accion_audit`
+      (`migrations/0020_reset_pin_staff_audit.sql`, aplicado + sumado a
+      `test/integration/bootstrap-test-db.sh`). `ResetPinDto` (mismo criterio de validación que
+      `ActivateStaffDto`: `@Length(4,4)`, sin regex adicional porque el filtrado a solo-dígitos ya ocurre
+      en el cliente, igual que en `activar/page.tsx`). `UsuariosService.resetPin(usuarioId, adminId,
+      nuevoPin, ip, userAgent)`: busca el usuario dentro del tenant, **rechaza explícitamente rol
+      `admin`** (los admins no usan PIN, usan email+contraseña — no aplica), hashea con bcrypt y
+      actualiza `pinAcceso` + `activo: true` + limpia `tokenActivacion`/`tokenExpiraEn` (mismo efecto que
+      `activateStaff`, así que también sirve para activar de una vez a alguien que nunca usó su enlace de
+      invitación). El PIN **nunca** se escribe en el log de auditoría, ni siquiera hasheado — solo se
+      registra que ocurrió el reseteo y el nombre del afectado. `POST /usuarios/:id/reset-pin`
+      (`@Roles('admin')`) en `usuarios.controller.ts`.
+- [x] Frontend: `ResetPinModal.tsx` (nuevo, hermano de `InviteEmpleadoModal.tsx`) — mismo patrón de
+      input de PIN que `activar/page.tsx` (password de 4 dígitos + confirmar, filtrado a solo-dígitos en
+      el cliente). Botón "Resetear PIN" agregado en `admin/empleados/page.tsx` junto a "Horarios" en el
+      footer de cada tarjeta, visible para `rol !== 'admin'` (empleado y recepción, ambos autentican por
+      PIN) — antes el footer de acciones solo existía para `rol === 'empleado'`.
+- [x] Bug encontrado y corregido durante la verificación: el modal llamaba a `onSuccess()` (=`loadStaff`
+      del padre) inmediatamente tras el `POST` exitoso, dentro del mismo `handleSubmit` — pero
+      `loadStaff` pone en `true` el `loading` de toda la página, que tiene un `if (loading) return
+      <spinner>` que desmonta el árbol completo (incluido el modal) antes de que el admin llegue a ver el
+      mensaje de éxito; al re-montar, el estado local `successMsg` volvía a su valor inicial y el modal
+      mostraba el formulario vacío de nuevo en vez de la confirmación. Corregido replicando el patrón ya
+      usado por `InviteEmpleadoModal`: `onSuccess()` se dispara solo cuando el admin hace clic en
+      "Cerrar" después de leer el mensaje de éxito, no automáticamente tras el `POST`.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real en `qa-test`: admin
+      resetea el PIN de "QA Empleado" a un valor de prueba, el modal muestra el mensaje de éxito
+      correctamente (tras el fix de arriba); cierre de sesión y login como staff con el PIN nuevo
+      confirmado exitoso (llega a "Mi Silla" con datos reales); `audit_logs` confirma la entrada
+      `reset_pin_staff` con `payloadAntes: {"nombreCompleto": "QA Empleado"}` y
+      `payloadDespues: {"pinReseteado": true}` — sin el PIN en ningún campo. Botón "Resetear PIN" ausente
+      para "QA Admin" (rol admin), confirmando que el guard de rol también se refleja en la UI.
