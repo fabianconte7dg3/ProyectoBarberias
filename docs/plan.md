@@ -394,11 +394,39 @@ encontrado) en
     Verificado en un contenedor Postgres aislado y descartable (volumen nuevo, sin relación con
     `volumetrix_postgres`) que el rol se crea correctamente. `bootstrap-test-db.sh` actualizado para
     aplicar `0018` y esperar 22 archivos. `test:integration` corrido localmente tras el fix: 13/13 en
-    verde. **No se tocó `docker-compose.production.yml`**: ahí `POSTGRES_USER=app_user` ya crea el rol
-    automáticamente vía el propio mecanismo de la imagen — pero como superusuario, lo que en teoría
-    haría *bypass* de RLS en producción (contradice el propio comentario de diseño en
-    `0001_rls_policies.sql`). Es un hallazgo separado, no resuelto en este pase — requiere decidir un
-    modelo de owner/app-role separado para producción antes de un primer despliegue real.
+    verde. Push confirmado en verde en GitHub Actions (`gh run watch`), la primera vez que CI pasa desde
+    que se agregó el workflow.
+  - **Segundo hallazgo (mismo día, encontrado al revisar producción antes de dar el primero por cerrado
+    del todo): `docker-compose.production.yml` (y `docker-compose.staging.yml`, mismo bug) tenían
+    `POSTGRES_USER=app_user`.** La imagen oficial de Postgres crea ese usuario como **superusuario** al
+    inicializar el volumen — un superusuario hace *bypass* de RLS sin importar `NOBYPASSRLS` (ver
+    postgres docs), contradiciendo el propio comentario de diseño en `0001_rls_policies.sql` ("la app
+    NUNCA debe conectarse como superusuario/owner"). De haberse desplegado tal cual, RLS habría quedado
+    sin efecto en producción para todo el tráfico de la app.
+  - **Corregido:** `POSTGRES_USER` pasa a ser el rol *owner* (`postgres`, solo para aplicar migraciones a
+    mano, nunca usado por la app en runtime) en ambos `.env.*.example`. Nuevo
+    `infrastructure/postgres-init-production/01-create-app-user.sh` — mismo mecanismo
+    `docker-entrypoint-initdb.d` que el fix de dev/CI, pero la password de `app_user` viene de una env
+    var nueva (`APP_USER_PASSWORD`, seteada en `.env.production`/`.env.staging`, nunca hardcodeada) en
+    vez de un valor fijo — falla fuerte (`exit 1`) si esa env var no está seteada, en vez de arrancar
+    silenciosamente inseguro. `docker-compose.production.yml`: `pgbouncer` corregido para proxyear como
+    `app_user` (antes usaba las credenciales del owner, mismo bug un nivel más arriba — el pool entero
+    habría seguido siendo superusuario aunque el rol app_user existiera bien). `docker-compose.staging.yml`
+    (sin PgBouncer) recibe el mismo mount del init script.
+  - **Bug real encontrado durante la verificación:** la interpolación de variables de `psql` (`:'var'`)
+    no se sustituye dentro de un bloque `DO $$ ... $$` — el primer intento de
+    `EXECUTE format(..., :'app_user_password')` le llegaba literal al parser SQL del servidor y rompía
+    con `syntax error at or near ":"`. Reescrito sin bloque dinámico: chequeo de idempotencia con
+    `psql -tAc` aparte, password escapada al estilo SQL (`'` → `''`) por el propio shell e interpolada
+    en un heredoc sin comillas en el delimitador (para que el shell la expanda antes de llegar a psql).
+  - **Verificado en contenedores Docker aislados y descartables** (sin tocar `volumetrix_postgres`
+    real): rol creado con `LOGIN`/`NOSUPERUSER`/`NOBYPASSRLS`; conexión "remota" real (contenedor
+    cliente separado, misma topología de red que `pgbouncer`↔`postgres` en el compose real, no
+    `localhost` — que hubiera dado un falso positivo por la regla `trust` que la imagen habilita para
+    conexiones locales) con la password correcta autentica y confirma `is_superuser: off`; con password
+    incorrecta, falla con `password authentication failed`; sin `APP_USER_PASSWORD` seteada, el
+    contenedor de Postgres no arranca (`exit 1`, log explícito). `docker compose ... config` válido en
+    ambos compose files con las env vars resueltas.
 - [ ] Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh` (snapshot manual vía
       `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron — falta destino de
       backup elegido (S3 o similar) y WAL archiving continuo.
