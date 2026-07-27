@@ -778,7 +778,8 @@ datos reales" de toda la Fase 6):
 - ~~Historial Clínico como página dedicada~~ — hecho en
   [Fase 6-E](#fase-6-e--historial-clínico-como-página-dedicada--completo), respetando la restricción de
   privacidad de la Fase 2.1
-- División de Configuración en identidad de marca vs. operación
+- ~~División de Configuración en identidad de marca vs. operación~~ — hecho en
+  [Fase 6-G](#fase-6-g--división-de-configuración-identidad-del-negocio-vs-operación--completo)
 - ~~"Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)~~ — hecho en
   [Fase 6-F](#fase-6-f--finanzas-y-reportes-como-sección-de-nav-propia--completo)
 - Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos (gap estructural real,
@@ -963,3 +964,56 @@ datos reales" de toda la Fase 6):
       Transacciones CSV" de `admin/datos` — confirmado que ambos se comportan igual, no es una
       regresión. `admin/dashboard` ya no muestra el tab "Finanzas & Recaudación"; el tab por defecto
       ahora es "Servicios & Productos" con datos reales sin cambios.
+
+## Fase 6-G — División de Configuración: Identidad del Negocio vs. Operación ✅ Completo
+
+> Último ítem "de nav propia" de la lista original "fuera de este pase" de la Fase 6-B, ejecutado a
+> pedido explícito del usuario (2026-07-27). El ítem original decía "identidad de marca (RUC, logo,
+> horarios de apertura) vs. operación (kill-switch, combos, comisiones, auditoría)".
+
+**Diagnóstico:** `barberias` ya tiene columnas reales `nombreComercial`, `ruc`, `telefonoNegocio`,
+`colorPrimario` y `logoUrl` — pero hasta ahora solo se escriben una vez, al crear el tenant
+(`super-admin.service.ts` / `auth.service.ts` en el registro legado). No existía ningún endpoint
+autenticado para que el propio admin del tenant las edite después — un gap real de autoservicio, distinto
+del "Perfil de cuenta propia (autogestión de usuario)" ya diferido en la Fase 5 (ese es sobre el usuario
+logueado editando su propio nombre/PIN vía `/usuarios/me`, no sobre la identidad del negocio). `ruc` y
+`telefonoNegocio` tampoco se exponían nunca vía el endpoint público (correctamente, son datos internos);
+`colorPrimario` sí es real y consumido — controla `--primary` en todo el portal público y el panel de
+admin (`[tenantSlug]/layout.tsx`) — pero `logoUrl`, aunque ya viaja en `tenant-context.tsx`, no se
+renderizaba en ningún lado.
+
+**"Horarios de apertura" — omitido, no existe como concepto real:** el schema solo tiene `horarios` a
+nivel de cada `empleadoId` (tabla `horarios`), nunca un horario de apertura a nivel de negocio/tenant.
+Agregarlo habría significado una tabla/columna nueva y wiring en disponibilidad — una feature nueva
+completa, desproporcionada para "dividir una página de configuración ya existente". Se omite y se
+documenta como gap real, mismo criterio que el resto de la Fase 6.
+
+- [x] Backend: nuevo valor de enum `actualizar_identidad` en `accion_audit`
+      (`migrations/0019_identidad_negocio_audit.sql`, aplicado + sumado a
+      `test/integration/bootstrap-test-db.sh`). `UpdateIdentidadDto` (todos los campos opcionales,
+      validados: `nombreComercial` 1-255, `ruc`/`telefonoNegocio` con largo máximo, `colorPrimario` regex
+      hex, `logoUrl` con `@IsUrl`). `obtenerIdentidad`/`actualizarIdentidad` en `usuarios.service.ts`
+      (mismo patrón que `toggleKillSwitch`: lee estado anterior, actualiza solo lo provisto, deja rastro
+      en `audit_logs` con payload antes/después) + `GET`/`PATCH /usuarios/configuracion/identidad`
+      (`@Roles('admin')`) en `usuarios.controller.ts` — mismo namespace que ya usa el kill-switch para
+      "configuración a nivel de tenant".
+- [x] Frontend: `admin/configuracion/page.tsx` reestructurado con 2 tabs (mismo patrón de sub-tabs que
+      `admin/dashboard`): **"Identidad del Negocio"** (nuevo formulario: nombre comercial, RUC, teléfono,
+      color primario con selector + hex sincronizados, URL de logo con preview) y **"Operación"** (las 6
+      secciones ya existentes — kill-switch, catálogo de servicios/combos, catálogo de productos, equipo
+      & comisiones, historial de ausencias, auditoría — sin cambios de contenido, solo envueltas en el
+      tab). Tab por defecto: "Operación", para no alterar el flujo habitual de los admins actuales.
+- [x] `reservar/layout.tsx`: el círculo con la inicial del nombre comercial en el header público ahora
+      renderiza el logo real (`<img>`) cuando `tenant.logoUrl` está presente, con el círculo con inicial
+      como fallback — le da un punto de consumo real al campo antes de esto solo almacenado y nunca
+      mostrado.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real en `qa-test`: tab
+      "Identidad del Negocio" carga el nombre comercial real ("QA Test Tenant") desde el nuevo GET;
+      guardado de RUC/color/logo de prueba confirmado en DB vía `psql` y en `audit_logs` (acción
+      `actualizar_identidad` con `payloadAntes`/`payloadDespues` correctos); el color nuevo se refleja en
+      `--primary` del portal público de reserva tras recargar, y el logo de prueba reemplaza la inicial en
+      el header — ambos puntos de consumo reales confirmados end-to-end, no solo por inspección de
+      código. Tab "Operación" sigue mostrando las 6 secciones existentes sin cambios (kill-switch,
+      catálogo, equipo/comisiones, ausencias, auditoría — incluida la entrada de auditoría anterior del
+      kill-switch, intacta). Datos de prueba (RUC/color/logo) revertidos a `NULL` en `qa-test` tras la
+      verificación.
