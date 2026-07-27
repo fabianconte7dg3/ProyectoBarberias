@@ -707,3 +707,78 @@ encontrado) en
       `walkthrough.md` resumiendo la Fase 6, gap del `mailto:` de la landing registrado en `spec.md`
       §7 junto al gap ya existente del WhatsApp simulado, y banner/enlaces de
       `Plan_Rediseno_Visual_Stitch.md` actualizados de "ejecución no iniciada" a completado
+
+## Fase 6-B — Shell de layout real (sidebar) para Panel de Tenant y Super Admin ✅ Completo
+
+> La Fase 6 recoloreó las superficies existentes con los tokens de Stitch, pero nunca comparó la
+> **estructura** de cada pantalla contra el `code.html` real de las 24 referencias en
+> `/home/fabianc/Documentos/volumetris desing/stitch_volumetrix_multi_industry_saas_platform/`. El
+> usuario probó la app él mismo (2026-07-27) y encontró 3 problemas concretos en el Panel de Tenant:
+> botón "Nueva Cita" duplicado en la agenda, panel no responsive (overflow horizontal), y un 404 en
+> `veterinaria-piloto` (este último resultó no ser un bug real — ver abajo). Investigación con 4 agentes
+> Explore en paralelo (leyendo `code.html` de las 24 carpetas + comparando contra el código real)
+> confirmó que el hallazgo más grande y transversal es que **las 24 referencias usan consistentemente
+> un sidebar vertical fijo (256px)**, mientras la implementación real usa un header horizontal
+> (`AdminHeader.tsx`) — y ese header horizontal es la causa raíz directa de los 3 problemas reportados.
+> El análisis también encontró ~6 páginas con arquitectura de información muy distinta al mock (catálogo
+> de servicios visual, perfil de cliente con tabs, historial clínico dedicado, configuración dividida,
+> finanzas propia, booking público con panel lateral) — **decisión del usuario: quedan fuera de este
+> pase**, documentadas como fases futuras separadas más abajo. Plan completo (diagnóstico línea por
+> línea, diseño de componentes, tabla de reagrupación del nav) en el archivo de plan mode de la sesión;
+> resumen ejecutable acá.
+
+**Diagnóstico confirmado:**
+- Botón duplicado: 3 puntos de entrada simultáneos en el DOM (`AdminHeader.tsx` desktop `xl:` + mobile
+  ícono-only + banner propio de `agenda/page.tsx`), no 2 como se reportó.
+- Responsive: bug clásico de flexbox — `agenda/page.tsx` envuelve `TimelineGrid` (que ya tiene
+  `overflow-x-auto` + `min-w-[768px]` correctamente) en una cadena `flex flex-col`/`flex-1` sin
+  `min-w-0` en ningún nivel, así que el ancho mínimo intrínseco del hijo empuja a toda la página a hacer
+  scroll horizontal en vez de solo la grilla interna.
+- `veterinaria-piloto` 404: no es un bug — verificado en navegador que `/veterinaria-piloto/reservar`
+  carga con datos reales; el 404 fue por navegar literal a una URL con `...` usados como placeholder en
+  un mensaje del asistente.
+- Hallazgo adicional: de las 9 páginas de `admin/**`, solo 3 (`agenda`, `mi-silla`, `clientes`) tenían
+  nav persistente vía `AdminHeader`; las otras 6 (`dashboard`, `empleados`, `productos`, `datos`, `caja`,
+  `configuracion`) tenían cada una su propio header ad-hoc con solo un botón "volver" — la navegación
+  desaparecía en 6 de 9 páginas. El sidebar fijo resuelve esto de raíz, gratis.
+
+- [x] Nuevos componentes: `AdminSidebar.tsx` (sidebar fijo 256px, `hidden md:flex` + drawer mobile con
+      hamburguesa, nav reagrupado y filtrado por rol, logout y "Copiar Link" propios — ya no
+      prop-drilling desde cada página), `AdminPageHeader.tsx` (título+descripción+acciones),
+      `DateNavigator.tsx` (extraído de `AdminHeader`, solo lo usa `agenda`), `ImpersonationBanner.tsx`
+      (extraído de `AdminHeader`, montado una vez en `admin/layout.tsx`, `fixed` con offset condicional
+      para no tapar el sidebar cuando está activo)
+- [x] `admin/layout.tsx` monta el shell nuevo (antes wrapper trivial) — excepción explícita para
+      `/admin/login`, que no lleva sidebar
+- [x] Migradas las 9 páginas de `admin/**` a `AdminPageHeader`, consolidando "Nueva Cita" a un único
+      botón (antes 3 puntos de entrada simultáneos)
+- [x] Fix `min-w-0` en la cadena de contenedores flex de `agenda/page.tsx` y `dashboard/page.tsx`
+- [x] Borrado `AdminHeader.tsx` — sin referencias reales restantes (verificado por grep)
+- [x] Super Admin: revisado — ya tenía el sidebar correcto; se decidió no forzar `AdminPageHeader` en
+      `super-admin/page.tsx` porque su header inline ya vive dentro de un wrapper `max-w-7xl` propio y
+      forzar el componente compartido (diseñado para ser full-bleed) generaba padding duplicado sin
+      beneficio real — se dejó como estaba, consistente con "no cambiar por cambiar"
+- [x] Verificado: `tsc --noEmit` limpio en `apps/web` (un `useRouter` huérfano en `mi-silla/page.tsx`
+      encontrado y corregido en el camino). Navegador real con datos reales de `qa-test`: sidebar con 8
+      ítems (admin) / 2 ítems (`empleado`: Agenda + Mi Silla, confirmado el filtro por rol) presente en
+      las 9 páginas — incluidas las 6 que antes no tenían nav persistente; un único botón "Nueva Cita" en
+      la agenda (confirmado por inspección del DOM, ya no 3); cero overflow horizontal de página en
+      1280px/1024px/700px (confirmado con `document.documentElement.scrollWidth`), con el drawer mobile
+      abriendo/cerrando correctamente bajo `md` y el scroll de `TimelineGrid` ahora contenido
+      internamente (`scrollWidth` de la grilla 800px vs `clientWidth` de página 700px, cero overflow de
+      `<html>`) en vez de arrastrar toda la página. Super Admin (login 2FA con `qa-superadmin@test.local`
+      + código maestro `123456`, dashboard con datos reales) sin regresiones.
+
+**Explícitamente fuera de este pase** (documentado, no ejecutado — mismo criterio de "no fabricar UI sin
+datos reales" de toda la Fase 6):
+- Catálogo de Servicios como página visual propia (hoy enterrado en `configuracion`)
+- Perfil de Cliente como página propia con tabs (hoy modal desde la tabla de `clientes`)
+- Historial Clínico como página dedicada — **la restricción de privacidad de la Fase 2.1 (solo el
+  profesional autor ve el contenido clínico completo) se mantiene**, no se replica el mock que muestra
+  historial completo/editable al admin
+- División de Configuración en identidad de marca vs. operación
+- "Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)
+- Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos (gap estructural real,
+  confirmado en la investigación, no solo de color)
+- Sucursales/multi-sede y Perfil de cuenta propia — ya diferidos en Fase 5, confirmado sin código
+  existente
