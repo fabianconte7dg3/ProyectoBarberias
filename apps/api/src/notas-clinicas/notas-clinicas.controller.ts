@@ -20,6 +20,12 @@ export class NotasClinicasController {
     return this.notasClinicasService.findFullByCita(citaId, (req as any).user);
   }
 
+  @Roles('admin', 'recepcion', 'empleado')
+  @Get('mias')
+  findMisNotas(@Req() req: Request) {
+    return this.notasClinicasService.findMisNotas((req as any).user.userId);
+  }
+
   @Roles('admin')
   @Get('metadata/paciente/:pacienteId')
   findMetadataByPaciente(@Param('pacienteId') pacienteId: string) {

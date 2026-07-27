@@ -4,12 +4,13 @@ import { useState } from 'react';
 import { useRouter, usePathname, useParams } from 'next/navigation';
 import {
   LayoutDashboard, Calendar, UserCheck, Users, ShoppingBag, Lock, Database,
-  Settings, Armchair, LogOut, Menu, X, Link2, Check, Sparkles,
+  Settings, Armchair, LogOut, Menu, X, Link2, Check, Sparkles, Stethoscope,
 } from 'lucide-react';
 import { useTenant } from '@/lib/tenant-context';
 import { buildTenantPublicUrl } from '@/lib/tenant-url';
 import { useAdminStore } from '@/lib/adminStore';
 import { fetchApi } from '@/lib/api';
+import { requierePaciente } from '@/lib/industrias';
 
 interface NavItem {
   label: string;
@@ -22,7 +23,8 @@ export function AdminSidebar() {
   const pathname = usePathname();
   const params = useParams();
   const tenantSlug = params.tenantSlug as string;
-  const { terminologiaEmpleado, terminologiaServicio } = useTenant();
+  const { terminologiaEmpleado, terminologiaServicio, industria } = useTenant();
+  const mostrarHistorialClinico = requierePaciente(industria);
   const currentUser = useAdminStore((state) => state.user);
   const logoutStore = useAdminStore((state) => state.logout);
   const isImpersonating = useAdminStore((state) => state.impersonation?.active ?? false);
@@ -36,6 +38,7 @@ export function AdminSidebar() {
     ...(isAdmin ? [{ label: 'Dashboard', href: `/${tenantSlug}/admin/dashboard`, icon: LayoutDashboard }] : []),
     { label: 'Agenda', href: `/${tenantSlug}/admin/agenda`, icon: Calendar },
     ...(isEmpleado ? [{ label: 'Mi Silla', href: `/${tenantSlug}/admin/mi-silla`, icon: Armchair }] : []),
+    ...(mostrarHistorialClinico ? [{ label: 'Historial Clínico', href: `/${tenantSlug}/admin/historial-clinico`, icon: Stethoscope }] : []),
     ...(isAdmin ? [
       { label: 'Clientes', href: `/${tenantSlug}/admin/clientes`, icon: UserCheck },
       { label: `${terminologiaEmpleado}s`, href: `/${tenantSlug}/admin/empleados`, icon: Users },

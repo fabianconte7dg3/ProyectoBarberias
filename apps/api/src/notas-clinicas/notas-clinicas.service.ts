@@ -52,6 +52,30 @@ export class NotasClinicasService {
   }
 
   /**
+   * Historial Clínico del profesional autenticado (Fase 6-E) — todas las notas
+   * que él mismo escribió, con contenido completo. Self-scoped por
+   * empleadoId=user.userId: no hay forma de leer notas ajenas por este camino,
+   * a diferencia de findFullByCita() que sí puede recibir un citaId de otro
+   * autor (y por eso valida y lanza 403 ahí). Aquí el filtro en el WHERE ya
+   * garantiza que nunca se devuelve contenido de otro profesional.
+   */
+  async findMisNotas(userId: string) {
+    const db = TenantContext.getDb();
+
+    return db.query.notasClinicas.findMany({
+      where: eq(schema.notasClinicas.empleadoId, userId),
+      orderBy: [desc(schema.notasClinicas.createdAt)],
+      with: {
+        paciente: {
+          columns: { nombre: true },
+          with: { cliente: { columns: { nombreCompleto: true } } },
+        },
+        cita: { columns: { inicioEstimado: true, notas: true } },
+      },
+    });
+  }
+
+  /**
    * Vista de admin: metadata de auditoría (existe, cuándo, quién la escribió),
    * nunca diagnóstico/tratamiento.
    */
