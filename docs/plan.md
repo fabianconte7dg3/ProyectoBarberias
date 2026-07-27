@@ -773,7 +773,8 @@ encontrado) en
 datos reales" de toda la Fase 6):
 - ~~Catálogo de Servicios como página visual propia (hoy enterrado en `configuracion`)~~ — hecho en
   [Fase 6-C](#fase-6-c--catálogo-de-servicios-como-página-propia--completo)
-- Perfil de Cliente como página propia con tabs (hoy modal desde la tabla de `clientes`)
+- ~~Perfil de Cliente como página propia con tabs (hoy modal desde la tabla de `clientes`)~~ — hecho en
+  [Fase 6-D](#fase-6-d--perfil-de-cliente-como-página-propia-con-tabs--completo)
 - Historial Clínico como página dedicada — **la restricción de privacidad de la Fase 2.1 (solo el
   profesional autor ve el contenido clínico completo) se mantiene**, no se replica el mock que muestra
   historial completo/editable al admin
@@ -821,3 +822,46 @@ datos reales" de toda la Fase 6):
       (`$10→$11→$10`, con mensaje de éxito); combos siguen funcionando idénticos; tarjeta de enlace en
       `configuracion` navega correctamente; cero overflow horizontal en mobile (375px, `scrollWidth ===
       clientWidth`). Datos de QA restaurados a su estado original tras la prueba.
+
+## Fase 6-D — Perfil de Cliente como página propia con tabs ✅ Completo
+
+> Segundo ítem de la lista "fuera de este pase" de la Fase 6-B, ejecutado a pedido explícito del usuario
+> (2026-07-27). Referencia Stitch: `perfil_del_cliente_admin/` (título del mock: "Perfil de Cliente").
+> Igual que en la Fase 6-C, el mock incluye elementos sin respaldo real — tab "Productos" (no hay forma
+> limpia de listar compras de un cliente: `detalles_transaccion` no tiene `clienteId` directo, solo vía
+> `citaId → citas.clienteId`, lo que deja fuera toda venta de mostrador sin cita asociada — se omitió en
+> vez de mostrar datos parciales/engañosos), ubicación/dirección, foto de perfil, badge "Frequent" (sin
+> campo real) y avatar con imagen de stock. Se construyó con lo real: `Resumen` (contacto, LTV,
+> asistencias, fechas de inasistencia — ya existían, solo se centralizaron aquí), `Historial de Citas`
+> (dato real nuevo, ver abajo), `Ficha de Pacientes`/`Ficha de Mascotas` (migrado tal cual del modal,
+> mismo criterio de privacidad), `Notas Internas` (ya existía como campo `notasPreferencia`, ahora tiene
+> su propia pestaña en vez de vivir dentro del formulario de edición). El badge "VIP" del mock sí se
+> mantuvo porque ya existía como criterio real en la lista (`totalGastado >= 50`), reutilizado tal cual.
+
+- [x] Backend: `clientes.service.ts` — nuevo método `obtenerHistorialCitas(id)` vía
+      `db.query.citas.findMany({ where: eq(clienteId), with: { empleado, servicio, combo, transaccion } })`
+      — la relación `citas.transaccion` ya existía en el schema (`citasRelations`), no fue necesario tocar
+      la base de datos ni escribir una migración para esta fase. `clientes.controller.ts`: nuevo
+      `GET /clientes/:id/citas` (mismos roles que `/:id/inasistencias`).
+- [x] Frontend: `apps/web/src/app/[tenantSlug]/admin/clientes/[clienteId]/page.tsx` (nueva, ruta
+      dinámica) — tarjeta de resumen (avatar iniciales, badge VIP, LTV, asistencias, fechas de
+      inasistencia si aplica, contacto) + nav vertical de tabs; edición de nombre/email inline en
+      `Resumen` (ya no en un modal separado); toggle Bloquear/Ley 81 en el header de la página en vez de
+      en la tabla (se mantiene también en la tabla para un cambio rápido sin navegar). `Ficha de
+      Pacientes` solo se muestra si `requierePaciente(industria)` — migrado literal del modal, incluida
+      la restricción de la Fase 2.1 (solo metadata de notas clínicas, nunca el contenido completo).
+- [x] `admin/clientes/page.tsx` (lista): el modal de edición completo (con la sección de pacientes
+      embebida) se eliminó — quitados `editingCliente` y todo el estado/handlers de pacientes/historial
+      clínico que vivían ahí. El botón "Editar" de cada fila ahora navega a `/admin/clientes/[id]`. El
+      modal de creación de cliente nuevo se mantiene igual que antes (nunca tuvo sección de pacientes,
+      solo aplicaba a edición).
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real: en `qa-test`
+      (barbería) — perfil de "Cliente AutoConfirm2" (2 asistencias, $17 LTV, 2 strikes) muestra
+      `Historial de Citas` con 5 citas reales y estados correctos (pendiente/completada/ausente strike),
+      edición de email end-to-end con mensaje de éxito, Notas Internas guarda y persiste, toggle
+      Bloquear/Ley 81 funciona, "Ficha de Pacientes" correctamente oculta (industria barbería); en
+      `veterinaria-piloto` — mismo perfil para "Carlos Ruiz" muestra "Ficha de Mascotas" (terminología
+      dinámica `terminologiaCliente`), con los campos personalizados reales del tenant (Especie, Raza,
+      Peso, Alergias) y registro de una mascota de prueba confirmado end-to-end. Cero overflow horizontal
+      en mobile (375px). Datos de prueba (email, notas, bloqueo, mascota) revertidos a su estado original
+      en ambos tenants tras la verificación.
