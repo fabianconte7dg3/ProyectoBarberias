@@ -775,9 +775,9 @@ datos reales" de toda la Fase 6):
   [Fase 6-C](#fase-6-c--catálogo-de-servicios-como-página-propia--completo)
 - ~~Perfil de Cliente como página propia con tabs (hoy modal desde la tabla de `clientes`)~~ — hecho en
   [Fase 6-D](#fase-6-d--perfil-de-cliente-como-página-propia-con-tabs--completo)
-- Historial Clínico como página dedicada — **la restricción de privacidad de la Fase 2.1 (solo el
-  profesional autor ve el contenido clínico completo) se mantiene**, no se replica el mock que muestra
-  historial completo/editable al admin
+- ~~Historial Clínico como página dedicada~~ — hecho en
+  [Fase 6-E](#fase-6-e--historial-clínico-como-página-dedicada--completo), respetando la restricción de
+  privacidad de la Fase 2.1
 - División de Configuración en identidad de marca vs. operación
 - "Finanzas y Reportes" como sección de nav propia (hoy es un tab dentro de `dashboard`)
 - Panel de resumen lateral sticky en el flujo de reserva pública de 3 pasos (gap estructural real,
@@ -865,3 +865,48 @@ datos reales" de toda la Fase 6):
       Peso, Alergias) y registro de una mascota de prueba confirmado end-to-end. Cero overflow horizontal
       en mobile (375px). Datos de prueba (email, notas, bloqueo, mascota) revertidos a su estado original
       en ambos tenants tras la verificación.
+
+## Fase 6-E — Historial Clínico como página dedicada ✅ Completo
+
+> Tercer ítem de la lista "fuera de este pase" de la Fase 6-B, ejecutado a pedido explícito del usuario
+> (2026-07-27). Referencia Stitch: `historial_cl_nico_t_cnico_del_cliente/` — mock genérico de expediente
+> médico (constantes vitales, tabs de Archivos/Prescripciones, botón "Nueva Consulta", editar/imprimir,
+> foto del paciente) pensado para que el admin vea y edite el historial completo. **Ese diseño contradice
+> directamente la restricción de privacidad ya decidida en la Fase 2.1**
+> (`notas_clinicas.service.ts:findFullByCita` lanza 403 para cualquiera que no sea
+> `nota.empleadoId === user.userId`, admin incluido) — no se replicó tal cual.
+>
+> Investigación previa a escribir código: se confirmó que `GET /notas-clinicas/cita/:citaId` (contenido
+> completo) **nunca se llama desde el frontend** — `CobrarCitaModal.tsx` solo hace `POST` al cerrar una
+> cita con paciente asignado. Es decir, el profesional podía escribir diagnóstico/tratamiento pero no
+> existía ninguna pantalla para volver a leerlos después. Esa es la interpretación real y honesta de
+> "Historial Clínico como página dedicada": una vista de solo lectura de **las propias notas del
+> profesional que las escribió**, no un expediente editable de admin. El campo `notasClinicas` real solo
+> tiene `diagnostico`, `tratamiento`, `proximaRevisionEn`, `citaId`, `pacienteId`, `empleadoId`,
+> `createdAt` — no hay constantes vitales, archivos ni prescripciones como entidades separadas, así que
+> esos tabs del mock también se omitieron.
+
+- [x] Backend: `notas-clinicas.service.ts` — nuevo `findMisNotas(userId)`, self-scoped por
+      `WHERE empleadoId = userId` (a diferencia de `findFullByCita`, que sí puede recibir el `citaId` de
+      otro autor y por eso necesita el chequeo explícito con 403; acá el filtro del propio WHERE ya hace
+      imposible leer contenido ajeno). Usa las relaciones `notasClinicas → paciente → cliente` y
+      `notasClinicas → cita` que ya existían en el schema. `notas-clinicas.controller.ts`: nuevo
+      `GET /notas-clinicas/mias` (mismos roles que `create`/`findFullByCita` — el autor de una nota puede
+      ser admin o recepción si esa persona es también la profesional asignada a la cita, no solo
+      `empleado`).
+- [x] Frontend: `apps/web/src/app/[tenantSlug]/admin/historial-clinico/page.tsx` (nueva) — timeline a la
+      izquierda (todas mis notas, más reciente primero, con paciente/dueño y fecha) + panel de detalle a
+      la derecha (motivo de la visita, diagnóstico, tratamiento, próxima revisión) al seleccionar una.
+      Sin botón "Nueva Consulta" (la creación ya vive en `CobrarCitaModal`, atada a una cita específica —
+      duplicar ese flujo aquí, desconectado de una cita real, habría sido arquitectónicamente incorrecto).
+- [x] `AdminSidebar.tsx`: nuevo ítem "Historial Clínico" condicionado a `requierePaciente(industria)` —
+      visible para cualquier rol (no solo `empleado`) porque el endpoint es self-scoped por usuario, no
+      por rol; un admin sin notas propias simplemente ve el estado vacío.
+- [x] Verificado: `tsc --noEmit` limpio en `apps/api` y `apps/web`. Navegador real en `veterinaria-piloto`:
+      como "Vet Empleado" (login por PIN), el historial muestra una nota clínica real preexistente de
+      "Firulais" (dueño "Ana Perez") con diagnóstico, tratamiento y próxima revisión completos — prueba
+      de que el gap era real (esa nota nunca había sido visible en ningún lado hasta ahora). Como
+      "Vet Admin" (login por email/contraseña), la misma página muestra el estado vacío en vez del
+      contenido de "Vet Empleado" — la restricción de privacidad de la Fase 2.1 queda confirmada en
+      vivo, no solo por inspección de código. Nav "Historial Clínico" ausente en `qa-test` (barbería, no
+      requiere paciente). Cero overflow horizontal en mobile (375px).
