@@ -1,17 +1,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
-import { useAdminStore } from '@/lib/adminStore';
+import { useParams, useRouter } from 'next/navigation';
 import { fetchApi } from '@/lib/api';
 import { useAdminAuth } from '@/hooks/useAdminAuth';
 import { AdminPageHeader } from '@/components/admin/AdminPageHeader';
-import { useTenant } from '@/lib/tenant-context';
-import { requierePaciente } from '@/lib/industrias';
 import {
-  Search, Plus, UserCheck, ShieldCheck, AlertTriangle,
-  MessageSquare, Edit, Ban, RefreshCw, X, Check, Mail, Phone, Calendar, DollarSign, Lock, ShieldAlert,
-  PawPrint, FileClock
+  Search, Plus, UserCheck, AlertTriangle,
+  MessageSquare, Edit, Ban, RefreshCw, X,
 } from 'lucide-react';
 
 interface Cliente {
@@ -28,32 +24,10 @@ interface Cliente {
   createdAt: string;
 }
 
-interface Paciente {
-  id: string;
-  clienteId: string;
-  nombre: string;
-  camposPersonalizados: Record<string, unknown>;
-  activo: boolean;
-  createdAt: string;
-}
-
-interface NotaClinicaMetadata {
-  id: string;
-  citaId: string;
-  empleadoId: string;
-  empleadoNombre: string | null;
-  proximaRevisionEn: string | null;
-  createdAt: string;
-}
-
 export default function AdminClientesPage() {
   const params = useParams();
+  const router = useRouter();
   const tenantSlug = params.tenantSlug as string;
-
-  const currentUser = useAdminStore((state) => state.user);
-  const { industria, configCamposPersonalizados, terminologiaCliente } = useTenant();
-  const mostrarPacientes = requierePaciente(industria);
-
 
   const [clientesList, setClientesList] = useState<Cliente[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,26 +38,14 @@ export default function AdminClientesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroMkt, setFiltroMkt] = useState<'todos' | 'ley81' | 'strikes' | 'bloqueados'>('todos');
 
-  // Modal Crear / Editar Cliente
+  // Modal Crear Cliente (la edición y el resto del perfil viven en su propia
+  // página — ver admin/clientes/[clienteId]/page.tsx, Fase 6-D)
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCliente, setEditingCliente] = useState<Cliente | null>(null);
   const [formNombre, setFormNombre] = useState('');
   const [formTelefono, setFormTelefono] = useState('');
-  const [formEmail, setFormEmail] = useState('');
   const [formNotas, setFormNotas] = useState('');
-  const [formAceptaMkt, setFormAceptaMkt] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState('');
-
-  // Multi-industria: pacientes (mascotas) del cliente en edición
-  const [pacientesList, setPacientesList] = useState<Paciente[]>([]);
-  const [loadingPacientes, setLoadingPacientes] = useState(false);
-  const [formPacienteNombre, setFormPacienteNombre] = useState('');
-  const [formPacienteCampos, setFormPacienteCampos] = useState<Record<string, string>>({});
-  const [savingPaciente, setSavingPaciente] = useState(false);
-  const [pacienteErrorMsg, setPacienteErrorMsg] = useState('');
-  const [notasMetadataPorPaciente, setNotasMetadataPorPaciente] = useState<Record<string, NotaClinicaMetadata[]>>({});
-  const [pacienteHistorialAbierto, setPacienteHistorialAbierto] = useState<string | null>(null);
 
   // Fase 2.3: fechas de inasistencia por cliente (respalda el badge de strikes) —
   // ver Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md §5
@@ -117,97 +79,11 @@ export default function AdminClientesPage() {
   };
 
   const handleOpenCreateModal = () => {
-    setEditingCliente(null);
     setFormNombre('');
     setFormTelefono('+507');
-    setFormEmail('');
     setFormNotas('');
-    setFormAceptaMkt(false);
     setFormError('');
-    setPacientesList([]);
-    setNotasMetadataPorPaciente({});
-    setPacienteHistorialAbierto(null);
-    resetFormPaciente();
     setIsModalOpen(true);
-  };
-
-  const handleOpenEditModal = (c: Cliente) => {
-    setEditingCliente(c);
-    setFormNombre(c.nombreCompleto || '');
-    setFormTelefono(c.telefonoWhatsapp);
-    setFormEmail(c.emailFacturacion || '');
-    setFormNotas(c.notasPreferencia || '');
-    setFormAceptaMkt(c.aceptaMarketing);
-    setFormError('');
-    setPacientesList([]);
-    setNotasMetadataPorPaciente({});
-    setPacienteHistorialAbierto(null);
-    resetFormPaciente();
-    setIsModalOpen(true);
-    if (mostrarPacientes) {
-      loadPacientes(c.id);
-    }
-  };
-
-  const resetFormPaciente = () => {
-    setFormPacienteNombre('');
-    setFormPacienteCampos({});
-    setPacienteErrorMsg('');
-  };
-
-  const loadPacientes = async (clienteId: string) => {
-    setLoadingPacientes(true);
-    try {
-      const res = await fetchApi<Paciente[]>(`/pacientes?clienteId=${clienteId}`);
-      setPacientesList(res || []);
-    } catch (err: any) {
-      console.error('Error cargando pacientes:', err);
-    } finally {
-      setLoadingPacientes(false);
-    }
-  };
-
-  const handleAddPaciente = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCliente || !formPacienteNombre.trim()) {
-      setPacienteErrorMsg(`El nombre de ${terminologiaCliente === 'Dueño de mascota' ? 'la mascota' : 'el paciente'} es requerido.`);
-      return;
-    }
-
-    setSavingPaciente(true);
-    setPacienteErrorMsg('');
-    try {
-      await fetchApi('/pacientes', {
-        method: 'POST',
-        body: JSON.stringify({
-          clienteId: editingCliente.id,
-          nombre: formPacienteNombre.trim(),
-          camposPersonalizados: formPacienteCampos,
-        }),
-      });
-      resetFormPaciente();
-      loadPacientes(editingCliente.id);
-    } catch (err: any) {
-      setPacienteErrorMsg(err.message || 'Error al registrar.');
-    } finally {
-      setSavingPaciente(false);
-    }
-  };
-
-  const handleVerHistorial = async (pacienteId: string) => {
-    if (pacienteHistorialAbierto === pacienteId) {
-      setPacienteHistorialAbierto(null);
-      return;
-    }
-    setPacienteHistorialAbierto(pacienteId);
-    if (!notasMetadataPorPaciente[pacienteId]) {
-      try {
-        const res = await fetchApi<NotaClinicaMetadata[]>(`/notas-clinicas/metadata/paciente/${pacienteId}`);
-        setNotasMetadataPorPaciente((prev) => ({ ...prev, [pacienteId]: res || [] }));
-      } catch (err: any) {
-        console.error('Error cargando historial clínico (metadata):', err);
-      }
-    }
   };
 
   const handleVerInasistencias = async (clienteId: string) => {
@@ -237,28 +113,14 @@ export default function AdminClientesPage() {
     setFormError('');
 
     try {
-      if (editingCliente) {
-        // Actualizar Cliente
-        await fetchApi(`/clientes/${editingCliente.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            nombreCompleto: formNombre.trim() || undefined,
-            emailFacturacion: formEmail.trim() || undefined,
-            notasPreferencia: formNotas.trim() || undefined,
-            aceptaMarketing: formAceptaMkt,
-          }),
-        });
-      } else {
-        // Crear Cliente
-        await fetchApi('/clientes', {
-          method: 'POST',
-          body: JSON.stringify({
-            nombreCompleto: formNombre.trim() || 'Cliente Registrado',
-            telefonoWhatsapp: formTelefono.trim(),
-            notasPreferencia: formNotas.trim() || undefined,
-          }),
-        });
-      }
+      await fetchApi('/clientes', {
+        method: 'POST',
+        body: JSON.stringify({
+          nombreCompleto: formNombre.trim() || 'Cliente Registrado',
+          telefonoWhatsapp: formTelefono.trim(),
+          notasPreferencia: formNotas.trim() || undefined,
+        }),
+      });
 
       setIsModalOpen(false);
       loadClientes();
@@ -554,9 +416,9 @@ export default function AdminClientesPage() {
                           <td className="py-3.5 px-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button
-                                onClick={() => handleOpenEditModal(c)}
+                                onClick={() => router.push(`/${tenantSlug}/admin/clientes/${c.id}`)}
                                 className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
-                                title="Editar Datos"
+                                title="Ver Perfil"
                               >
                                 <Edit size={14} />
                               </button>
@@ -595,14 +457,15 @@ export default function AdminClientesPage() {
 
       </main>
 
-      {/* MODAL CREAR / EDITAR CLIENTE */}
+      {/* MODAL CREAR CLIENTE — la edición y el resto del perfil viven en su
+          propia página (admin/clientes/[clienteId]/page.tsx, Fase 6-D) */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4">
-          <div className={`bg-card border border-border w-full ${editingCliente && mostrarPacientes ? 'max-w-lg' : 'max-w-md'} rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto`}>
+          <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-border pb-3">
               <h2 className="text-base font-bold flex items-center gap-2">
                 <UserCheck size={18} className="text-primary" />
-                <span>{editingCliente ? 'Editar Cliente' : 'Registrar Nuevo Cliente'}</span>
+                <span>Registrar Nuevo Cliente</span>
               </h2>
               <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground">
                 <X size={18} />
@@ -626,22 +489,10 @@ export default function AdminClientesPage() {
                 <input
                   type="text"
                   required
-                  disabled={!!editingCliente}
                   value={formTelefono}
                   onChange={(e) => setFormTelefono(e.target.value)}
                   placeholder="+50766001122"
-                  className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-mono font-semibold disabled:opacity-60"
-                />
-              </div>
-
-              <div>
-                <label className="text-xs font-bold uppercase text-muted-foreground block mb-1">Email de Facturación</label>
-                <input
-                  type="email"
-                  value={formEmail}
-                  onChange={(e) => setFormEmail(e.target.value)}
-                  placeholder="juan@email.com"
-                  className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2 bg-secondary/50 border border-border rounded-xl text-xs font-mono font-semibold"
                 />
               </div>
 
@@ -653,19 +504,6 @@ export default function AdminClientesPage() {
                   onChange={(e) => setFormNotas(e.target.value)}
                   placeholder="Ej. Prefiere degradado bajo con tijera arriba, bebe café sin azúcar..."
                   className="w-full p-3 bg-secondary/50 border border-border rounded-xl text-xs font-semibold"
-                />
-              </div>
-
-              <div className="p-3 bg-secondary/40 border border-border rounded-xl flex items-center justify-between">
-                <div className="space-y-0.5">
-                  <span className="text-xs font-bold block text-foreground">Autorización Ley 81 (Marketing)</span>
-                  <span className="text-[10px] text-muted-foreground block">El cliente autoriza recibir mensajes comerciales.</span>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={formAceptaMkt}
-                  onChange={(e) => setFormAceptaMkt(e.target.checked)}
-                  className="w-4 h-4 accent-primary rounded cursor-pointer"
                 />
               </div>
 
@@ -688,122 +526,10 @@ export default function AdminClientesPage() {
                   disabled={saving}
                   className="px-5 py-2 bg-primary text-primary-foreground text-xs font-bold rounded-xl hover:opacity-90 transition-opacity"
                 >
-                  {saving ? 'Guardando...' : (editingCliente ? 'Actualizar Cliente' : 'Guardar Cliente')}
+                  {saving ? 'Guardando...' : 'Guardar Cliente'}
                 </button>
               </div>
             </form>
-
-            {/* Multi-industria: pacientes/mascotas del cliente (solo en edición) */}
-            {editingCliente && mostrarPacientes && (
-              <div className="border-t border-border pt-4 space-y-3">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <PawPrint size={14} className="text-primary" />
-                  <span>Pacientes de {editingCliente.nombreCompleto || 'este cliente'}</span>
-                </h3>
-
-                {loadingPacientes ? (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <RefreshCw className="animate-spin" size={14} />
-                    <span>Cargando...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {pacientesList.length === 0 && (
-                      <p className="text-[11px] text-muted-foreground italic">Aún no hay pacientes registrados.</p>
-                    )}
-                    {pacientesList.map((p) => (
-                      <div key={p.id} className="bg-secondary/30 border border-border rounded-xl p-3 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <span className="font-bold text-xs text-foreground block">{p.nombre}</span>
-                            {Object.entries(p.camposPersonalizados || {}).filter(([, v]) => v).length > 0 && (
-                              <span className="text-[10px] text-muted-foreground">
-                                {Object.entries(p.camposPersonalizados)
-                                  .filter(([, v]) => v)
-                                  .map(([k, v]) => `${k}: ${v}`)
-                                  .join(' · ')}
-                              </span>
-                            )}
-                          </div>
-                          {currentUser?.rol === 'admin' && (
-                            <button
-                              type="button"
-                              onClick={() => handleVerHistorial(p.id)}
-                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
-                              title="Ver historial clínico (metadata, sin contenido)"
-                            >
-                              <FileClock size={13} />
-                            </button>
-                          )}
-                        </div>
-
-                        {pacienteHistorialAbierto === p.id && (
-                          <div className="bg-background/60 border border-border rounded-lg p-2 space-y-1">
-                            {(notasMetadataPorPaciente[p.id] || []).length === 0 ? (
-                              <p className="text-[10px] text-muted-foreground italic">Sin notas clínicas registradas.</p>
-                            ) : (
-                              notasMetadataPorPaciente[p.id].map((n) => (
-                                <div key={n.id} className="text-[10px] text-muted-foreground flex items-center justify-between">
-                                  <span>{new Date(n.createdAt).toLocaleDateString()} — {n.empleadoNombre || 'Empleado'}</span>
-                                  {n.proximaRevisionEn && <span className="font-semibold">Próx. revisión: {n.proximaRevisionEn}</span>}
-                                </div>
-                              ))
-                            )}
-                            <p className="text-[9px] text-muted-foreground/70 pt-1 border-t border-border">
-                              Solo el profesional autor puede ver el contenido clínico completo.
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Formulario para agregar un nuevo paciente */}
-                <div className="bg-secondary/20 border border-dashed border-border rounded-xl p-3 space-y-2">
-                  <div>
-                    <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">Nombre</label>
-                    <input
-                      type="text"
-                      value={formPacienteNombre}
-                      onChange={(e) => setFormPacienteNombre(e.target.value)}
-                      placeholder="Ej. Firulais"
-                      className="w-full px-3 py-1.5 bg-background border border-border rounded-lg text-xs font-semibold"
-                    />
-                  </div>
-
-                  {configCamposPersonalizados
-                    .filter((campo) => campo.entidad === 'paciente')
-                    .map((campo) => (
-                      <div key={campo.clave}>
-                        <label className="text-[10px] font-bold uppercase text-muted-foreground block mb-1">
-                          {campo.etiqueta}{campo.requerido && ' *'}
-                        </label>
-                        <input
-                          type={campo.tipo === 'numero' ? 'number' : campo.tipo === 'fecha' ? 'date' : 'text'}
-                          value={formPacienteCampos[campo.clave] || ''}
-                          onChange={(e) => setFormPacienteCampos((prev) => ({ ...prev, [campo.clave]: e.target.value }))}
-                          className="w-full px-3 py-1.5 bg-background border border-border rounded-lg text-xs font-semibold"
-                        />
-                      </div>
-                    ))}
-
-                  {pacienteErrorMsg && (
-                    <p className="text-[10px] text-destructive font-medium">{pacienteErrorMsg}</p>
-                  )}
-
-                  <button
-                    type="button"
-                    onClick={handleAddPaciente}
-                    disabled={savingPaciente}
-                    className="w-full py-1.5 bg-primary/10 hover:bg-primary/20 text-primary text-xs font-bold rounded-lg transition-colors flex items-center justify-center gap-1.5"
-                  >
-                    <Plus size={13} />
-                    <span>{savingPaciente ? 'Guardando...' : 'Registrar Paciente'}</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}

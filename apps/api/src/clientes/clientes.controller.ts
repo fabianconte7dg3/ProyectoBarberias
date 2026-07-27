@@ -65,6 +65,12 @@ export class ClientesController {
     return this.clientesService.obtenerInasistencias(id);
   }
 
+  @Roles('admin', 'recepcion', 'empleado')
+  @Get(':id/citas')
+  obtenerHistorialCitas(@Param('id') id: string) {
+    return this.clientesService.obtenerHistorialCitas(id);
+  }
+
   @Roles('admin', 'recepcion')
   @Patch(':id')
   update(@Param('id') id: string, @Body() dto: UpdateClienteDto) {

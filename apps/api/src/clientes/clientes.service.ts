@@ -73,6 +73,27 @@ export class ClientesService {
     });
   }
 
+  /**
+   * Historial de citas del cliente para el Perfil de Cliente (Fase 6-D) — incluye
+   * servicio/combo, empleado y el monto cobrado si la cita ya tiene transacción
+   * asociada (relación citas.transaccion ya definida en el schema).
+   */
+  async obtenerHistorialCitas(id: string) {
+    await this.findOne(id);
+    const db = TenantContext.getDb();
+
+    return db.query.citas.findMany({
+      where: eq(schema.citas.clienteId, id),
+      orderBy: [desc(schema.citas.inicioEstimado)],
+      with: {
+        empleado: { columns: { nombreCompleto: true } },
+        servicio: { columns: { nombre: true } },
+        combo: { columns: { nombre: true } },
+        transaccion: { columns: { totalFacturado: true, metodoPago: true } },
+      },
+    });
+  }
+
   async update(id: string, dto: UpdateClienteDto) {
     const db = TenantContext.getDb();
     
