@@ -12,11 +12,21 @@ services:
     container_name: volumetrix_prod_postgres
     restart: unless-stopped
     environment:
+      # POSTGRES_USER es el owner de la instancia (superusuario, creado por la
+      # propia imagen oficial) — se usa SOLO para aplicar migraciones a mano
+      # (docker exec ... psql -U $POSTGRES_USER ...), nunca por la app en
+      # runtime. La app corre siempre como `app_user` (no-superusuario,
+      # NOBYPASSRLS), provisionado por postgres-init-production/ mas abajo —
+      # ver ese script para el porque (un superusuario hace bypass de RLS sin
+      # importar NOBYPASSRLS).
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB:-volumetrix}
+      APP_USER_PASSWORD: ${APP_USER_PASSWORD}
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Solo corre en un volumen vacio (primer arranque real).
+      - ./postgres-init-production:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -43,12 +53,15 @@ services:
     container_name: volumetrix_prod_pgbouncer
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-volumetrix}
+      # A proposito NO usa POSTGRES_USER/POSTGRES_PASSWORD (el owner/superusuario)
+      # — PgBouncer debe proxyear como `app_user` (RLS-safe), el mismo usuario que
+      # ya trae DATABASE_URL de .env.production para `api`. Ver postgres-init-production/.
+      DATABASE_URL: postgres://app_user:${APP_USER_PASSWORD}@postgres:5432/${POSTGRES_DB:-volumetrix}
       LISTEN_PORT: 6432
       POOL_MODE: transaction
       MAX_CLIENT_CONN: 200
       DEFAULT_POOL_SIZE: 20
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_USER: app_user
     depends_on:
       postgres:
         condition: service_healthy
