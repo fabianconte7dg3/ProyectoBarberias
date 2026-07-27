@@ -117,9 +117,11 @@ fondo) y `docs/plan.md` Fase 6 (desglose ejecutable, sub-fase por sub-fase):
 - **Tests automatizados:** cobertura real en los módulos críticos desde la Fase 3 (2026-07-25) — RLS
   multi-tenant, idempotencia de citas, cálculo de comisiones (`apps/api`, integration tests contra
   Postgres real vía `npm run test:integration`) y `calcularSlotsDisponibles`/`ProfileSelector`
-  (`apps/web`, `npm test`). Los 13 `*.spec.ts` boilerplate originales de `apps/api` siguen sin tocar y
-  de hecho están rotos (`npm test` normal falla 12/13) — ver
-  [`Plan_Fase3_Suite_Tests.md`](../02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) y
+  (`apps/web`, `npm test`). Los 13 `*.spec.ts` boilerplate originales de `apps/api` (`npm test` normal,
+  sin DB) fueron reparados el 2026-07-26 — reescritos con mocks reales y casos de negocio (bloqueo
+  progresivo de login, cálculo de comisiones/combos, validación de hash HMAC del webhook de Yappy,
+  límite de empleados por plan, etc.), no solo `should be defined`; 13/13 suites, 77 tests en verde —
+  ver [`Plan_Fase3_Suite_Tests.md`](../02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) y
   [`spec.md`](../spec.md) §10.
 - **Infraestructura:** dominio (`volumetrixpa.com`) con subdominio por tenant y SSL on-demand vía Caddy,
   CI/CD (GitHub Actions) y PgBouncer verificado empíricamente ya están implementados — ver

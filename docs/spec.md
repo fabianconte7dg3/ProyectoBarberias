@@ -170,12 +170,15 @@ contra una base de datos de test dedicada (`volumetrix_test`, mismo contenedor D
 `ProfileSelector`. Detalle completo del diseño (por qué integration tests reales y no mocks para RLS)
 en [`Plan_Fase3_Suite_Tests.md`](./02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md).
 
-Lo que **no** se tocó: los 13 archivos `*.spec.ts` originales de `apps/api` y el único `*.e2e-spec.ts`
-siguen siendo boilerplate de `nest generate` sin personalizar — y de hecho están rotos hoy (`npm test`
-falla en 12 de los 13, ver `plan.md` Fase 3): los controllers ya requieren providers reales
-(`DRIZZLE_POOL_DB`, `Queue`, etc.) que el boilerplate nunca registró. Ver
+Los 13 archivos `*.spec.ts` de `apps/api` (unit tests, sin DB, vía `npm test`) fueron reparados el
+2026-07-26: los 12 que estaban rotos por boilerplate de `nest generate` sin providers mockeados
+(`DRIZZLE_POOL_DB`, etc.) se reescribieron con mocks reales y casos de negocio concretos (bloqueo
+progresivo de login por PIN, cálculo de comisiones de servicio/combo, validación de hash HMAC del
+webhook de Yappy, límite de empleados por plan, cierre de caja, emisión asíncrona de factura DGI) —
+13/13 suites, 77 tests en verde. El único `*.e2e-spec.ts` genérico sigue sin tocar (fuera de alcance,
+sin caso de negocio propio que justifique un e2e real todavía). Ver
 [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
-para el detalle histórico y `plan.md` para lo que queda pendiente.
+para el detalle histórico y `plan.md` Fase 3 para el desglose completo.
 
 ## 11. Documentos relacionados
 

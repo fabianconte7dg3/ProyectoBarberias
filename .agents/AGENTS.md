@@ -94,7 +94,7 @@ Leer [CLAUDE.md](../CLAUDE.md) para la guía completa. Puntos críticos:
 | 1 | `node_modules`/`dist`/`.env` trackeados en git | ✅ Resuelto (`0f52ba55`, `ac27f95e`, 2026-07-24) |
 | 2 | 56 vulnerabilidades de dependencias (39 backend, 17 frontend) | ✅ Resuelto — 39→0 backend, 17→6 residuales de bajo riesgo (ver `Auditoria_Stack_Tecnologico.md`) |
 | 3 | `spec.md`/`plan.md`/`walkthrough.md` no existían | ✅ Resuelto — los tres existen y son la fuente viva (ver sección "Flujo de Trabajo" arriba) |
-| 4 | 13 `*.spec.ts` de `apps/api` y 0 `*.test.tsx` de `apps/web` son boilerplate sin tocar (cobertura real = 0) | 🔶 Parcial — RLS/idempotencia/comisiones (backend) y `calcularSlotsDisponibles`/`ProfileSelector` (frontend) ya tienen tests reales; los 13 `*.spec.ts` boilerplate originales quedan (y están rotos: `npm test` falla 12/13) — ver `docs/plan.md` Fase 3 |
+| 4 | 13 `*.spec.ts` de `apps/api` y 0 `*.test.tsx` de `apps/web` son boilerplate sin tocar (cobertura real = 0) | ✅ Resuelto (2026-07-26) — los 12 specs rotos (`Test.createTestingModule` sin mockear dependencias reales) fueron reescritos con mocks y casos de negocio reales; `npm test` de `apps/api` está en verde (13/13 suites, 77 tests) — ver `docs/plan.md` Fase 3 |
 | 5 | Sin CI/CD, sin entorno de staging, todo el desarrollo directo sobre `master` | 🔲 Pendiente — ver `docs/plan.md` Fase 4 |
 
 > Nota post-resolución de 1: `git rm --cached` no borra del disco, pero en este repo `apps/api/node_modules/`

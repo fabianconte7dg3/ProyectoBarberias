@@ -310,6 +310,49 @@ encontrado) en
       en vez de la terminología del tenant. Corregido para usar `useTenant()` y mapear
       `'empleado' → terminologiaEmpleado`; `admin`/`recepcion` no tienen término dinámico en el esquema
       (roles de plataforma, no del vertical) así que quedan como "Administrador"/"Recepción" genérico.
+- [x] **Continuación (2026-07-26): reparados los 12 `*.spec.ts` boilerplate de `apps/api` que quedaban
+      en rojo.** Causa raíz confirmada en los 12: `Test.createTestingModule({ controllers: [X] })` (o
+      `providers: [X]`) generado por `nest generate`, sin mockear ninguna de las dependencias reales del
+      constructor (`DRIZZLE_POOL_DB`, otros servicios) — Nest no podía resolver el módulo de test y
+      fallaba en `compile()`, antes de llegar siquiera al único `it('should be defined')` de cada archivo.
+      No se limitó el fix a "hacer compilar el módulo": se reescribieron con mocks reales (`jest.fn()`
+      para servicios inyectados, `TenantContext.getDb()/getTenantId()` spyeados donde el código los usa
+      directo en vez de vía `@Inject(DRIZZLE_POOL_DB)`) y casos de negocio concretos, no solo
+      `should be defined` — con foco en la lógica que la suite de `test:integration` (RLS/idempotencia/
+      comisiones) no cubre:
+  - `auth.service.spec.ts`: bloqueo progresivo de PIN tras 5 intentos fallidos (30s/2m/5m), y las 4
+    causales de rechazo de `loginAdmin` (rol incorrecto, cuenta inactiva, contraseña inválida, tenant
+    bloqueado por plataforma o suspendido por pago).
+  - `caja.service.spec.ts`: cálculo del balance esperado en efectivo (suma completa de pagos en
+    efectivo, solo la porción en efectivo de los mixtos) y los 3 estados de cierre (cuadrado/sobrante/
+    faltante) según la diferencia declarada.
+  - `dgi.service.spec.ts`: el retardo asíncrono simulado de 2s (con `jest.useFakeTimers()`) y que un
+    fallo de DB durante la emisión de factura no propague ni tumbe el flujo de cobro que la llamó.
+  - `transacciones.service.spec.ts`: idempotencia por `idempotencyKey`, las 3 causales de rechazo
+    (cita ajena de otro empleado, cita ya procesada, cobro duplicado), cálculo de comisión de un
+    servicio simple vs. un combo (una línea de detalle por servicio interno), y que el método de pago
+    Yappy no marque la cita completada ni emita factura DGI hasta el webhook.
+  - `usuarios.service.spec.ts`: límite de empleados por plan al invitar staff, kill switch (no-op si
+    ya está en el estado pedido, auditoría si cambia), y las 2 causales de rechazo de activación de
+    cuenta por token (inválido, expirado).
+  - `yappy.service.spec.ts`: el más profundo — reproduce el cifrado AES-256-CBC real de
+    `secretKeyCifrada` dentro del propio test (misma `ENCRYPTION_KEY` que el servicio) para poder
+    calcular un HMAC-SHA256 válido y verificar la validación de hash del webhook de punta a punta
+    (hash correcto vs. incorrecto), además de las 3 resoluciones de adaptador (manual sin config,
+    manual con número configurado, comercial incompleto → error).
+  - Los 5 `*.controller.spec.ts` restantes se dejaron como smoke tests de wiring (DI real con
+    servicios mockeados, sin lógica de negocio propia que testear ahí) pero con al menos un caso que
+    verifica delegación real al servicio (no solo `should be defined`) — incluyendo el hallazgo de que
+    `CajaController`/`TransaccionesController` necesitan `DRIZZLE_POOL_DB` mockeado en el módulo de
+    test aunque no lo inyecten directo, porque `TenantInterceptor` (referenciado vía
+    `@UseInterceptors` a nivel de clase) se resuelve al compilar el módulo, no al primer request.
+  - `npm test` de `apps/api`: 13/13 suites, 77 tests, verde. `npx tsc --noEmit` limpio.
+  - **No perseguido a propósito:** los ~150 errores de `@typescript-eslint/no-unsafe-*` que deja
+    `eslint` sobre estos archivos (mocks tipados `any` disparan las reglas de seguridad de tipos) —
+    mismo patrón ya presente y tolerado en los `test/integration/*.integration-spec.ts` existentes de
+    la Fase 3 original (176 errores ahí también); no es una convención nueva de este cambio, y `eslint`
+    no forma parte del gate de CI para tests (`.github/workflows/ci.yml` corre `tsc --noEmit` +
+    `test:integration`, no `lint`).
 
 ## Fase 4 — Infraestructura de Producción 🔶 Parcial
 
