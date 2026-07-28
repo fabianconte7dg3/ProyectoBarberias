@@ -79,18 +79,18 @@ export function NumpadLogin({ pin, setPin, onSubmit, error, isLoading, onBack, u
             type="button"
             onClick={() => handleInput(num.toString())}
             disabled={isLoading}
-            className="h-20 text-3xl font-medium rounded-2xl bg-secondary hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all"
+            className="h-20 text-3xl font-medium rounded-2xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all"
           >
             {num}
           </button>
         ))}
-        
+
         {/* Botón Borrar */}
         <button
           type="button"
           onClick={handleDelete}
           disabled={isLoading || pin.length === 0}
-          className="h-20 flex justify-center items-center rounded-2xl bg-secondary text-muted-foreground hover:text-foreground active:scale-95 transition-all disabled:opacity-40"
+          className="h-20 flex justify-center items-center rounded-2xl bg-secondary text-secondary-foreground/70 hover:text-secondary-foreground active:scale-95 transition-all disabled:opacity-40"
         >
           <Delete size={28} />
         </button>
@@ -100,7 +100,7 @@ export function NumpadLogin({ pin, setPin, onSubmit, error, isLoading, onBack, u
           type="button"
           onClick={() => handleInput('0')}
           disabled={isLoading}
-          className="h-20 text-3xl font-medium rounded-2xl bg-secondary hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all"
+          className="h-20 text-3xl font-medium rounded-2xl bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground active:scale-95 transition-all"
         >
           0
         </button>
@@ -110,7 +110,7 @@ export function NumpadLogin({ pin, setPin, onSubmit, error, isLoading, onBack, u
           type="button"
           onClick={() => onSubmit(pin)}
           disabled={isLoading || pin.length !== PIN_LENGTH}
-          className="h-20 flex justify-center items-center rounded-2xl bg-primary text-primary-foreground font-semibold active:scale-95 transition-all disabled:opacity-30 disabled:bg-secondary disabled:text-muted-foreground"
+          className="h-20 flex justify-center items-center rounded-2xl bg-primary text-primary-foreground font-semibold active:scale-95 transition-all disabled:opacity-30 disabled:bg-secondary disabled:text-secondary-foreground/70"
           title="Ingresar"
         >
           <Check size={32} />

@@ -139,9 +139,9 @@ export function AdminSidebar() {
       >
         {brand}
         {currentUser && (
-          <div className="mx-3 mb-3 flex items-center gap-2 bg-secondary/80 px-3 py-2 rounded-xl border border-border">
-            <UserCheck size={14} className="text-primary shrink-0" />
-            <span className="text-xs font-semibold text-foreground truncate">{currentUser.nombreCompleto}</span>
+          <div className="mx-3 mb-3 flex items-center gap-2 bg-secondary px-3 py-2 rounded-xl border border-border">
+            <UserCheck size={14} className="text-secondary-foreground shrink-0" />
+            <span className="text-xs font-semibold text-secondary-foreground truncate">{currentUser.nombreCompleto}</span>
           </div>
         )}
         {navList()}
@@ -181,9 +181,9 @@ export function AdminSidebar() {
               </button>
             </div>
             {currentUser && (
-              <div className="mx-3 mb-3 flex items-center gap-2 bg-secondary/80 px-3 py-2 rounded-xl border border-border">
-                <UserCheck size={14} className="text-primary shrink-0" />
-                <span className="text-xs font-semibold text-foreground truncate">{currentUser.nombreCompleto}</span>
+              <div className="mx-3 mb-3 flex items-center gap-2 bg-secondary px-3 py-2 rounded-xl border border-border">
+                <UserCheck size={14} className="text-secondary-foreground shrink-0" />
+                <span className="text-xs font-semibold text-secondary-foreground truncate">{currentUser.nombreCompleto}</span>
               </div>
             )}
             {navList(() => setMobileOpen(false))}
