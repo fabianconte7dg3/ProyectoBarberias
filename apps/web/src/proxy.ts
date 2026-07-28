@@ -9,8 +9,16 @@ import type { NextRequest } from 'next/server';
  */
 const RESERVED_SUBDOMAINS = new Set(['www', 'api', 'admin']);
 
-/** Dominios raiz conocidos (sin subdominio) — dev local y produccion. */
-const ROOT_HOSTS = new Set(['localhost', 'volumetrixpa.com']);
+/**
+ * Dominios raiz conocidos (sin subdominio) — dev local y produccion, mas
+ * `NEXT_PUBLIC_ROOT_HOST` opcional (inlineado en build time, ver Dockerfile)
+ * para entornos como staging que corren bajo un dominio propio en vez de
+ * uno de tenant — sin esto, un dominio de staging sin subdominio de tenant
+ * se interpretaria como slug y rompia el ruteo por path (ej. `/qa-test/...`).
+ */
+const ROOT_HOSTS = new Set(
+  ['localhost', 'volumetrixpa.com', process.env.NEXT_PUBLIC_ROOT_HOST].filter(Boolean) as string[]
+);
 
 export function proxy(request: NextRequest) {
   const host = request.headers.get('host') ?? '';

@@ -67,14 +67,31 @@ services:
     build:
       context: ../apps/web
       args:
-        NEXT_PUBLIC_API_URL: https://api.staging.volumetrixpa.com
+        # Ruteo por path, no por subdominio: `${APP_DOMAIN}/api/*` -> api,
+        # el resto -> web (ver infrastructure/staging/Caddyfile). Evita
+        # depender de un segundo hostname DNS (`api.<dominio>`) que algunos
+        # proveedores de DNS dinamico gratuito no dejan crear junto con un
+        # wildcard. `APP_DOMAIN` viene de .env.staging, resuelto por
+        # `docker compose --env-file .env.staging build` (no del env_file
+        # de runtime del container, que no aplica a build args).
+        NEXT_PUBLIC_API_URL: https://${APP_DOMAIN}/api
+        NEXT_PUBLIC_ROOT_HOST: ${APP_DOMAIN}
     container_name: volumetrix_staging_web
     restart: unless-stopped
     depends_on:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      # 127.0.0.1 explicito + header Host manual, no "localhost": `localhost`
+      # resuelve a ::1 antes que a 127.0.0.1 en /etc/hosts, wget de busybox no
+      # cae a IPv4 si la conexion IPv6 es rechazada (Next.js standalone solo
+      # bindea IPv4, ver ENV HOSTNAME en apps/web/Dockerfile) -- el healthcheck
+      # nunca conectaba. El header Host explicito hace falta ademas porque
+      # proxy.ts interpreta el host de la request como slug de tenant salvo
+      # que sea exactamente "localhost" (ROOT_HOSTS) -- sin el header, pegarle
+      # a 127.0.0.1 devuelve 404 (lo interpreta como slug "127"). Encontrado
+      # desplegando de verdad por primera vez (ver Plan_Fase4_Infraestructura.md).
+      test: ["CMD-SHELL", "wget -qO- --header='Host: localhost' http://127.0.0.1:3000/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -84,6 +101,8 @@ services:
     image: caddy:2-alpine
     container_name: volumetrix_staging_caddy
     restart: unless-stopped
+    env_file:
+      - .env.staging
     ports:
       - "8080:80"
       - "8443:443"

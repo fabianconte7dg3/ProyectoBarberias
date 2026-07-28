@@ -101,7 +101,10 @@ services:
       api:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/ || exit 1"]
+      # Ver el mismo comentario largo en docker-compose.staging.yml: "localhost"
+      # resuelve IPv6 primero (Next.js standalone solo bindea IPv4) y sin el
+      # header Host explicito el proxy de tenant interpreta 127.0.0.1 como slug.
+      test: ["CMD-SHELL", "wget -qO- --header='Host: localhost' http://127.0.0.1:3000/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5

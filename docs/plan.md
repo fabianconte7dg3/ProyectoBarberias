@@ -368,8 +368,16 @@ encontrado) en
       Verificado en navegador real. Pendiente de decisión externa: proveedor DNS si más adelante se
       quiere certificado wildcard en vez de on-demand por subdominio (no es necesario para operar, es
       una optimización).
-- [ ] Entornos separados: staging vs producción — `docker-compose.staging.yml` + Caddyfile +
-      `.env.staging.example` listos como placeholder, sin servidor de staging real todavía.
+- [x] Entornos separados: staging vs producción — **staging desplegado y verificado de punta a punta por
+      primera vez (2026-07-28)** contra una EC2 real de AWS provista por el usuario, con dominio propio
+      del usuario (DDNS gratuito). Detalle completo (decisión de ruteo por path en vez de subdominio, 2
+      bugs reales de Docker/Next.js encontrados y corregidos, extracción de
+      `infrastructure/scripts/apply-migrations.sh`, hallazgos operativos de la instancia) en
+      `docs/02-arquitectura-y-db/Plan_Fase4_Infraestructura.md` §8. Verificado con `curl`/navegador real:
+      HTTPS con certificado Let's Encrypt real, API accesible por `/api/*`, y el wizard de setup (ver
+      hallazgo de seguridad más abajo) redirigiendo correctamente en una instalación 100% nueva.
+      Producción real (dominio `volumetrixpa.com`, ruteo por subdominio con wildcard) sigue sin
+      desplegarse — este pase fue staging únicamente, para validar el camino de deploy.
 - [x] CI/CD con GitHub Actions — `tsc --noEmit` + tests en cada PR y push a `master`
       (`.github/workflows/ci.yml`). `npm test` de `apps/api` queda fuera del workflow a propósito
       (son unit tests sin DB — `test:integration`, que sí corre, es la cobertura real de RLS/

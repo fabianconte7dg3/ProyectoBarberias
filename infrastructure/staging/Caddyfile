@@ -1,31 +1,26 @@
-# Caddyfile de staging — placeholder, sin desplegar todavia.
+# Caddyfile de staging — ruteo por path bajo un unico dominio (`{$APP_DOMAIN}`,
+# viene de infrastructure/.env.staging via env_file en docker-compose.staging.yml),
+# no por subdominio.
 #
-# PENDIENTE antes de usar esto en un servidor real: TenantsService.
-# HOSTS_FIJOS (apps/api/src/tenants/tenants.service.ts) solo reconoce
-# volumetrixpa.com/www/api como hosts fijos validos para el ask endpoint
-# de on-demand TLS — no conoce staging.volumetrixpa.com todavia. Un
-# subdominio de TENANT (barberia-jose.staging.volumetrixpa.com) SI
-# valida correctamente (el primer label sigue siendo el slug real), pero
-# el dominio raiz/www/api de staging necesitaria agregarse a HOSTS_FIJOS
-# antes de depender de esto. No se agrega ahora porque el esquema de
-# subdominios de staging todavia no esta decidido (ver Plan_Fase4).
-{
-	on_demand_tls {
-		ask http://api:4000/tenants/validar-dominio
+# Por que por path y no por subdominio (como produccion, api.volumetrixpa.com +
+# wildcard *.volumetrixpa.com para tenants): el esquema de subdominios de
+# staging todavia no esta decidido (ver Plan_Fase4_Infraestructura.md), y
+# muchos proveedores de DNS dinamico gratuito (No-IP, DuckDNS, etc.) no
+# permiten crear un registro wildcard en el plan gratis, ni siempre dejan
+# crear mas de un hostname. Con ruteo por path un unico hostname alcanza:
+# el frontend ya resuelve cualquier tenant por ruta (`/<slug>/...`, ver
+# apps/web/src/proxy.ts) sin necesitar que el subdominio SEA el slug.
+#
+# Automatic HTTPS (no on-demand): al ser un solo dominio conocido de
+# antemano (no un wildcard de tenants arbitrarios), Caddy emite el
+# certificado normal via ACME sin necesitar el endpoint `ask` de
+# validacion que si usa produccion.
+{$APP_DOMAIN} {
+	handle_path /api/* {
+		reverse_proxy api:4000
 	}
-}
 
-staging.volumetrixpa.com, www.staging.volumetrixpa.com {
-	reverse_proxy web:3000
-}
-
-api.staging.volumetrixpa.com {
-	reverse_proxy api:4000
-}
-
-*.staging.volumetrixpa.com {
-	tls {
-		on_demand
+	handle {
+		reverse_proxy web:3000
 	}
-	reverse_proxy web:3000
 }

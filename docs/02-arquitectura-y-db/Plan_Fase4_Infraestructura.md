@@ -187,7 +187,7 @@ vez de confiar en él.
 Verificado reproduciendo los mismos pasos del workflow a mano en local (checkout limpio simulado con
 `npm ci`, `tsc`, levantar el compose, correr los tests) antes de commitear.
 
-## 7. Explícitamente fuera de esta pasada, con placeholders
+## 7. Explícitamente fuera de esta pasada, con placeholders (histórico — ver §8, ya ejecutado)
 
 - **Staging real**: `infrastructure/docker-compose.staging.yml` (copia de producción, prefijo
   `volumetrix_staging_*`, puertos Caddy `8080`/`8443` para poder correr junto a producción en la misma
@@ -198,6 +198,86 @@ Verificado reproduciendo los mismos pasos del workflow a mano en local (checkout
   por dominio completo), pero el dominio raíz/www/api de staging necesitaría agregarse a `HOSTS_FIJOS`
   antes de depender de esto en un servidor real. No se agregó ahora porque el esquema de subdominios de
   staging no está decidido todavía.
+
+## 8. Staging real desplegado por primera vez (2026-07-28)
+
+Deploy real contra una EC2 de AWS (Ubuntu 26.04, provista por el usuario) con un dominio propio del
+usuario vía DDNS gratuito apuntando a la IP de la instancia — dominio real omitido a propósito de este
+documento (público en GitHub), la variable relevante es `APP_DOMAIN` en `.env.staging` (no versionado).
+
+### Decisión: ruteo por path en vez de subdominio
+
+El plan gratuito de DDNS usado no permite wildcard (`*.dominio`) ni crear más de un hostname —
+imposibilita el esquema `api.<dominio>` + `*.<dominio>` que usa producción. Como el frontend ya resuelve
+cualquier tenant por **ruta** (`/<slug>/...`, no necesita que el subdominio SEA el slug — ver
+`apps/web/src/proxy.ts`), un único hostname alcanza ruteando por path en Caddy:
+`{$APP_DOMAIN}/api/*` → `api:4000` (con `handle_path`, que saca el prefijo `/api` antes de proxyear),
+todo lo demás → `web:3000`. Frontend y backend quedan en el mismo origen — de yapa, elimina cualquier
+fricción de CORS (nunca hay petición realmente cross-origin que gatear).
+
+Esto reemplaza el Caddyfile de staging viejo (wildcard + on-demand TLS + `HOSTS_FIJOS`, nunca desplegado)
+por uno con automatic HTTPS normal (dominio único conocido de antemano, no hace falta el endpoint `ask` de
+validación que sí necesita producción para su wildcard de tenants).
+
+**3 archivos parametrizados por `NEXT_PUBLIC_ROOT_HOST`** (antes hardcodeaban `volumetrixpa.com`/
+`localhost`), para que un dominio de staging cualquiera pueda usarse sin tocar código:
+`apps/web/src/proxy.ts`, `apps/web/src/lib/tenant-url.ts` (arma URLs de tenant por path en vez de
+subdominio cuando el host es el root host de staging), `apps/web/Dockerfile` (nuevo build arg).
+`docker-compose.staging.yml` deriva `NEXT_PUBLIC_API_URL`/`NEXT_PUBLIC_ROOT_HOST` directo de `APP_DOMAIN`
+(ya existía en `.env.staging.example`) — cero hardcode de dominio en ningún archivo versionado.
+
+### Migraciones: secuencia real extraída a script reusable
+
+`apps/api/test/integration/bootstrap-test-db.sh` era, hasta ahora, el único lugar con la secuencia
+correcta de migraciones + correcciones de drift (ver CLAUDE.md — varias tablas/columnas de la DB real no
+las crea ningún archivo de migración). Aplicar `migrations/*.sql` en orden numérico simple sobre una DB
+nueva NO reproduce un schema correcto. Se extrajo esa secuencia a
+`infrastructure/scripts/apply-migrations.sh` (parametrizado por `CONTAINER`/`DB` vía env vars, no borra
+ni crea la DB — solo la puebla), reusado tanto por `bootstrap-test-db.sh` (ahora un wrapper delgado que
+solo hace el DROP/CREATE de la DB descartable) como por este deploy de staging. Primera vez que esta
+secuencia corre fuera de la DB descartable de tests — funcionó limpio contra una DB de staging real desde
+cero. Verificado que el refactor no rompió nada: `test:integration` 13/13 en verde antes de tocar la EC2.
+
+### 2 bugs reales encontrados desplegando por primera vez (no hipotéticos — nunca se había desplegado)
+
+1. **`web` nunca pasaba su propio healthcheck.** Next.js standalone (`server.js` generado por
+   `output: 'standalone'`) hace bind literal al valor de `process.env.HOSTNAME` si está seteado — y
+   Docker **siempre** setea `HOSTNAME=<id_del_contenedor>` en cada contenedor por defecto. El servidor
+   terminaba escuchando solo en la IP interna del contenedor en la red de Docker, nunca en `127.0.0.1` ni
+   `0.0.0.0` — ni el propio healthcheck (`wget http://localhost:3000/`, corriendo *dentro* del mismo
+   contenedor) podía conectarse. Afecta también a `docker-compose.production.yml` (nunca antes
+   desplegado, mismo Dockerfile). **Corregido**: `ENV HOSTNAME="0.0.0.0"` explícito en el stage `runner`
+   de `apps/web/Dockerfile`, forzando bind a todas las interfaces.
+2. **El healthcheck de `web`, aun con el bind corregido, seguía fallando con `localhost`.** `localhost`
+   resuelve a `::1` (IPv6) antes que a `127.0.0.1` en `/etc/hosts` del contenedor Alpine, y el `wget` de
+   BusyBox no cae a IPv4 si la conexión IPv6 es rechazada (el servidor solo escucha IPv4 tras el fix
+   anterior) — nunca llegaba a conectar. Y conectando por IP literal (`127.0.0.1`) sin más, `proxy.ts`
+   interpretaba el host `127.0.0.1` como si fuera un slug de tenant (no está en `ROOT_HOSTS`) y devolvía
+   404. **Corregido** en ambos `docker-compose.staging.yml` y `docker-compose.production.yml`:
+   `wget -qO- --header='Host: localhost' http://127.0.0.1:3000/ || exit 1` — IP explícita (evita la
+   ambigüedad IPv6) + header `Host` explícito (satisface el chequeo de `ROOT_HOSTS`, que sí reconoce
+   `"localhost"` sin importar el dominio real).
+
+### Otros hallazgos operativos (no bugs de código, config del entorno)
+
+- El volumen raíz por defecto de la instancia era de 8GB (4.6GB libres) — insuficiente con margen para
+  Docker + Postgres + Redis + las imágenes de build. Se agrandó a 30GB vía AWS Console (`Modify Volume`,
+  en caliente) + `growpart`/`resize2fs` desde SSH, sin reiniciar la instancia.
+- El Security Group de la instancia solo tenía el puerto 22 abierto — hubo que agregar reglas de entrada
+  para 80 y 443 (0.0.0.0/0) antes de que Let's Encrypt pudiera validar el dominio (el primer intento de
+  Caddy falló con `Timeout during connect (likely firewall problem)`; reintentó y emitió el certificado
+  correctamente en cuanto los puertos quedaron abiertos).
+- `apt-get update` inicial tardó varios minutos (instancia con crédito de CPU/red limitado en su primer
+  arranque) — lento pero no colgado, sin contención de lock de dpkg.
+
+### Verificación
+
+`curl -sI https://<dominio>/` → `HTTP/2 200` con TLS real emitido por Let's Encrypt; `/api/health` →
+`{"status":"ok"}` a través del ruteo por path; `/api/super-admin/setup/status` → `{"necesitaSetup":true}`
+(confirma en un deploy 100% real que el fix de seguridad del wizard — ver entrada de Fase 4 en
+`docs/plan.md` sobre el backdoor de `superadmin@barberos.app` — funciona de punta a punta, no solo
+localmente); navegador real contra `/super-admin` redirige correctamente a `/super-admin/setup` con la
+plataforma recién instalada, sin ningún superadmin creado.
 - **Backups**: `scripts/backup-postgres.sh`, snapshot manual vía `pg_dump` (no PITR real — eso requiere
   WAL archiving continuo + storage S3-compatible, un paso siguiente aparte una vez haya destino
   elegido), parametrizable 100% por env vars (`PG_CONTAINER`, `PG_USER`, `PG_DATABASE`,
