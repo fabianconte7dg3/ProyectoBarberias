@@ -446,6 +446,11 @@ encontrado) en
     incorrecta, falla con `password authentication failed`; sin `APP_USER_PASSWORD` seteada, el
     contenedor de Postgres no arranca (`exit 1`, log explícito). `docker compose ... config` válido en
     ambos compose files con las env vars resueltas.
+- [x] Fix: reserva pública fallaba con Internal Server Error en staging real — drift de 2 puntos nunca
+      antes documentados entre `schema.ts` y las migraciones (`origen_cita` sin el valor `'web_publica'`,
+      y `alertas_seguridad` sin `GRANT` a `app_user`), invisibles en el Postgres local de desarrollo
+      porque ya estaban parcheados a mano ahí. Corregido con la migración 0022, aplicada y verificada en
+      local/`volumetrix_test`/staging real. Detalle completo en `Plan_Fase4_Infraestructura.md` §10.
 - [ ] **PRÓXIMA TAREA** — Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh`
       (snapshot manual vía `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron —
       falta destino de backup elegido (S3 o similar), WAL archiving continuo, y un cron/systemd timer que

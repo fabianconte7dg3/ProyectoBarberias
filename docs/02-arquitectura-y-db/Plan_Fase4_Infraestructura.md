@@ -368,6 +368,41 @@ retroactivamente sobre el que ya está corriendo.
 - `caddy validate` (imagen `caddy:2-alpine`, `APP_DOMAIN=midominio-prueba.com` como env var) contra
   `production/Caddyfile` → `Valid configuration`.
 
+## 10. Bug real en staging: reserva pública fallaba con Internal Server Error (2026-07-28)
+
+**Reportado por el usuario probando el staging real de punta a punta** (crear negocio → reservar como
+cliente): el paso de confirmación de una reserva pública fallaba siempre con `Internal server error`.
+Logs de `docker compose logs api` en la EC2 mostraron dos errores reales de Postgres, ambos el mismo
+patrón de drift entre `schema.ts` y las migraciones versionadas que ya advierte `CLAUDE.md` — pero en
+dos puntos nunca antes documentados, porque el Postgres local de desarrollo ya los tenía parcheados a
+mano desde hace tiempo (por eso nunca se habían detectado: solo se manifiestan en una base nueva, como
+`volumetrix_test` o un staging real recién levantado):
+
+1. **`invalid input value for enum origen_cita: "web_publica"`** — `schema.ts` declara `'web_publica'`
+   como valor válido de `origen_cita` desde que existe el flujo de reserva pública
+   (`citas.controller.ts` `POST /citas/publica`), pero `0000_yummy_jubilee.sql` solo creó el enum con
+   `('bot_whatsapp', 'walk_in', 'manual_admin')` y ninguna migración posterior agregó `'web_publica'`
+   (`0016` solo agregó `'importacion_historica'`). Resultado: **toda reserva pública real fallaba** en
+   cualquier base de datos nueva — el bug más serio de los dos, bloqueaba el flujo principal del
+   producto.
+2. **`permission denied for table alertas_seguridad`** — hallado en el camino, revisando los mismos
+   logs: `0009_observabilidad_y_alertas.sql` crea la tabla `alertas_seguridad` pero nunca le otorga
+   `GRANT` a `app_user` (solo otorga `GRANT EXECUTE` de una función relacionada). Resultado: el panel
+   "Alertas de Seguridad" del dashboard de SuperAdmin fallaba silenciosamente en cualquier base nueva.
+
+**Fix**: migración nueva
+[`0022_corregir_drift_origen_cita_y_grant_alertas.sql`](../../apps/api/src/database/migrations/0022_corregir_drift_origen_cita_y_grant_alertas.sql)
+(`ALTER TYPE origen_cita ADD VALUE IF NOT EXISTS 'web_publica'` + el `GRANT` faltante), agregada a
+`infrastructure/scripts/apply-migrations.sh` en su lugar correspondiente en la secuencia (con el
+candado de conteo de archivos actualizado a 26). Aplicada en los 3 lugares relevantes:
+- Postgres local (`volumetrix`): no-op (`NOTICE: enum label "web_publica" already exists, skipping`) —
+  confirma que ya estaba parcheado a mano, consistente con el resto de drift documentado.
+- `volumetrix_test`: reconstruida desde cero con `bootstrap-test-db.sh` — la migración se aplicó limpia
+  (sin el NOTICE, confirmando que reproduce el fix en una base realmente nueva) y
+  `npm run test:integration` siguió en 13/13 verde.
+- Staging real (EC2): aplicada directamente contra `volumetrix_staging_postgres` vía SSH — verificado con
+  `enum_range(NULL::origen_cita)` y `\dp alertas_seguridad` que ambos fixes quedaron activos.
+
 ## Verificación consolidada
 
 | Pieza | Cómo se verificó |
@@ -381,4 +416,5 @@ retroactivamente sobre el que ya está corriendo.
 | CI | Pipeline reproducido a mano en local antes de commitear |
 | Staging/backup | `docker compose config` válido; script de backup verificado contra Postgres de dev |
 | Deploy parametrizado (§9) | `tsc --noEmit`; `docker compose config` con dominio de prueba; `caddy validate` del Caddyfile parametrizado; `bash -n deploy.sh` |
+| Fix drift `origen_cita`/`alertas_seguridad` (§10) | `bootstrap-test-db.sh` desde cero + `test:integration` 13/13; aplicado y verificado en Postgres local, `volumetrix_test` y staging real (EC2) |
 | `tsc --noEmit` | Limpio en `apps/api` y `apps/web` después de cada cambio |

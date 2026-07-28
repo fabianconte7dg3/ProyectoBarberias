@@ -152,13 +152,14 @@ apply_migration 0018_impersonacion_audit.sql
 apply_migration 0019_identidad_negocio_audit.sql
 apply_migration 0020_reset_pin_staff_audit.sql
 apply_migration 0021_eliminar_seed_superadmin_hardcodeado.sql
+apply_migration 0022_corregir_drift_origen_cita_y_grant_alertas.sql
 
 # Red de seguridad: si alguien agrega un archivo nuevo a migrations/ y se olvida de sumarlo acá
 # arriba, fallar ruidosamente en vez de dejar la DB con un subset silencioso del esquema.
-# 25 archivos .sql reales hoy (24 aplicados arriba + 1 omitido, 0006_kill_switch.sql).
+# 26 archivos .sql reales hoy (25 aplicados arriba + 1 omitido, 0006_kill_switch.sql).
 ACTUAL_COUNT=$(find "$MIGRATIONS_DIR" -maxdepth 1 -name '*.sql' | wc -l)
-if [[ "$ACTUAL_COUNT" -ne 25 ]]; then
-  echo "ERROR: se esperaban 25 archivos .sql en $MIGRATIONS_DIR, se encontraron $ACTUAL_COUNT." >&2
+if [[ "$ACTUAL_COUNT" -ne 26 ]]; then
+  echo "ERROR: se esperaban 26 archivos .sql en $MIGRATIONS_DIR, se encontraron $ACTUAL_COUNT." >&2
   echo "       Si agregaste una migración nueva, sumala a este script en el orden correcto." >&2
   exit 1
 fi
