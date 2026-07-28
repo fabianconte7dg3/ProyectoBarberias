@@ -427,15 +427,26 @@ encontrado) en
     incorrecta, falla con `password authentication failed`; sin `APP_USER_PASSWORD` seteada, el
     contenedor de Postgres no arranca (`exit 1`, log explícito). `docker compose ... config` válido en
     ambos compose files con las env vars resueltas.
-- [ ] Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh` (snapshot manual vía
-      `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron — falta destino de
-      backup elegido (S3 o similar) y WAL archiving continuo.
+- [ ] **PRÓXIMA TAREA** — Backups automáticos con Point-in-Time Recovery — `scripts/backup-postgres.sh`
+      (snapshot manual vía `pg_dump`, verificado) listo, pero no es PITR real ni corre en ningún cron —
+      falta destino de backup elegido (S3 o similar), WAL archiving continuo, y un cron/systemd timer que
+      lo dispare solo. Motivado por la conversación sobre migración de VPS (2026-07-27): sin esto, migrar
+      o recuperarse de un fallo depende de acordarse de correr el script a mano.
 - [x] PgBouncer para connection pooling — agregado a `docker-compose.production.yml`
       (`pool_mode=transaction`). La verificación pendiente ya se hizo: la suite real de integration
       tests (RLS/idempotencia/comisiones) corrida completa a través de PgBouncer, 13/13 en verde —
       `drizzle-orm/node-postgres` es compatible, confirmado empíricamente, no solo en teoría.
 - [ ] Monitoreo y alertas de disponibilidad — `GET /health` (sin tocar DB) ya existe como requisito
       técnico común a cualquier proveedor, pero no se eligió servicio de monitoreo todavía.
+- [ ] Wizard de primer arranque (setup inicial) — al desplegar en un VPS nuevo (sin tenants ni superadmin
+      todavía), la app debe detectar ese estado y mostrar un panel de configuración inicial en vez de un
+      login vacío o requerir SQL a mano — mismo patrón que Nextcloud/Crafty Controller al instalar por
+      primera vez. Debe cubrir al mínimo: crear la cuenta superadmin (reemplaza el script manual de
+      `crearTenantManual`/seeds), y configurar el primer tenant (identidad de negocio, industria). Decidido
+      en conversación del 2026-07-27 tras evaluar cómo se ve el deploy a un VPS de terceros — hoy ese flujo
+      depende de scripts SQL manuales, lo cual no escala a "alguien más instala esto". Requiere: endpoint
+      backend que exponga si existe al menos un superadmin (gate del wizard), y una página en
+      `apps/web` que se muestre en vez del login normal mientras ese gate esté en `false`.
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 
