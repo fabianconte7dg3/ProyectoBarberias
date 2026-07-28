@@ -1,8 +1,9 @@
 # 💡 Ideas Futuras: Expansión Multi-Industria y Barbero Independiente (Solo-preneur)
 
-Este documento registra los análisis de factibilidad técnica, arquitectura y estrategia de negocio para dos ejes de crecimiento futuro del SaaS:
+Este documento registra los análisis de factibilidad técnica, arquitectura y estrategia de negocio para ejes de crecimiento futuro del SaaS:
 1. **Adaptación para Barberos Independientes / Freelancers (Solo-preneurs)**.
 2. **Expansión a Nuevas Verticales de Mercado (Veterinarias, Clínicas, Salones de Belleza, Spas, etc.)**.
+3. **Motor de Formularios Dinámicos y Exportación Inteligente** (idea sin desarrollar, ver sección 3).
 
 ---
 
@@ -51,6 +52,50 @@ Para soportar múltiples verticales sin duplicar código, basta con implementar 
 
 2. **Frontend UI:**
    Reemplazar textos fijos como `"Selecciona tu Barbero"` por `` `Selecciona tu ${tenant.terminologia_empleado}` ``.
+
+---
+
+## 📄 3. Motor de Formularios Dinámicos y Exportación Inteligente
+
+> **Estado: idea sin desarrollar, sin fecha ni compromiso.** Propuesta por el usuario el 2026-07-27 como
+> spec externa (no generada por el equipo). Registrada acá porque `docs/plan.md` es solo para trabajo
+> comprometido con checkboxes accionables — esto todavía no lo es.
+
+### Concepto
+
+Un constructor visual de formularios (campos configurables: texto, número, fecha, select, checkbox,
+archivo, firma) que los usuarios finales llenan vía link público, con versionado (congelar la versión
+vieja si se edita un formulario con respuestas ya guardadas), validación estricta en backend, y un motor
+de exportación que fusiona las respuestas con una plantilla para generar documentos finales (contratos,
+recibos, reportes) en PDF, con vista de impresión optimizada (oculta la UI de navegación al imprimir).
+
+### Encaje con la arquitectura actual
+
+Más compatible de lo que parece a primera vista — varias piezas ya existen:
+- **BullMQ ya está en el stack** (`apps/api`, Redis) — el requisito de "colas de procesamiento en segundo
+  plano" no exige infraestructura nueva.
+- **Branding por tenant ya existe** (`colorPrimario`, `logoUrl` en `barberias`) — cubre buena parte del
+  requisito de "identidad de marca en documentos".
+- **Aislamiento estricto por RLS** ya es el patrón central de todo el proyecto.
+- Ya existe un primitivo real y directamente relacionado: `barberias.configCamposPersonalizados` (campos
+  dinámicos por industria, hoy solo para `pacientes` en veterinaria/clínica médica) y
+  `clientes.datos_adicionales` (jsonb) — **pero ambos con cero wiring de UI/API real**, según nota vigente
+  en `CLAUDE.md`. Un motor de formularios genérico podría ser, en parte, la forma de finalmente darle uso
+  a esos dos campos en vez de construir un sistema paralelo desde cero.
+
+### Por qué no es una tarea chica
+
+Lo que la spec original no menciona explícitamente pero implica: cuotas de almacenamiento/generación por
+tenant (no existe ningún mecanismo de límites por tenant hoy), internacionalización (la app es 100%
+español hoy, sin ninguna capa de i18n), y un motor de generación de PDF con plantillas editables — cada
+uno de esos tres es, por sí solo, un esfuerzo comparable a una fase completa ya cerrada de este proyecto
+(ej. Fase 2 multi-industria completa). No es una extensión incremental de una página existente.
+
+### Pregunta abierta para cuando se retome
+
+¿Es esto una feature de Volumetrix (ej. consentimientos/contratos para veterinaria o clínica médica,
+resolviendo el gap real de `configCamposPersonalizados`/`datos_adicionales`), o es una idea de producto
+separada? La respuesta cambia si esto merece su propio tenant/tier o si es un módulo más del SaaS actual.
 
 ---
 
