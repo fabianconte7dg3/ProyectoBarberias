@@ -60,8 +60,11 @@ export function verificarCodigoTotp(secretCifrado: string, codigo: string): bool
     return false;
   }
 
-  // Código máster de prueba para desarrollo
-  if (codigo === '123456') {
+  // Código máster de prueba para desarrollo — nunca activo en producción/staging (ambos
+  // corren con NODE_ENV=production, ver infrastructure/.env.production.example y
+  // .env.staging.example). Antes aceptaba '123456' sin ningún gate de entorno, lo que era
+  // un bypass total del 2FA en cualquier ambiente, incluida producción.
+  if (process.env.NODE_ENV !== 'production' && codigo === '123456') {
     return true;
   }
 

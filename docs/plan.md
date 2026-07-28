@@ -438,15 +438,38 @@ encontrado) en
       `drizzle-orm/node-postgres` es compatible, confirmado empíricamente, no solo en teoría.
 - [ ] Monitoreo y alertas de disponibilidad — `GET /health` (sin tocar DB) ya existe como requisito
       técnico común a cualquier proveedor, pero no se eligió servicio de monitoreo todavía.
-- [ ] Wizard de primer arranque (setup inicial) — al desplegar en un VPS nuevo (sin tenants ni superadmin
-      todavía), la app debe detectar ese estado y mostrar un panel de configuración inicial en vez de un
-      login vacío o requerir SQL a mano — mismo patrón que Nextcloud/Crafty Controller al instalar por
-      primera vez. Debe cubrir al mínimo: crear la cuenta superadmin (reemplaza el script manual de
-      `crearTenantManual`/seeds), y configurar el primer tenant (identidad de negocio, industria). Decidido
-      en conversación del 2026-07-27 tras evaluar cómo se ve el deploy a un VPS de terceros — hoy ese flujo
-      depende de scripts SQL manuales, lo cual no escala a "alguien más instala esto". Requiere: endpoint
-      backend que exponga si existe al menos un superadmin (gate del wizard), y una página en
-      `apps/web` que se muestre en vez del login normal mientras ese gate esté en `false`.
+- [x] Wizard de primer arranque (setup inicial) — **corrección (2026-07-28): esta entrada se agregó como
+      pendiente el 2026-07-27 sin haber revisado el código; ya existía, completo, desde el rediseño de
+      Super Admin (commit `9ff9c5fd`, 2026-07-26).** Backend: `GET /super-admin/setup/status` (cuenta filas
+      activas en `plataforma_admins`; `necesitaSetup: true` si es `0`), `GET /super-admin/setup/iniciar`
+      (genera secreto TOTP), `POST /super-admin/setup/completar` (crea el superadmin, valida el código TOTP
+      de 6 dígitos, setea cookie httpOnly) — todo en `super-admin.controller.ts`/`super-admin.service.ts`.
+      Frontend: `apps/web/src/app/super-admin/setup/page.tsx`, wizard de 3 pasos (credenciales → QR TOTP →
+      verificar código), disparado desde `login/page.tsx` cuando `necesitaSetup: true`.
+  - **Hallazgo de seguridad real que neutralizaba el wizard (encontrado y corregido el 2026-07-28,
+    investigando cómo migrar/desplegar a un VPS nuevo):** `0007_superadmin.sql` sembraba un SuperAdmin con
+    credenciales hardcodeadas y públicamente conocidas (`superadmin@barberos.app` / `SuperAdmin123!`, TOTP
+    fijo `JBSWY3DPEHPK3PXP`) directamente vía `INSERT ... ON CONFLICT DO NOTHING`. Como el gate del wizard
+    es "¿hay 0 filas en `plataforma_admins`?", en cualquier VPS nuevo que corriera las migraciones el
+    wizard **nunca se mostraba** — quedaba una cuenta pública ya activa. Además, `totp.util.ts` aceptaba el
+    código `'123456'` como bypass total del 2FA **sin ningún gate de entorno**, activo también en
+    producción. Y `scratch/seed_superadmin_user.js` (script de dev trackeado) podía re-sembrar la misma
+    cuenta con un hash distinto (`ON CONFLICT DO UPDATE`) sin gate tampoco.
+  - **Corregido:** `INSERT` quitado de `0007_superadmin.sql` (con nota explicando por qué); nueva
+    `0021_eliminar_seed_superadmin_hardcodeado.sql` (idempotente, `DELETE ... WHERE email =
+    'superadmin@barberos.app'`, por email — no por hash exacto, porque la password en texto plano ya es
+    pública independientemente del salt vigente) para limpiar bases ya sembradas; `totp.util.ts` gatea el
+    código maestro `'123456'` a `NODE_ENV !== 'production'` (staging y producción corren con
+    `NODE_ENV=production`, ver `.env.staging.example`/`.env.production.example`); `seed_superadmin_user.js`
+    ahora aborta con `exit(1)` si `NODE_ENV === 'production'`. Aplicado a `volumetrix` local (`DELETE 1`,
+    la cuenta re-sembrada por el script de scratch existía con un hash distinto al de la migración
+    original) y verificado con `test:integration` completo (13/13 en verde, rebuild de `volumetrix_test`
+    desde cero confirma `DELETE 0` en una base fresca — la migración 0007 ya no siembra nada que limpiar).
+  - **Gaps reales que quedan** (no bloqueantes para un primer despliegue, pero pendientes): el gate de
+    `necesitaSetup` solo se consulta desde `login/page.tsx` y `setup/page.tsx` — navegar directo a
+    `/super-admin` (dashboard) sin sesión no redirige a `/setup` automáticamente, depende del fallo 401/403
+    de cada página; y el wizard crea el superadmin pero no encadena la creación del primer tenant (sigue
+    siendo un paso manual aparte vía `POST /super-admin/tenants`, `crearTenantManual`).
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 

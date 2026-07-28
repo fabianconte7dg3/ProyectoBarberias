@@ -85,14 +85,11 @@ GRANT EXECUTE ON FUNCTION get_platform_stats() TO app_user;
 REVOKE EXECUTE ON FUNCTION get_all_tenants_summary() FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION get_all_tenants_summary() TO app_user;
 
--- Insertar SuperAdmin Inicial ($2a$10$e8n... = SuperAdmin123!)
--- Secret cifrado estático de prueba para TOTP: 'JBSWY3DPEHPK3PXP'
-INSERT INTO plataforma_admins (email, password_hash, totp_secret_cifrado, totp_habilitado, activo)
-VALUES (
-  'superadmin@barberos.app',
-  '$2b$10$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeg6Lruj3vjPGga31lW', -- bcrypt("SuperAdmin123!")
-  '555e09f583bb72f5d72f990924bc24bf:d61bcf704db4f2e6900f07ef609ed4ae', -- secret enc
-  true,
-  true
-)
-ON CONFLICT (email) DO NOTHING;
+-- NOTA (2026-07-28): este archivo sembraba antes un SuperAdmin con credenciales hardcodeadas
+-- (superadmin@barberos.app / SuperAdmin123!, TOTP fijo) directamente en la migración. Eso
+-- neutralizaba el wizard de primer arranque (GET /super-admin/setup/status decide si mostrarlo
+-- contando filas de plataforma_admins) en cualquier instalación nueva: en cuanto corrían las
+-- migraciones, la tabla dejaba de estar vacía y el wizard nunca aparecía, dejando credenciales
+-- públicas ya activas en producción. El INSERT se quitó — el primer SuperAdmin ahora se crea
+-- exclusivamente vía el wizard (POST /super-admin/setup/completar). Para bases de datos que ya
+-- corrieron esta migración con el INSERT viejo, ver 0021_eliminar_seed_superadmin_hardcodeado.sql.

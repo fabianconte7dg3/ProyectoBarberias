@@ -13,6 +13,14 @@ function cifrarSecret(text) {
 }
 
 async function seedSuperAdminUser() {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('Bloqueado: este script siembra credenciales hardcodeadas y públicamente');
+    console.error('conocidas (superadmin@barberos.app / SuperAdmin123!). Nunca correrlo con');
+    console.error('NODE_ENV=production. El primer SuperAdmin real se crea vía el wizard');
+    console.error('(POST /super-admin/setup/completar), no con este script.');
+    process.exit(1);
+  }
+
   const client = new Client({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/barberos',
   });
