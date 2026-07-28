@@ -474,8 +474,12 @@ encontrado) en
     `/super-admin/setup` ("Instalación Inicial — Paso 1 de 3"); se restauró la tabla desde el backup y se
     confirmó que `/super-admin` vuelve a mostrar el login normal (no hace falta sesión activa para probar
     esto, el gate corre antes que cualquier chequeo de auth). `tsc --noEmit` limpio.
-  - **Gap que queda pendiente:** el wizard crea el superadmin pero no encadena la creación del primer
-    tenant (sigue siendo un paso manual aparte vía `POST /super-admin/tenants`, `crearTenantManual`).
+  - **Decisión (2026-07-28): el wizard NO encadena la creación del primer tenant, a propósito.**
+    SuperAdmin (dueño de la plataforma) y tenant (negocio cliente) son roles distintos — es normal y
+    esperado terminar el wizard con 0 tenants (recién instalado, sin clientes todavía). Crear el primer
+    negocio sigue siendo un paso manual aparte vía "Negocios" en el dashboard (`POST /super-admin/tenants`,
+    `crearTenantManual`, mismo flujo de Onboarding Asistido que se usa para cualquier negocio nuevo) — no
+    se considera un gap a resolver.
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 
