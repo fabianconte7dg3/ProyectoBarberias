@@ -94,7 +94,11 @@ services:
     build:
       context: ../apps/web
       args:
-        NEXT_PUBLIC_API_URL: https://api.volumetrixpa.com
+        # APP_DOMAIN viene de .env.production, resuelto por
+        # `docker compose --env-file .env.production build` (no del env_file
+        # de runtime del container, que no aplica a build args).
+        NEXT_PUBLIC_API_URL: https://api.${APP_DOMAIN}
+        NEXT_PUBLIC_ROOT_HOST: ${APP_DOMAIN}
     container_name: volumetrix_prod_web
     restart: unless-stopped
     depends_on:
@@ -114,6 +118,10 @@ services:
     image: caddy:2-alpine
     container_name: volumetrix_prod_caddy
     restart: unless-stopped
+    # Necesario para que Caddy resuelva {$APP_DOMAIN} dentro del Caddyfile
+    # (interpolacion en tiempo de ejecucion del container, no de build).
+    env_file:
+      - .env.production
     ports:
       - "80:80"
       - "443:443"

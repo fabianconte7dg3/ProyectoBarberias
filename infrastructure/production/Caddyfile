@@ -1,12 +1,13 @@
-# Caddyfile de produccion — Volumetrix (volumetrixpa.com)
+# Caddyfile de produccion — Volumetrix, dominio parametrizado via APP_DOMAIN
+# ({$APP_DOMAIN}, ver .env.production y docker-compose.production.yml).
 #
 # TLS: on-demand por subdominio (cada host emite su propio certificado
 # individual la primera vez que se ve, via HTTP-01), NO certificado
-# wildcard. Un wildcard real (*.volumetrixpa.com) requeriria DNS-01
+# wildcard. Un wildcard real (*.{$APP_DOMAIN}) requeriria DNS-01
 # challenge con credenciales de API de un proveedor DNS (Cloudflare,
 # Route53, etc.) que todavia no se ha elegido — queda documentado como
 # optimizacion posterior, no implementado aqui. On-demand TLS solo
-# necesita el registro DNS wildcard "*.volumetrixpa.com -> IP del
+# necesita el registro DNS wildcard "*.{$APP_DOMAIN} -> IP del
 # servidor" apuntado por el usuario, sin API keys de terceros.
 {
 	# Sin `ask`, on-demand TLS emitiria un certificado para CUALQUIER hostname
@@ -23,22 +24,22 @@
 # (app/super-admin/**), ambos servidos por el contenedor `web` tal cual
 # — proxy.ts no reescribe nada para estos hosts (ver RESERVED_SUBDOMAINS
 # y ROOT_HOSTS en apps/web/src/proxy.ts).
-volumetrixpa.com, www.volumetrixpa.com {
+{$APP_DOMAIN}, www.{$APP_DOMAIN} {
 	reverse_proxy web:3000
 }
 
 # Backend NestJS — el navegador llama directo a este host
 # (NEXT_PUBLIC_API_URL, ver apps/web/src/lib/api.ts), no hay proxy interno
 # de Next.js de por medio.
-api.volumetrixpa.com {
+api.{$APP_DOMAIN} {
 	reverse_proxy api:4000
 }
 
-# Un subdominio por tenant (barberia-jose.volumetrixpa.com, ...). proxy.ts
+# Un subdominio por tenant (barberia-jose.{$APP_DOMAIN}, ...). proxy.ts
 # en el contenedor `web` reescribe internamente a /[tenantSlug]/... segun
 # el primer label del Host — Caddy no necesita saber nada de tenants,
 # solo enrutar cualquier host no reservado al mismo contenedor `web`.
-*.volumetrixpa.com {
+*.{$APP_DOMAIN} {
 	tls {
 		on_demand
 	}

@@ -286,6 +286,88 @@ plataforma recién instalada, sin ningún superadmin creado.
 - **Monitoreo**: `GET /health` (punto 4) es el único requisito técnico común a cualquier proveedor
   externo (UptimeRobot, Better Uptime, etc.) — no se eligió proveedor ni se configuró ninguna alerta.
 
+## 9. Deploy parametrizado por dominio + script `deploy.sh` (2026-07-27)
+
+**Motivación**: después de desplegar el staging real (§8) a mano — SSH, resize de disco, `.env.staging`
+armado a mano, secretos generados uno por uno, `docker compose up`, aplicar migraciones — surgió la
+pregunta de si ese proceso se puede agilizar para compartir el proyecto con un tercero que tiene su
+propio dominio real. La respuesta: sí, la mayor parte era mecánica y repetible; lo único no automatizable
+es lo que depende del proveedor de DNS/nube de cada quien (no del servidor), así que se separó
+explícitamente qué automatiza el script y qué instrucciones imprime para que el usuario las haga a mano.
+
+**Bug latente encontrado al generalizar**: `docker-compose.production.yml` tenía
+`NEXT_PUBLIC_API_URL: https://api.volumetrixpa.com` **hardcodeado** como build arg (a diferencia de
+`docker-compose.staging.yml`, que ya usaba `${APP_DOMAIN}` desde §8) — nadie lo había notado porque nunca
+se intentó un deploy de producción real con otro dominio. Mismo problema en 3 lugares más:
+`apps/api/src/main.ts` (`PROD_ORIGIN_REGEX` hardcodeaba `volumetrixpa.com` en el regex de CORS),
+`apps/api/src/tenants/tenants.service.ts` (`HOSTS_FIJOS`, la lista de hosts válidos para el `ask` de
+on-demand TLS) e `infrastructure/production/Caddyfile` (los 3 bloques de host hardcodeaban
+`volumetrixpa.com`). Los cuatro se parametrizaron con `APP_DOMAIN` (env var ya existente en
+`.env.production.example`/`.env.staging.example`, ahora efectivamente usada en todos los puntos que
+antes asumían el dominio de producción real de Volumetrix):
+
+- `main.ts`: el regex de CORS se construye en runtime desde `process.env.APP_DOMAIN` (default
+  `volumetrixpa.com` para no romper el deploy real existente si algún día corre sin la env var seteada),
+  escapando los metacaracteres del dominio antes de interpolarlo en el `RegExp`.
+- `tenants.service.ts`: `HOSTS_FIJOS` pasó de `Set` literal a un `Set` calculado una vez desde
+  `process.env.APP_DOMAIN` (mismo default).
+- `production/Caddyfile`: los 3 bloques de host (`volumetrixpa.com, www.volumetrixpa.com` /
+  `api.volumetrixpa.com` / `*.volumetrixpa.com`) pasaron a `{$APP_DOMAIN}` (interpolación nativa de
+  Caddy, mismo patrón que ya se usaba en `staging/Caddyfile` desde §8).
+- `docker-compose.production.yml`: `NEXT_PUBLIC_API_URL` pasó a `https://api.${APP_DOMAIN}`, se agregó
+  `NEXT_PUBLIC_ROOT_HOST: ${APP_DOMAIN}` como build arg de `web` (antes solo lo tenía `staging`) y se
+  agregó `env_file: - .env.production` al servicio `caddy` (necesario para que `{$APP_DOMAIN}` se
+  resuelva en runtime dentro del container — mismo fix que ya tenía `staging` desde §8).
+
+No se tocó `proxy.ts`/`tenant-url.ts`: ya leían `NEXT_PUBLIC_ROOT_HOST` desde §8 y ese mecanismo
+generaliza sin cambios a un dominio de producción real con DNS wildcard — `buildTenantPublicUrl` solo se
+llama desde dentro del panel de admin (`AdminSidebar`, `InviteEmpleadoModal`), nunca parado en el dominio
+raíz, así que la rama de URL "por path" que agrega `NEXT_PUBLIC_ROOT_HOST` (pensada para el staging sin
+wildcard DNS de §8) nunca se dispara en un deploy de producción con subdominio real — no había ambigüedad
+real que resolver ahí, solo en los 4 puntos de arriba.
+
+**`infrastructure/scripts/deploy.sh`** (nuevo): codifica la secuencia probada de §8 en un script
+idempotente. Uso: `./deploy.sh <production|staging> <dominio>`, corrido dentro del servidor destino con
+el repo ya clonado. Automatiza:
+1. Instalar Docker (script oficial `get.docker.com`) si no está — se salta si ya existe.
+2. Generar `.env.<entorno>` desde el `.example` correspondiente **solo si no existe ya** (no pisa
+   secretos en redeploys), con `POSTGRES_PASSWORD`/`APP_USER_PASSWORD`/`JWT_SECRET`/`APP_SECRET`/
+   `MFA_SECRET_KEY` generados con `openssl rand -hex`, `APP_DOMAIN`/`WEB_URL`/`DATABASE_URL` completados
+   con el dominio pasado por argumento, y el archivo con `chmod 600`.
+3. Para `staging`: generar `docker-compose.staging.override.yml` (remapea Caddy a 80/443 reales) si no
+   existe — el compose base expone 8080/8443 a propósito para poder convivir con un `production` en la
+   misma máquina, pero un staging standalone sí necesita 80/443 reales para que Let's Encrypt pueda
+   validar el challenge HTTP-01 (mismo override que se armó a mano en §8).
+4. `docker compose build` + `up -d`.
+5. Esperar a que Postgres esté `healthy` (polling con timeout).
+6. Aplicar migraciones vía `apply-migrations.sh` **solo si la base está vacía** (cuenta filas de
+   `information_schema.tables`) — en un redeploy sobre una base ya poblada, se omite.
+7. Imprimir un resumen con la IP pública detectada (`curl ifconfig.me`) y las 2 instrucciones que el
+   script **no puede** ejecutar por sí mismo: qué registros DNS crear (root/www/api/wildcard en
+   producción, un solo host en staging) y que hay que abrir los puertos 80/443 en el firewall/security
+   group — más los comandos `curl` para verificar una vez hecho eso, y la URL del wizard de instalación
+   inicial del SuperAdmin para el primer login.
+
+**Alcance deliberadamente fuera de este script**: no gestiona DNS ni firewall por API (requeriría
+credenciales de un proveedor específico — Route53, Cloudflare, el panel de cada nube — que varían por
+usuario, exactamente el tipo de decisión externa que esta fase viene dejando explícita en vez de
+adivinar). No re-genera secretos en un redeploy (evitaría invalidar sesiones/tokens existentes sin
+querer). No corre en la instancia EC2 de staging ya desplegada en §8 — ese servidor ya tiene su
+`.env.staging` y su `docker-compose.staging.override.yml` reales armados a mano; el script queda
+disponible para el *próximo* deploy (staging o producción, propio o de un tercero), no se aplicó
+retroactivamente sobre el que ya está corriendo.
+
+### Verificación
+
+- `npx tsc --noEmit` en `apps/api` — limpio tras los cambios en `main.ts`/`tenants.service.ts`.
+- `bash -n deploy.sh` — sintaxis válida.
+- `docker compose --env-file .env.production -f docker-compose.production.yml config` con un
+  `.env.production` de prueba (dominio ficticio `midominio-prueba.com`, generado y borrado solo para la
+  verificación, nunca commiteado) → `NEXT_PUBLIC_API_URL=https://api.midominio-prueba.com` y
+  `NEXT_PUBLIC_ROOT_HOST=midominio-prueba.com` resueltos correctamente.
+- `caddy validate` (imagen `caddy:2-alpine`, `APP_DOMAIN=midominio-prueba.com` como env var) contra
+  `production/Caddyfile` → `Valid configuration`.
+
 ## Verificación consolidada
 
 | Pieza | Cómo se verificó |
@@ -298,4 +380,5 @@ plataforma recién instalada, sin ningún superadmin creado.
 | PgBouncer | `npm run test:integration:pgbouncer` → 13/13 tests reales en verde |
 | CI | Pipeline reproducido a mano en local antes de commitear |
 | Staging/backup | `docker compose config` válido; script de backup verificado contra Postgres de dev |
+| Deploy parametrizado (§9) | `tsc --noEmit`; `docker compose config` con dominio de prueba; `caddy validate` del Caddyfile parametrizado; `bash -n deploy.sh` |
 | `tsc --noEmit` | Limpio en `apps/api` y `apps/web` después de cada cambio |

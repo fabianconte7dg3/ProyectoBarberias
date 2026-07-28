@@ -42,13 +42,14 @@ export class TenantsService {
 
   /**
    * Hosts fijos de la plataforma (dominio raíz, www, api) — siempre válidos
-   * para emisión de certificado, no representan un tenant.
+   * para emisión de certificado, no representan un tenant. Derivados de
+   * APP_DOMAIN (.env.production) — default volumetrixpa.com para no romper
+   * el deploy real existente si alguna vez corre sin la env var seteada.
    */
-  private static readonly HOSTS_FIJOS = new Set([
-    'volumetrixpa.com',
-    'www.volumetrixpa.com',
-    'api.volumetrixpa.com',
-  ]);
+  private static readonly HOSTS_FIJOS = (() => {
+    const domain = process.env.APP_DOMAIN ?? 'volumetrixpa.com';
+    return new Set([domain, `www.${domain}`, `api.${domain}`]);
+  })();
 
   /**
    * Endpoint `ask` de Caddy on-demand TLS (Fase 4 — infraestructura/production/Caddyfile).

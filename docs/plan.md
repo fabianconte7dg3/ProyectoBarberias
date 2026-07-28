@@ -378,6 +378,17 @@ encontrado) en
       hallazgo de seguridad más abajo) redirigiendo correctamente en una instalación 100% nueva.
       Producción real (dominio `volumetrixpa.com`, ruteo por subdominio con wildcard) sigue sin
       desplegarse — este pase fue staging únicamente, para validar el camino de deploy.
+- [x] Deploy agilizado y parametrizado por dominio — **`infrastructure/scripts/deploy.sh`
+      (2026-07-27)**: instala Docker si falta, genera `.env.<entorno>` con secretos aleatorios (una sola
+      vez, no pisa redeploys), build + up de docker compose, aplica migraciones solo si la DB está vacía,
+      e imprime las 2 instrucciones manuales que no puede automatizar (registros DNS, puertos de
+      firewall). Motivado por querer compartir el proyecto con un tercero con dominio propio sin repetir
+      a mano toda la secuencia de §8. En el camino se encontró y corrigió un dominio hardcodeado
+      (`volumetrixpa.com`) en 4 lugares que nunca se habían probado con otro dominio:
+      `docker-compose.production.yml` (`NEXT_PUBLIC_API_URL`), `apps/api/src/main.ts` (regex de CORS),
+      `apps/api/src/tenants/tenants.service.ts` (`HOSTS_FIJOS` del `ask` de on-demand TLS) e
+      `infrastructure/production/Caddyfile` — los 4 ahora leen `APP_DOMAIN`. Detalle completo en
+      `Plan_Fase4_Infraestructura.md` §9.
 - [x] CI/CD con GitHub Actions — `tsc --noEmit` + tests en cada PR y push a `master`
       (`.github/workflows/ci.yml`). `npm test` de `apps/api` queda fuera del workflow a propósito
       (son unit tests sin DB — `test:integration`, que sí corre, es la cobertura real de RLS/
