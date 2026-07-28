@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, Store, LogOut, BarChart3 } from 'lucide-react';
@@ -16,10 +16,49 @@ export default function SuperAdminLayout({ children }: { children: ReactNode }) 
   const router = useRouter();
   const isAuthScreen = pathname === '/super-admin/login' || pathname === '/super-admin/setup';
 
+  // Gate del wizard de primer arranque: antes, /super-admin/setup/status solo se consultaba
+  // desde login/page.tsx y setup/page.tsx — navegar directo a /super-admin (o cualquier ruta
+  // bajo el shell) con la plataforma sin ningún SuperAdmin creado no redirigía a /setup, quedaba
+  // a merced del fallo 401/403 de cada fetch individual de cada página. Se chequea una sola vez
+  // por montaje (guard con useRef, mismo patrón que useAdminAuth.ts) para no repetir la consulta
+  // en cada navegación dentro del shell.
+  const [checkingSetup, setCheckingSetup] = useState(true);
+  const setupChecked = useRef(false);
+
+  useEffect(() => {
+    if (isAuthScreen) {
+      setCheckingSetup(false);
+      return;
+    }
+    if (setupChecked.current) return;
+    setupChecked.current = true;
+
+    fetchApi<{ necesitaSetup: boolean }>('/super-admin/setup/status')
+      .then((res) => {
+        if (res.necesitaSetup) {
+          router.push('/super-admin/setup');
+        } else {
+          setCheckingSetup(false);
+        }
+      })
+      .catch((err) => {
+        console.error('Error verificando status de setup:', err);
+        setCheckingSetup(false);
+      });
+  }, [isAuthScreen, router]);
+
   if (isAuthScreen) {
     return (
       <div data-surface="executive" className="min-h-screen bg-background text-foreground font-sans">
         {children}
+      </div>
+    );
+  }
+
+  if (checkingSetup) {
+    return (
+      <div data-surface="executive" className="min-h-screen bg-background flex items-center justify-center text-xs font-bold text-muted-foreground">
+        Cargando...
       </div>
     );
   }

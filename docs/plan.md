@@ -465,11 +465,17 @@ encontrado) en
     la cuenta re-sembrada por el script de scratch existía con un hash distinto al de la migración
     original) y verificado con `test:integration` completo (13/13 en verde, rebuild de `volumetrix_test`
     desde cero confirma `DELETE 0` en una base fresca — la migración 0007 ya no siembra nada que limpiar).
-  - **Gaps reales que quedan** (no bloqueantes para un primer despliegue, pero pendientes): el gate de
-    `necesitaSetup` solo se consulta desde `login/page.tsx` y `setup/page.tsx` — navegar directo a
-    `/super-admin` (dashboard) sin sesión no redirige a `/setup` automáticamente, depende del fallo 401/403
-    de cada página; y el wizard crea el superadmin pero no encadena la creación del primer tenant (sigue
-    siendo un paso manual aparte vía `POST /super-admin/tenants`, `crearTenantManual`).
+  - **Gap "el gate solo cubre login/setup" — corregido (2026-07-28):** el chequeo de `setup/status` se
+    movió de `login/page.tsx`/`setup/page.tsx` a `super-admin/layout.tsx` (envuelve todas las rutas bajo
+    `/super-admin/**`), con guard de un solo chequeo por montaje (`useRef`, mismo patrón que
+    `useAdminAuth.ts`) y un estado `checkingSetup` que evita el flash del dashboard antes de saber si hace
+    falta redirigir. Verificado con datos reales: se vació `plataforma_admins` en `volumetrix` local
+    (backup previo vía `\copy ... TO csv`), se navegó directo a `/super-admin` y redirigió correctamente a
+    `/super-admin/setup` ("Instalación Inicial — Paso 1 de 3"); se restauró la tabla desde el backup y se
+    confirmó que `/super-admin` vuelve a mostrar el login normal (no hace falta sesión activa para probar
+    esto, el gate corre antes que cualquier chequeo de auth). `tsc --noEmit` limpio.
+  - **Gap que queda pendiente:** el wizard crea el superadmin pero no encadena la creación del primer
+    tenant (sigue siendo un paso manual aparte vía `POST /super-admin/tenants`, `crearTenantManual`).
 
 ## Fase 5 — Negocio Multi-Industria 🔲 Pendiente
 
