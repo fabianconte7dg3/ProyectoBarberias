@@ -10,3 +10,10 @@ build/
 !.env.*.example
 .DS_Store
 *.log
+
+# Estado local de Obsidian (docs/ es tambien un vault) - layout de paneles/pestanas por maquina,
+# no debe versionarse. app.json/graph.json/core-plugins.json SI se versionan (config compartida del
+# vault, ver CLAUDE.md).
+docs/.obsidian/workspace.json
+docs/.obsidian/workspace-mobile.json
+docs/.obsidian/plugins/

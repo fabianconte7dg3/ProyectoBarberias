@@ -1,0 +1,23 @@
+{
+  "file-explorer": true,
+  "global-search": true,
+  "switcher": true,
+  "graph": true,
+  "backlink": true,
+  "outgoing-link": true,
+  "outline": true,
+  "word-count": true,
+  "page-preview": true,
+  "note-composer": true,
+  "command-palette": true,
+  "markdown-importer": false,
+  "zk-prefixer": false,
+  "random-note": false,
+  "publish": false,
+  "sync": false,
+  "canvas": true,
+  "starred": true,
+  "tag-pane": true,
+  "properties": true,
+  "file-recovery": true
+}

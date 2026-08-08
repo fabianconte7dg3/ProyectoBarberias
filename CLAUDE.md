@@ -181,3 +181,29 @@ Check `docs/02-arquitectura-y-db/` before making schema or RLS changes (in parti
 designs already exist there; don't redesign from scratch without checking first), and
 `docs/06-referencias-tecnicas/Credenciales_QA_Local.md` for a dedicated QA tenant/credentials to use for
 manual testing instead of touching real dev accounts.
+
+### `docs/` is also an Obsidian vault — keep it connected, not just updated
+
+`docs/.obsidian/` (config committed: `app.json`, `graph.json`, `core-plugins.json` — `workspace.json`/
+`workspace-mobile.json` are gitignored, per-machine panel layout) makes `docs/` a real Obsidian vault, so
+the graph/backlinks view is only useful if notes actually reference each other. Rules for any session that
+touches `docs/`:
+
+1. **Review it for context first.** Before non-trivial work, check whether a relevant doc already exists
+   (`docs/README.md` index, or grep) rather than re-deriving design decisions from scratch — this was
+   already the convention (see Workflow above), the vault just makes it navigable via backlinks/graph too.
+2. **Never leave a new doc orphaned.** Every new file under `docs/` must get at least one inbound link:
+   add it to `docs/README.md`'s index (correct numbered category) **and** link it from the specific
+   existing doc it's most related to (e.g. a new design doc gets linked from the `docs/plan.md` phase that
+   implements it, not just from the README). A doc reachable only from README is a weak, hub-only graph —
+   real topical cross-links are what make the graph (and Claude's own future context-gathering) useful.
+3. **Keep standard relative markdown links** (`[text](../folder/Doc.md)`), never `[[wikilinks]]` — this
+   repo's docs are read on GitHub as much as in Obsidian, and wikilinks render as literal brackets there.
+   Obsidian's graph, backlinks, and rename-safety (`alwaysUpdateLinks` is on) all work fine with regular
+   relative links; there's no functional reason to switch syntax.
+4. **When mentioning another doc by name in prose, link it** (`` `matriz-permisos-y-bloqueos.md` `` →
+   `[`matriz-permisos-y-bloqueos.md`](./06-referencias-tecnicas/matriz-permisos-y-bloqueos.md)`) instead of
+   a bare filename in backticks — a bare mention reads fine to a human but is invisible to the graph.
+5. **Before ending a session that added/moved docs**, a quick orphan check is cheap and catches this
+   class of mistake: a new file under `docs/**/*.md` with zero other files linking to it is a graph dead
+   end, fix it before finishing.

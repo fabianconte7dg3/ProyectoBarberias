@@ -62,7 +62,7 @@ docs/
 - [Multi-Industria — Fase 4: Combos, Citas Grupales y Templates](./02-arquitectura-y-db/Plan_Multi_Industria_Fase4_CombosGruposTemplates.md) — Combos con comisión itemizada, citas de acompañante, widgets configurables por vertical. ✅ Implementado y verificado (2026-07-25).
 - [Sistema de Agenda — Anti-abuso, Confirmación y Migración](./02-arquitectura-y-db/Plan_Sistema_Agenda_AntiAbuso_Confirmacion.md) — Calendario en tiempo real (SSE), confirmación WhatsApp+web, enforcement de bloqueo, historial de inasistencias, importación de citas históricas. ✅ Implementado y verificado (2026-07-25).
 - [Fase 3: Suite de Tests Automatizados Real](./02-arquitectura-y-db/Plan_Fase3_Suite_Tests.md) — DB de test dedicada, integration tests reales de RLS/idempotencia/comisiones, Vitest en frontend. ✅ Implementado (2026-07-25, alcance acordado — ver plan.md).
-- [Fase 4: Infraestructura de Producción](./02-arquitectura-y-db/Plan_Fase4_Infraestructura.md) — Subdominio por tenant (`proxy.ts`), CORS/Caddy de producción, PgBouncer verificado empíricamente, CI/CD. 🔶 Parcial (2026-07-26, staging/backups/monitoreo reales quedan pendientes de decisión externa — ver plan.md).
+- [Fase 4: Infraestructura de Producción](./02-arquitectura-y-db/Plan_Fase4_Infraestructura.md) — Subdominio por tenant (`proxy.ts`), CORS/Caddy de producción, PgBouncer verificado empíricamente, CI/CD, staging desplegado y verificado en AWS real (2026-07-28). 🔶 Parcial — backups automáticos con PITR y monitoreo de disponibilidad siguen pendientes, ver [`plan.md`](./plan.md) Fase 4.
 
 ### 📍 [03. Integraciones Externas](./03-integraciones/)
 - [Integración Yappy API](./03-integraciones/Integracion_Yappy_API.md) — Cobros digitales y webhooks HMAC. ✅ Implementado.
@@ -79,11 +79,13 @@ docs/
 - [Perfil Operativo & Flujo](./05-diseno-y-ux/Perfil_Operativo_Flujo.md) — Experiencia operativa del staff y del cliente.
 - [Estructura del CRM](./05-diseno-y-ux/Estructura_CRM.md) — Cómo funciona el CRM silencioso en la práctica.
 - [Pantallas del MVP](./05-diseno-y-ux/Pantallas_Figma.md) — Las 9 pantallas del MVP y la identidad visual (paleta, tipografía) — ya construidas.
-- [Rediseño Visual — Google Stitch (PRD + Design System)](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) — 24 pantallas exportadas + 2 sistemas de diseño (tenant / Super Admin) + impersonation de Super Admin y vista "Mi Silla". 🔶 Priorizado (2026-07-26) — desglose ejecutable en `plan.md` Fase 6, ejecución no iniciada.
+- [Rediseño Visual — Google Stitch (PRD + Design System)](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md) — 24 pantallas exportadas + 2 sistemas de diseño (tenant / Super Admin) + impersonation de Super Admin y vista "Mi Silla". ✅ Implementado — desglose ejecutable en [`plan.md`](./plan.md) Fase 6 y sub-fases 6-B a 6-J.
 
 ### 📍 [06. Referencias Técnicas](./06-referencias-tecnicas/)
 - [Arquitectura de Datos — Guía de Setup](./06-referencias-tecnicas/README_Arquitectura_Datos.md) — Cómo dejar el patrón RLS/Drizzle funcionando en un entorno nuevo (corregido: ya no instruye usar `drizzle-kit`, prohibido en este proyecto).
 - [Credenciales de Prueba (QA Local)](./06-referencias-tecnicas/Credenciales_QA_Local.md) — Tenant y usuarios de prueba dedicados con credenciales fijas, para no tocar cuentas de dev reales.
+- [Matriz de Permisos, Roles y Estados de Bloqueo](./06-referencias-tecnicas/matriz-permisos-y-bloqueos.md) — RBAC, métodos de pago y cumplimiento regulatorio, y los kill-switches (`killSwitchActivo`/`bloqueadoPorPlataforma`) — ver [`plan.md`](./plan.md) Fase 2.4 para el enforcement real de backend que le faltaba.
+- [Patrón de Autenticación para Páginas del Panel Admin](./06-referencias-tecnicas/patron-auth-paginas-admin.md) — Regla de oro `useAdminAuth` y el bug de carrera de hidratación de Zustand que previene (ver `plan.md` Fase 0).
 - [Políticas SQL RLS (0001_rls_policies.sql)](./06-referencias-tecnicas/0001_rls_policies.sql) — Referencia del script de políticas.
 
 ---
@@ -93,12 +95,12 @@ docs/
 Documentos superados, conservados como registro histórico — cada uno tiene un banner explicando qué lo
 reemplaza:
 
-- `Idea_SaaS_Barberias.md`, `SaaS_Barberias_Panama.md` — ideación temprana (recomendaban Supabase, nunca usado).
-- `Modelo_Base_Datos_General.md`, `Motor_Base_Datos.md` — narrativas de justificación de RLS, duplicadas entre sí, superadas por `CLAUDE.md`.
-- `Infraestructura_Hibrida.md` — narrativa de infraestructura, superada por `Escalabilidad_y_Crecimiento.md`.
-- `Wireframes_UI.md` — mockups con imágenes rotas (ruta local de otra herramienta), pantallas ya construidas.
-- `Checklist_Desarrollo_SaaS.md`, `Checklist_Multi_Industria_y_Produccion.md` — roadmaps anteriores, consolidados en `plan.md`.
+- [`Idea_SaaS_Barberias.md`](./archives/Idea_SaaS_Barberias.md), [`SaaS_Barberias_Panama.md`](./archives/SaaS_Barberias_Panama.md) — ideación temprana (recomendaban Supabase, nunca usado).
+- [`Modelo_Base_Datos_General.md`](./archives/Modelo_Base_Datos_General.md), [`Motor_Base_Datos.md`](./archives/Motor_Base_Datos.md) — narrativas de justificación de RLS, duplicadas entre sí, superadas por [`CLAUDE.md`](../CLAUDE.md).
+- [`Infraestructura_Hibrida.md`](./archives/Infraestructura_Hibrida.md) — narrativa de infraestructura, superada por [`Escalabilidad_y_Crecimiento.md`](./02-arquitectura-y-db/Escalabilidad_y_Crecimiento.md).
+- [`Wireframes_UI.md`](./archives/Wireframes_UI.md) — mockups con imágenes rotas (ruta local de otra herramienta), pantallas ya construidas.
+- [`Checklist_Desarrollo_SaaS.md`](./archives/Checklist_Desarrollo_SaaS.md), [`Checklist_Multi_Industria_y_Produccion.md`](./archives/Checklist_Multi_Industria_y_Produccion.md) — roadmaps anteriores, consolidados en [`plan.md`](./plan.md).
 
 ---
 
-*Última actualización: 2026-07-24 — Proyecto Barberías SaaS*
+*Última actualización: 2026-08-08 — Proyecto Barberías SaaS*

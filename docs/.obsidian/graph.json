@@ -1,0 +1,31 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:plan.md OR path:spec.md OR path:README.md", "color": { "a": 1, "rgb": 15158332 } },
+    { "query": "path:01-vision-y-plan", "color": { "a": 1, "rgb": 16098851 } },
+    { "query": "path:02-arquitectura-y-db", "color": { "a": 1, "rgb": 4886745 } },
+    { "query": "path:03-integraciones", "color": { "a": 1, "rgb": 8311585 } },
+    { "query": "path:04-hitos-y-changelogs", "color": { "a": 1, "rgb": 9442302 } },
+    { "query": "path:05-diseno-y-ux", "color": { "a": 1, "rgb": 13631562 } },
+    { "query": "path:06-referencias-tecnicas", "color": { "a": 1, "rgb": 26742 } },
+    { "query": "path:archives", "color": { "a": 1, "rgb": 8947848 } }
+  ],
+  "collapse-display": true,
+  "showArrow": false,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": false,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 200,
+  "scale": 1,
+  "close": false
+}

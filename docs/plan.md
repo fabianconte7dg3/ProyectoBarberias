@@ -15,7 +15,9 @@ Ya ejecutado y verificado en sesiones anteriores. Detalle completo en cada doc e
       [`Plan_Multi_Industria_Fase2_Rename.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2_Rename.md)
 - [x] Terminología dinámica real en Portal de Reserva + Panel de Administración —
       [`Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md`](./02-arquitectura-y-db/Plan_Multi_Industria_Fase2D_TerminologiaDinamica.md)
-- [x] Fix: sesión de admin/staff se cerraba sola por carrera de hidratación de Zustand
+- [x] Fix: sesión de admin/staff se cerraba sola por carrera de hidratación de Zustand — ver
+      [`patron-auth-paginas-admin.md`](./06-referencias-tecnicas/patron-auth-paginas-admin.md) para el
+      diagnóstico completo y la regla de oro (`useAdminAuth`) que lo previene hacia adelante
 - [x] `node_modules`/`dist`/`.env` sacados del control de versiones (47.890 → 329 archivos trackeados) —
       [`Auditoria_Metodologia_Desarrollo_IA.md`](./01-vision-y-plan/Auditoria_Metodologia_Desarrollo_IA.md)
 - [x] Convención de segundo revisor + reglas de commits documentadas en `.agents/AGENTS.md`
@@ -250,7 +252,7 @@ cobro, comisión, confidencialidad de notas clínicas — más preciso que click
     `@Public()` (`/citas/publica`, `/clientes/publico`, etc., que resuelven el tenant por
     `x-tenant-slug` dentro del propio controller). Resultado: la Pausa de Auto-Servicio
     (`killSwitchActivo`) **nunca bloqueaba nada** en la Reserva Pública Web pese a estar documentado como
-    "🛑 PAUSADO" en `matriz-permisos-y-bloqueos.md` §2 — no era solo que faltara la UI, la propia
+    "🛑 PAUSADO" en [`matriz-permisos-y-bloqueos.md`](./06-referencias-tecnicas/matriz-permisos-y-bloqueos.md) §2 — no era solo que faltara la UI, la propia
     enforcement de backend no existía para ese camino. Corregido: el guard ahora resuelve el tenant por
     slug como fallback. Verificado con `curl`: `POST /citas/publica` con `killSwitchActivo=true` → `503`.
   - De paso se agregó el chequeo de `bloqueadoPorPlataforma` (bloqueo más severo, a nivel SuperAdmin) al

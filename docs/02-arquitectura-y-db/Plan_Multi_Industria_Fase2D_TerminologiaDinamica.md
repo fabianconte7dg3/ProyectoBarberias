@@ -90,7 +90,8 @@ Solo en el Portal de Reserva público (decisión de alcance, ver sección 5):
 ## 5. Explícitamente diferido
 
 - **Banner de "Reserva Pausada"** en el portal público cuando `killSwitchActivo`/`estado` no es
-  `activo` — ya documentado como funcionalidad esperada en `matriz-permisos-y-bloqueos.md` pero nunca
+  `activo` — ya documentado como funcionalidad esperada en
+  [`matriz-permisos-y-bloqueos.md`](../06-referencias-tecnicas/matriz-permisos-y-bloqueos.md) pero nunca
   implementada en el frontend. El nuevo endpoint `/tenants/publico/:slug` podría exponer ese estado en
   el futuro, pero no se agregó ahora para no mezclar features.
 - **Badge de rol crudo en el selector de perfil** (`ProfileSelector.tsx`) sigue mostrando el valor

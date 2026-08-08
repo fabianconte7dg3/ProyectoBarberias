@@ -41,7 +41,9 @@ funcional y desplegable.
 - [ ] Definir el mecanismo de configuración de campos por industria — ¿JSON schema simple en `barberias`, o tabla dedicada de campos personalizados?
 - [ ] Conectar `citas.notas` al flujo real de agendar/cobrar (hoy tampoco tiene wiring)
 - [ ] Piloto de un vertical no-barbería de punta a punta: tenant real de veterinaria, agendar, cobrar, ver reportes con datos reales — no solo probar que el texto cambia
-- [ ] Banner de "Reserva Pausada" en el portal público durante kill-switch (documentado en `matriz-permisos-y-bloqueos.md`, nunca construido)
+- [ ] Banner de "Reserva Pausada" en el portal público durante kill-switch (documentado en
+      [`matriz-permisos-y-bloqueos.md`](../06-referencias-tecnicas/matriz-permisos-y-bloqueos.md), nunca
+      construido — implementado después en la Fase 2.4, ver [`plan.md`](../plan.md))
 - [ ] Decidir si renombrar `transacciones.comisionBarbero`/`propinaBarbero` — columnas append-only de un libro fiscal, requieren revisión dedicada aparte (excluido a propósito de la Fase 2)
 
 ## Fase 4: Calidad y Mantenimiento 🔲 Pendiente
