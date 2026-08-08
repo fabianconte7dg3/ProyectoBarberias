@@ -48,7 +48,7 @@ export function ProfileSelector({ staff, onSelect }: ProfileSelectorProps) {
             <span className="font-bold text-sm sm:text-base text-card-foreground group-hover:text-primary text-center line-clamp-1">
               {member.nombreCompleto}
             </span>
-            <span className="text-[11px] uppercase font-bold text-muted-foreground mt-1 px-2 py-0.5 rounded bg-secondary">
+            <span className="text-[11px] uppercase font-bold text-secondary-foreground mt-1 px-2 py-0.5 rounded bg-secondary">
               {etiquetaRol(member.rol)}
             </span>
           </button>

@@ -329,7 +329,7 @@ export default function AdminServiciosPage() {
                         <Sparkles size={18} />
                       </div>
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
-                        s.activo ? 'bg-emerald-500/10 text-emerald-600' : 'bg-secondary text-muted-foreground'
+                        s.activo ? 'bg-emerald-500/10 text-emerald-600' : 'bg-secondary text-secondary-foreground'
                       }`}>
                         {s.activo ? 'Activo' : 'Inactivo'}
                       </span>

@@ -59,9 +59,9 @@ const ESTADO_LABELS: Record<string, { label: string; className: string }> = {
   programada: { label: 'Pendiente', className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
   en_curso: { label: 'En Sillón', className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
   completada: { label: 'Completada', className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
-  cancelada: { label: 'Cancelada', className: 'bg-secondary text-muted-foreground border-border' },
+  cancelada: { label: 'Cancelada', className: 'bg-secondary text-secondary-foreground border-border' },
   ausente_strike: { label: 'Ausente (Strike)', className: 'bg-rose-500/10 text-rose-600 border-rose-500/20' },
-  revision_manual: { label: 'Revisión Manual', className: 'bg-secondary text-muted-foreground border-border' },
+  revision_manual: { label: 'Revisión Manual', className: 'bg-secondary text-secondary-foreground border-border' },
 };
 
 type Tab = 'resumen' | 'historial' | 'pacientes' | 'notas';
@@ -355,7 +355,7 @@ export default function PerfilClientePage() {
             className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
               cliente.aceptaMarketing
                 ? 'bg-secondary/10 text-secondary border-secondary/20 hover:bg-secondary/20'
-                : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                : 'bg-secondary text-secondary-foreground border-border hover:bg-secondary/80'
             }`}
             title="Haz clic para cambiar permiso Ley 81"
           >
@@ -366,7 +366,7 @@ export default function PerfilClientePage() {
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition-colors ${
               cliente.bloqueado
                 ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20'
-                : 'bg-secondary hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 border-border'
+                : 'bg-secondary hover:bg-rose-500/10 text-secondary-foreground hover:text-rose-500 border-border'
             }`}
           >
             <Ban size={14} />
@@ -650,7 +650,7 @@ export default function PerfilClientePage() {
                             <button
                               type="button"
                               onClick={() => handleVerHistorialClinico(p.id)}
-                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
+                              className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground transition-colors"
                               title="Ver historial clínico (metadata, sin contenido)"
                             >
                               <FileClock size={14} />

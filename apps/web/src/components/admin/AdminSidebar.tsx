@@ -158,7 +158,7 @@ export function AdminSidebar() {
         <span className="text-base font-extrabold tracking-tight text-foreground">Volumetrix</span>
         <button
           onClick={() => setMobileOpen(true)}
-          className="p-2 text-muted-foreground hover:text-foreground bg-secondary rounded-xl border border-border"
+          className="p-2 text-secondary-foreground bg-secondary rounded-xl border border-border"
           title="Abrir menú"
         >
           <Menu size={20} />
@@ -174,7 +174,7 @@ export function AdminSidebar() {
               {brand}
               <button
                 onClick={() => setMobileOpen(false)}
-                className="mr-3 p-2 text-muted-foreground hover:text-foreground bg-secondary rounded-xl border border-border shrink-0"
+                className="mr-3 p-2 text-secondary-foreground bg-secondary rounded-xl border border-border shrink-0"
                 title="Cerrar menú"
               >
                 <X size={18} />

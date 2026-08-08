@@ -27,7 +27,7 @@ export function BarberSelection({ empleados, selectedId, onSelect }: Props) {
           aria-pressed={selectedId === null}
         >
           <div className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center border-2 ${
-            selectedId === null ? 'border-primary text-primary bg-card' : 'border-border text-muted-foreground bg-secondary'
+            selectedId === null ? 'border-primary text-primary bg-card' : 'border-border text-secondary-foreground bg-secondary'
           }`}>
             <UserCircle2 size={32} strokeWidth={1.5} />
             {selectedId === null && (

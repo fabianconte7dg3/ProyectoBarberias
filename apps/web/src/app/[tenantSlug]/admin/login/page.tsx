@@ -155,7 +155,7 @@ export default function AdminLoginPage() {
               </button>
               <button
                 onClick={handleLogout}
-                className="px-3 py-1.5 bg-secondary text-muted-foreground text-[11px] font-semibold rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                className="px-3 py-1.5 bg-secondary text-secondary-foreground text-[11px] font-semibold rounded-lg hover:bg-destructive hover:text-destructive-foreground transition-colors"
               >
                 Salir
               </button>

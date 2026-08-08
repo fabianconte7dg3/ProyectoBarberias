@@ -404,7 +404,7 @@ export default function AdminClientesPage() {
                               className={`px-2.5 py-1 rounded-xl text-xs font-extrabold border transition-colors ${
                                 c.aceptaMarketing
                                   ? 'bg-secondary/10 text-secondary dark:text-secondary border-secondary/20 hover:bg-secondary/20'
-                                  : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                                  : 'bg-secondary text-secondary-foreground border-border hover:bg-secondary/80'
                               }`}
                               title="Haz clic para cambiar permiso Ley 81"
                             >
@@ -417,7 +417,7 @@ export default function AdminClientesPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => router.push(`/${tenantSlug}/admin/clientes/${c.id}`)}
-                                className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-muted-foreground hover:text-foreground transition-colors"
+                                className="p-1.5 rounded-lg bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground transition-colors"
                                 title="Ver Perfil"
                               >
                                 <Edit size={14} />
@@ -427,7 +427,7 @@ export default function AdminClientesPage() {
                                 className={`p-1.5 rounded-lg border transition-colors ${
                                   c.bloqueado
                                     ? 'bg-rose-500 text-white border-rose-600 hover:opacity-90'
-                                    : 'bg-secondary hover:bg-rose-500/10 text-muted-foreground hover:text-rose-500 border-border'
+                                    : 'bg-secondary hover:bg-rose-500/10 text-secondary-foreground hover:text-rose-500 border-border'
                                 }`}
                                 title={c.bloqueado ? 'Desbloquear Cliente' : 'Bloquear Cliente'}
                               >

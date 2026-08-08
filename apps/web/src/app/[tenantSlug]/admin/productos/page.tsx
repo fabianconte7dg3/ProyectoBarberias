@@ -214,7 +214,7 @@ export default function AdminProductosPage() {
                       </td>
                       <td className="py-3 px-3 text-center">
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          p.activo ? 'bg-emerald-500/10 text-emerald-600' : 'bg-secondary text-muted-foreground'
+                          p.activo ? 'bg-emerald-500/10 text-emerald-600' : 'bg-secondary text-secondary-foreground'
                         }`}>
                           {p.activo ? 'Activo' : 'Inactivo'}
                         </span>
@@ -222,7 +222,7 @@ export default function AdminProductosPage() {
                       <td className="py-3 px-3 text-right space-x-2">
                         <button
                           onClick={() => handleOpenModal(p)}
-                          className="p-1.5 bg-secondary hover:bg-secondary/80 rounded-lg text-muted-foreground hover:text-foreground"
+                          className="p-1.5 bg-secondary hover:bg-secondary/80 rounded-lg text-secondary-foreground"
                           title="Editar"
                         >
                           <Edit size={16} />
