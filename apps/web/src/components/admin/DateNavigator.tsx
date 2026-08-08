@@ -14,7 +14,7 @@ export function DateNavigator({ selectedDate, onDateChange }: DateNavigatorProps
     <div className="flex items-center justify-center gap-1 bg-background border border-border rounded-xl p-1 shadow-inner text-xs sm:text-sm">
       <button
         onClick={() => onDateChange(subDays(selectedDate, 1))}
-        className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground transition-colors"
         title="Día anterior"
       >
         <ChevronLeft size={16} />
@@ -29,7 +29,7 @@ export function DateNavigator({ selectedDate, onDateChange }: DateNavigatorProps
 
       <button
         onClick={() => onDateChange(addDays(selectedDate, 1))}
-        className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+        className="p-1.5 sm:p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground transition-colors"
         title="Día siguiente"
       >
         <ChevronRight size={16} />

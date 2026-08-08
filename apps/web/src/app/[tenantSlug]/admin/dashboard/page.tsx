@@ -262,11 +262,11 @@ export default function AdminDashboardPage() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground transition-all shadow-xs"
+            className="group flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground hover:text-secondary-foreground transition-all shadow-xs"
           >
             <Calendar size={15} className="text-emerald-500" />
             <span>{PRESETS_LABEL[preset]}</span>
-            <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-foreground group-hover:text-secondary-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isDropdownOpen && (
@@ -280,7 +280,7 @@ export default function AdminDashboardPage() {
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
                       isActive
                         ? 'bg-primary/10 text-primary font-bold'
-                        : 'text-foreground hover:bg-secondary'
+                        : 'text-foreground hover:bg-secondary hover:text-secondary-foreground'
                     }`}
                   >
                     <span>{PRESETS_LABEL[p]}</span>
@@ -294,7 +294,7 @@ export default function AdminDashboardPage() {
 
         <button
           onClick={() => loadDashboard(fechaDesde, fechaHasta)}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition-colors border border-border"
           title="Actualizar datos"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
@@ -311,7 +311,7 @@ export default function AdminDashboardPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
               activeTab === 'ventas'
                 ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
             }`}
           >
             <Scissors size={16} />
@@ -323,7 +323,7 @@ export default function AdminDashboardPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
               activeTab === 'staff'
                 ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
             }`}
           >
             <Award size={16} />
@@ -335,7 +335,7 @@ export default function AdminDashboardPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
               activeTab === 'riesgos'
                 ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
             }`}
           >
             <ShieldAlert size={16} />
@@ -637,7 +637,7 @@ export default function AdminDashboardPage() {
                         <td className="py-3 px-3 text-center font-mono">{b.totalCitas}</td>
                         <td className="py-3 px-3 text-right font-mono font-bold">${b.totalFacturado.toFixed(2)}</td>
                         <td className="py-3 px-3 text-center">
-                          <span className="px-2 py-0.5 rounded-full bg-secondary border border-border text-xs font-bold font-mono">
+                          <span className="px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground border border-border text-xs font-bold font-mono">
                             {b.porcentajeComision}%
                             {Number(b.porcentajeComisionProducto || 0) > 0 && ` / ${b.porcentajeComisionProducto}% Prod`}
                           </span>

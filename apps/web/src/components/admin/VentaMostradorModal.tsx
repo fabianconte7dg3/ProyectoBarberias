@@ -136,7 +136,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
             <ShoppingBag size={20} className="text-primary" />
             <span>Venta Directa de Mostrador</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -162,7 +162,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
                     e.target.value = '';
                   }
                 }}
-                className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-semibold"
+                className="w-full px-3 py-2 bg-secondary text-secondary-foreground border border-border rounded-xl text-xs font-semibold"
               >
                 <option value="">+ Seleccionar producto del catálogo...</option>
                 {catalogProductos.map(p => (
@@ -186,7 +186,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
                     <button
                       type="button"
                       onClick={() => handleRemoveProducto(p.productoId)}
-                      className="p-1 bg-secondary hover:bg-secondary/80 rounded"
+                      className="p-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded"
                     >
                       <Minus size={12} />
                     </button>
@@ -194,7 +194,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
                     <button
                       type="button"
                       onClick={() => handleAddProducto(p.productoId)}
-                      className="p-1 bg-secondary hover:bg-secondary/80 rounded"
+                      className="p-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded"
                     >
                       <Plus size={12} />
                     </button>
@@ -225,7 +225,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'efectivo'
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
-                    : 'border-border hover:bg-secondary text-muted-foreground'
+                    : 'border-border hover:bg-secondary text-muted-foreground hover:text-secondary-foreground'
                 }`}
               >
                 <DollarSign size={20} />
@@ -238,7 +238,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'yappy'
                     ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400'
-                    : 'border-border hover:bg-secondary text-muted-foreground'
+                    : 'border-border hover:bg-secondary text-muted-foreground hover:text-secondary-foreground'
                 }`}
               >
                 <QrCode size={20} />
@@ -276,7 +276,7 @@ export function VentaMostradorModal({ isOpen, onClose, onSuccess }: VentaMostrad
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-2.5 bg-secondary text-foreground font-semibold rounded-xl text-xs"
+              className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-semibold rounded-xl text-xs"
             >
               Cancelar
             </button>

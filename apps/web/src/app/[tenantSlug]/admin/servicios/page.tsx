@@ -292,7 +292,7 @@ export default function AdminServiciosPage() {
             </div>
             <button
               onClick={loadData}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+              className="w-full flex items-center justify-center gap-2 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition-colors border border-border"
             >
               <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
               <span>Actualizar</span>
@@ -312,7 +312,7 @@ export default function AdminServiciosPage() {
                   key={key}
                   onClick={() => setSortKey(key)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                    sortKey === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary'
+                    sortKey === key ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
                   }`}
                 >
                   {label}
@@ -349,7 +349,7 @@ export default function AdminServiciosPage() {
                   <div className="flex items-center gap-2 px-5 pb-5 pt-1">
                     <button
                       onClick={() => handleOpenModal(s)}
-                      className="flex-1 bg-secondary hover:bg-secondary/80 text-foreground px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
+                      className="flex-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground px-3 py-2 rounded-xl text-xs font-semibold transition-colors flex items-center justify-center gap-1.5"
                     >
                       <Edit size={14} />
                       <span>Editar</span>
@@ -480,7 +480,7 @@ export default function AdminServiciosPage() {
                 <button
                   type="button"
                   onClick={() => { setIsNuevoComboOpen(false); setComboServiciosSel({}); }}
-                  className="px-3 py-1.5 text-xs hover:bg-secondary rounded-lg"
+                  className="px-3 py-1.5 text-xs hover:bg-secondary hover:text-secondary-foreground rounded-lg"
                 >
                   Cancelar
                 </button>
@@ -582,7 +582,7 @@ export default function AdminServiciosPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 bg-secondary text-foreground text-xs font-semibold rounded-xl"
+                  className="flex-1 py-2.5 bg-secondary text-secondary-foreground text-xs font-semibold rounded-xl"
                 >
                   Cancelar
                 </button>

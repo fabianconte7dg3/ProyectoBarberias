@@ -255,7 +255,7 @@ export default function AdminClientesPage() {
                 <button
                   onClick={() => setFiltroMkt('todos')}
                   className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                    filtroMkt === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                    filtroMkt === 'todos' ? 'bg-primary text-primary-foreground' : 'bg-secondary/60 text-foreground hover:bg-secondary hover:text-secondary-foreground'
                   }`}
                 >
                   Todos ({totalClientes})
@@ -263,7 +263,7 @@ export default function AdminClientesPage() {
                 <button
                   onClick={() => setFiltroMkt('ley81')}
                   className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                    filtroMkt === 'ley81' ? 'bg-secondary text-secondary-foreground' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                    filtroMkt === 'ley81' ? 'bg-secondary text-secondary-foreground' : 'bg-secondary/60 text-foreground hover:bg-secondary hover:text-secondary-foreground'
                   }`}
                 >
                   Opt-In Ley 81 ({optInMktCount})
@@ -271,7 +271,7 @@ export default function AdminClientesPage() {
                 <button
                   onClick={() => setFiltroMkt('strikes')}
                   className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                    filtroMkt === 'strikes' ? 'bg-amber-500 text-white' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                    filtroMkt === 'strikes' ? 'bg-amber-500 text-white' : 'bg-secondary/60 text-foreground hover:bg-secondary hover:text-secondary-foreground'
                   }`}
                 >
                   Con Ausencias ({clientesStrikesCount})
@@ -279,7 +279,7 @@ export default function AdminClientesPage() {
                 <button
                   onClick={() => setFiltroMkt('bloqueados')}
                   className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
-                    filtroMkt === 'bloqueados' ? 'bg-rose-600 text-white' : 'bg-secondary/60 text-muted-foreground hover:bg-secondary'
+                    filtroMkt === 'bloqueados' ? 'bg-rose-600 text-white' : 'bg-secondary/60 text-foreground hover:bg-secondary hover:text-secondary-foreground'
                   }`}
                 >
                   Bloqueados
@@ -467,7 +467,7 @@ export default function AdminClientesPage() {
                 <UserCheck size={18} className="text-primary" />
                 <span>Registrar Nuevo Cliente</span>
               </h2>
-              <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground">
+              <button onClick={() => setIsModalOpen(false)} className="p-1 rounded-lg hover:bg-secondary hover:text-secondary-foreground text-muted-foreground">
                 <X size={18} />
               </button>
             </div>
@@ -517,7 +517,7 @@ export default function AdminClientesPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-xs font-bold rounded-xl"
+                  className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-xl"
                 >
                   Cancelar
                 </button>

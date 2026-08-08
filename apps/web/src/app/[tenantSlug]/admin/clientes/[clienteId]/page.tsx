@@ -309,7 +309,7 @@ export default function PerfilClientePage() {
         </div>
         <button
           onClick={() => router.push(`/${tenantSlug}/admin/clientes`)}
-          className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-xs font-bold rounded-xl"
+          className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-xl"
         >
           Volver a Clientes
         </button>
@@ -464,7 +464,7 @@ export default function PerfilClientePage() {
                     key={t.key}
                     onClick={() => setTab(t.key)}
                     className={`flex items-center justify-between px-4 py-3 rounded-xl text-left text-sm font-semibold transition-colors ${
-                      active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                      active ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
                     }`}
                   >
                     <div className="flex items-center gap-3">
@@ -492,7 +492,7 @@ export default function PerfilClientePage() {
                   {!editing && (
                     <button
                       onClick={() => setEditing(true)}
-                      className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 text-xs font-bold rounded-xl"
+                      className="px-3 py-1.5 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-xl"
                     >
                       Editar
                     </button>
@@ -526,7 +526,7 @@ export default function PerfilClientePage() {
                       <button
                         type="button"
                         onClick={() => { setEditing(false); setFormNombre(cliente.nombreCompleto || ''); setFormEmail(cliente.emailFacturacion || ''); setSaveError(''); }}
-                        className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-xs font-bold rounded-xl flex items-center gap-1.5"
+                        className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-secondary-foreground text-xs font-bold rounded-xl flex items-center gap-1.5"
                       >
                         <X size={14} />
                         <span>Cancelar</span>

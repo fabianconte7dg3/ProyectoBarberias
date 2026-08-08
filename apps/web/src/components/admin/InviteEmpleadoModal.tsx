@@ -73,7 +73,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
             <UserPlus size={20} className="text-primary" />
             <span>Invitar Nuevo {terminologiaEmpleado} / Staff</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -99,7 +99,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
                   placeholder="ej. Mateo Gómez"
                   value={nombreCompleto}
                   onChange={(e) => setNombreCompleto(e.target.value)}
-                  className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2 bg-secondary text-secondary-foreground border border-border rounded-xl text-xs font-semibold"
                 />
               </div>
 
@@ -110,7 +110,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
                 <select
                   value={rol}
                   onChange={(e) => setRol(e.target.value as 'empleado' | 'recepcion')}
-                  className="w-full px-3 py-2 bg-secondary border border-border rounded-xl text-xs font-semibold"
+                  className="w-full px-3 py-2 bg-secondary text-secondary-foreground border border-border rounded-xl text-xs font-semibold"
                 >
                   <option value="empleado">{terminologiaEmpleado} ({terminologiaServicio}s & Productos)</option>
                   <option value="recepcion">Recepción / Caja</option>
@@ -155,7 +155,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
                 <button
                   type="button"
                   onClick={onClose}
-                  className="flex-1 py-2.5 bg-secondary text-foreground font-semibold rounded-xl text-xs"
+                  className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-semibold rounded-xl text-xs"
                 >
                   Cancelar
                 </button>
@@ -179,7 +179,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
                 Envía este enlace de activación al {terminologiaEmpleado.toLowerCase()} para que ingrese y configure su PIN de acceso de 4 dígitos:
               </p>
 
-              <div className="p-3 bg-secondary border border-border rounded-xl font-mono text-[11px] break-all select-all">
+              <div className="p-3 bg-secondary text-secondary-foreground border border-border rounded-xl font-mono text-[11px] break-all select-all">
                 {activationUrl}
               </div>
 
@@ -193,7 +193,7 @@ export function InviteEmpleadoModal({ isOpen, tenantSlug, onClose, onSuccess }: 
 
               <button
                 onClick={() => { onSuccess(); onClose(); }}
-                className="w-full py-2 bg-secondary text-foreground text-xs font-semibold rounded-xl"
+                className="w-full py-2 bg-secondary text-secondary-foreground text-xs font-semibold rounded-xl"
               >
                 Cerrar y Actualizar Lista
               </button>

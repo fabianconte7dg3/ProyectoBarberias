@@ -44,7 +44,7 @@ export function SuccessView({ tenantSlug }: Props) {
 
         <Link
           href={`/${tenantSlug}/reservar`}
-          className="flex items-center justify-center w-full p-4 bg-secondary text-foreground rounded-xl font-bold text-lg transition-all active:scale-95"
+          className="flex items-center justify-center w-full p-4 bg-secondary text-secondary-foreground rounded-xl font-bold text-lg transition-all active:scale-95"
         >
           Volver al Inicio
         </Link>

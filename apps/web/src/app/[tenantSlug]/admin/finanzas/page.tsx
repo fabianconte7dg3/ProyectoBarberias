@@ -195,7 +195,7 @@ export default function AdminFinanzasPage() {
         <button
           onClick={handleExportar}
           disabled={exporting}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border disabled:opacity-60"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition-colors border border-border disabled:opacity-60"
           title="Exportar transacciones del período en CSV"
         >
           <Download size={14} className={exporting ? 'animate-pulse' : ''} />
@@ -205,11 +205,11 @@ export default function AdminFinanzasPage() {
         <div className="relative" ref={dropdownRef}>
           <button
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            className="flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground transition-all shadow-xs"
+            className="group flex items-center gap-2 px-3.5 py-2 bg-secondary/80 hover:bg-secondary border border-border rounded-xl text-xs font-bold text-foreground hover:text-secondary-foreground transition-all shadow-xs"
           >
             <Calendar size={15} className="text-emerald-500" />
             <span>{PRESETS_LABEL[preset]}</span>
-            <ChevronDown size={14} className={`text-muted-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown size={14} className={`text-foreground group-hover:text-secondary-foreground transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`} />
           </button>
 
           {isDropdownOpen && (
@@ -221,7 +221,7 @@ export default function AdminFinanzasPage() {
                     key={p}
                     onClick={() => handlePresetSelect(p)}
                     className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-semibold transition-colors ${
-                      isActive ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-secondary'
+                      isActive ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-secondary hover:text-secondary-foreground'
                     }`}
                   >
                     <span>{PRESETS_LABEL[p]}</span>
@@ -235,7 +235,7 @@ export default function AdminFinanzasPage() {
 
         <button
           onClick={() => loadFinanzas(fechaDesde, fechaHasta)}
-          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-xl transition-colors border border-border"
+          className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl transition-colors border border-border"
           title="Actualizar datos"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />

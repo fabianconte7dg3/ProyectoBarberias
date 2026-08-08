@@ -207,7 +207,7 @@ export default function AdminProductosPage() {
                         <span className={`px-2.5 py-1 rounded-full text-xs font-mono border ${
                           isLowStock 
                             ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' 
-                            : 'bg-secondary text-foreground border-border'
+                            : 'bg-secondary text-secondary-foreground border-border'
                         }`}>
                           {p.stockActual} unidades {isLowStock && '(Stock Bajo)'}
                         </span>
@@ -346,7 +346,7 @@ export default function AdminProductosPage() {
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="flex-1 py-2.5 bg-secondary text-foreground text-xs font-semibold rounded-xl"
+                  className="flex-1 py-2.5 bg-secondary text-secondary-foreground text-xs font-semibold rounded-xl"
                 >
                   Cancelar
                 </button>

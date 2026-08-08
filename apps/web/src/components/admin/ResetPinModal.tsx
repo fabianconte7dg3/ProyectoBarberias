@@ -63,7 +63,7 @@ export function ResetPinModal({ isOpen, usuario, onClose, onSuccess }: ResetPinM
             <KeyRound size={20} className="text-primary" />
             <span>Resetear PIN de {usuario.nombreCompleto}</span>
           </div>
-          <button onClick={handleClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={handleClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -134,7 +134,7 @@ export function ResetPinModal({ isOpen, usuario, onClose, onSuccess }: ResetPinM
                 <button
                   type="button"
                   onClick={handleClose}
-                  className="flex-1 py-2.5 bg-secondary text-foreground font-semibold rounded-xl text-xs"
+                  className="flex-1 py-2.5 bg-secondary text-secondary-foreground font-semibold rounded-xl text-xs"
                 >
                   Cancelar
                 </button>

@@ -43,7 +43,7 @@ export function ProfileSelector({ staff, onSelect }: ProfileSelectorProps) {
             className="group flex flex-col items-center p-4 sm:p-5 rounded-2xl border border-border bg-card hover:border-primary hover:bg-primary/5 transition-all duration-300 shadow-xs hover:shadow-md"
           >
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-secondary flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
-              <UserCircle2 size={36} className="text-muted-foreground group-hover:text-primary transition-colors" />
+              <UserCircle2 size={36} className="text-secondary-foreground group-hover:text-primary transition-colors" />
             </div>
             <span className="font-bold text-sm sm:text-base text-card-foreground group-hover:text-primary text-center line-clamp-1">
               {member.nombreCompleto}

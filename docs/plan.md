@@ -1183,3 +1183,51 @@ documenta como gap real, mismo criterio que el resto de la Fase 6.
       `reset_pin_staff` con `payloadAntes: {"nombreCompleto": "QA Empleado"}` y
       `payloadDespues: {"pinReseteado": true}` — sin el PIN en ningún campo. Botón "Resetear PIN" ausente
       para "QA Admin" (rol admin), confirmando que el guard de rol también se refleja en la UI.
+
+## Fase 6-J — Auditoría de contraste sobre `bg-secondary` ✅ Completo
+
+> Originado por una captura de pantalla real del usuario desde su celular (2026-08-08): el selector de
+> perfil de `/admin/login` se veía "horrible" — el ícono del avatar y el badge de rol prácticamente
+> invisibles. Investigación confirmó que **no es un problema de diseño ni de paleta** (el sistema de
+> diseño de la Fase 6 está correctamente definido — ver
+> [`Plan_Rediseno_Visual_Stitch.md`](./05-diseno-y-ux/Plan_Rediseno_Visual_Stitch.md)) sino una
+> regresión/omisión puntual del mismo bug ya corregido una vez en `5af6e9a` ("corregir contraste
+> ilegible en badge de usuario y teclado PIN"): texto oscuro (`text-muted-foreground` #5a4044 o
+> `text-foreground` #071e27) sobre fondo `bg-secondary` (#006876, teal oscuro) — contraste real medido
+> de ~1.4:1 (severo, texto invisible) o ~2.65:1 (moderado, falla WCAG AA 4.5:1 pero es legible) — en vez
+> del token ya definido para ese emparejamiento, `text-secondary-foreground` (blanco, ~6.5:1). El caso
+> peor encontrado: el botón "Cerrar Sesión" del sidebar tenía `hover:text-destructive` (rojo `#ba1a1a`)
+> sobre `hover:bg-secondary` — ambos colores casi con la misma luminancia, contraste ~1.03:1 (invisible
+> por completo).
+>
+> El primer barrido (buscar `text-muted-foreground`/`bg-secondary` en el mismo `className`) no encontró
+> todos los casos — se corrigió luego un segundo patrón (fondo e ícono en elementos padre/hijo distintos,
+> ej. el ícono `UserCircle2` dentro de un `<div bg-secondary>`) y un tercero (estados `hover:` que oscurecen
+> el fondo a `bg-secondary` completo sin cambiar el color del texto/ícono, dejándolo ilegible solo al pasar
+> el mouse/tocar). La auditoría final revisó cada aparición de `bg-secondary` en `apps/web/src` uno por uno
+> (~120 ocurrencias) para separar bugs reales de falsos positivos (paneles con `bg-secondary/20-50`, tinte
+> claro que blanquea contra `--card` blanco, contraste ya adecuado con texto oscuro).
+
+- [x] **26 archivos corregidos** (commits `4a84fc3` y el de cierre de esta fase) — mismo cambio mecánico en
+      todos: `text-muted-foreground`/`text-foreground` → `text-secondary-foreground` (o
+      `hover:text-secondary-foreground` cuando el fondo solo se oscurece en hover) allí donde el fondo
+      real u efectivo es `bg-secondary` a opacidad completa. Componentes: `ProfileSelector`,
+      `AdminSidebar`, `BarberSelection` (booking público), `SuccessView`, `DateNavigator`,
+      `InviteEmpleadoModal`, `HorariosModal`, `ResetPinModal`, `VentaMostradorModal`, `CobrarCitaModal`,
+      `MiDesempenoModal`, `QuickWalkInModal`. Páginas: `admin/login`, `admin/configuracion`,
+      `admin/dashboard`, `admin/finanzas`, `admin/clientes` (lista + perfil), `admin/productos`,
+      `admin/servicios`, `admin/empleados`, `admin/caja`, `admin/datos`, `admin/historial-clinico`,
+      `admin/mi-silla`, `reservar/confirmar`.
+- [x] **Caso especial — botón "Cerrar Sesión"**: en vez de forzar texto blanco sobre teal (que le quita el
+      significado semántico de "acción peligrosa"), se cambió el hover a `hover:bg-destructive/10` (mismo
+      patrón ya usado en otros toggles de bloqueo/desbloqueo de la app), manteniendo `text-destructive`
+      legible sobre un fondo rojo claro en vez de teal.
+- [x] **Deliberadamente no tocado**: paneles con `bg-secondary/20` a `/50` (opacidad parcial, mezclada con
+      el fondo blanco de `--card` da un tinte claro donde el texto oscuro ya tiene contraste adecuado —
+      confirmado con cálculo de luminancia relativa, no solo inspección visual) y las filas de tabla con
+      `hover:bg-secondary/30-40` (resaltado sutil, mismo motivo).
+- [x] Verificado: `tsc --noEmit` limpio en `apps/web`, `vitest` 8/8 en verde. Capturas de navegador real
+      antes/después en el viewport exacto reportado por el usuario (412×915, el mismo Android de la
+      captura original): el ícono del avatar y el badge "BARBERO" pasan de prácticamente invisibles a
+      blanco legible; el botón "Iniciar Sesión como Administrador" pasa de texto apenas visible a
+      contraste correcto tanto en reposo como en hover.

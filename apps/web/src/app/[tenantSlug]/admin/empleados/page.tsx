@@ -136,7 +136,7 @@ export default function AdminEmpleadosPage() {
 
         <button
           onClick={loadStaff}
-          className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary border border-border rounded-xl transition-colors"
+          className="p-2 text-muted-foreground hover:text-secondary-foreground hover:bg-secondary border border-border rounded-xl transition-colors"
           title="Refrescar lista"
         >
           <RefreshCw size={16} />
@@ -181,7 +181,7 @@ export default function AdminEmpleadosPage() {
                     </div>
                   </div>
 
-                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-secondary border border-border shrink-0">
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border shrink-0">
                     {u.rol}
                   </span>
                 </div>
@@ -242,7 +242,7 @@ export default function AdminEmpleadosPage() {
                           <div className="flex justify-end gap-2 pt-2 border-t border-border">
                             <button
                               onClick={() => setEditingUserId(null)}
-                              className="px-3 py-1 bg-secondary text-foreground text-xs font-semibold rounded-lg"
+                              className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-semibold rounded-lg"
                             >
                               Cancelar
                             </button>
@@ -278,7 +278,7 @@ export default function AdminEmpleadosPage() {
                               setComisionServicioInput(u.porcentajeComision || '60');
                               setComisionProductoInput(u.porcentajeComisionProducto || '0');
                             }}
-                            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+                            className="p-1.5 text-muted-foreground hover:text-secondary-foreground hover:bg-secondary rounded-lg transition-colors"
                             title="Editar comisiones"
                           >
                             <Edit2 size={14} />
@@ -295,7 +295,7 @@ export default function AdminEmpleadosPage() {
                     {u.rol === 'empleado' && (
                       <button
                         onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
-                        className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                        className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
                       >
                         <Clock size={15} className="text-primary" />
                         <span>Horarios</span>
@@ -303,7 +303,7 @@ export default function AdminEmpleadosPage() {
                     )}
                     <button
                       onClick={() => setResetPinUsuario({ id: u.id, nombreCompleto: u.nombreCompleto })}
-                      className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
+                      className="flex-1 py-2 bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-colors"
                       title="Resetear PIN de acceso"
                     >
                       <KeyRound size={15} className="text-primary" />

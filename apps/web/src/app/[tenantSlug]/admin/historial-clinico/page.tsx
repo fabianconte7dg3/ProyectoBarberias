@@ -60,7 +60,7 @@ export default function HistorialClinicoPage() {
       >
         <button
           onClick={loadNotas}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-colors border border-border"
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           <span>Actualizar</span>

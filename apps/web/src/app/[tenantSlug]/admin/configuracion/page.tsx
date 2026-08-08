@@ -239,7 +239,7 @@ export default function AdminConfiguracionPage() {
       >
         <button
           onClick={loadData}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors border border-border"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-colors border border-border"
         >
           <RefreshCw size={14} />
           <span>Actualizar</span>
@@ -254,7 +254,7 @@ export default function AdminConfiguracionPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
               activeTab === 'identidad'
                 ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
             }`}
           >
             <Building2 size={16} />
@@ -266,7 +266,7 @@ export default function AdminConfiguracionPage() {
             className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap ${
               activeTab === 'operacion'
                 ? 'bg-primary text-primary-foreground shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-foreground'
+                : 'bg-secondary/40 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground'
             }`}
           >
             <Settings2 size={16} />
@@ -498,7 +498,7 @@ export default function AdminConfiguracionPage() {
                   <div>
                     <div className="font-semibold text-sm flex items-center gap-2">
                       <span>{u.nombreCompleto}</span>
-                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-secondary border border-border">
+                      <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-secondary text-secondary-foreground border border-border">
                         {u.rol}
                       </span>
                     </div>
@@ -549,7 +549,7 @@ export default function AdminConfiguracionPage() {
                           </button>
                           <button
                             onClick={() => setEditingComisionUserId(null)}
-                            className="p-1.5 text-muted-foreground hover:bg-secondary rounded-lg transition-colors"
+                            className="p-1.5 text-muted-foreground hover:bg-secondary hover:text-secondary-foreground rounded-lg transition-colors"
                             title="Cancelar"
                           >
                             <X size={14} />
@@ -578,7 +578,7 @@ export default function AdminConfiguracionPage() {
                             setComisionInput(u.porcentajeComision || '0');
                             setComisionProductoInput(u.porcentajeComisionProducto || '0');
                           }}
-                          className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-secondary transition-colors"
+                          className="p-1.5 text-muted-foreground hover:text-secondary-foreground rounded-lg hover:bg-secondary transition-colors"
                           title="Editar comisiones"
                         >
                           <Edit2 size={14} />
@@ -586,7 +586,7 @@ export default function AdminConfiguracionPage() {
 
                         <button
                           onClick={() => setHorariosModalEmpleado({ id: u.id, nombre: u.nombreCompleto })}
-                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-secondary hover:bg-secondary/80 border border-border text-foreground rounded-lg transition-colors"
+                          className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-secondary hover:bg-secondary/80 border border-border text-secondary-foreground rounded-lg transition-colors"
                           title="Configurar Horarios y Vacaciones"
                         >
                           <Clock size={14} className="text-primary" />
@@ -616,7 +616,7 @@ export default function AdminConfiguracionPage() {
 
             <button
               onClick={loadData}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+              className="p-2 text-muted-foreground hover:text-secondary-foreground hover:bg-secondary rounded-lg transition-colors"
               title="Refrescar historial"
             >
               <RefreshCw size={14} />
@@ -694,7 +694,7 @@ export default function AdminConfiguracionPage() {
 
             <button
               onClick={loadData}
-              className="p-2 text-muted-foreground hover:text-foreground hover:bg-secondary rounded-lg transition-colors"
+              className="p-2 text-muted-foreground hover:text-secondary-foreground hover:bg-secondary rounded-lg transition-colors"
               title="Refrescar auditoría"
             >
               <RefreshCw size={14} />

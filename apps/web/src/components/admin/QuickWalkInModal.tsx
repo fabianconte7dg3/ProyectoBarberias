@@ -246,7 +246,7 @@ export function QuickWalkInModal({
             <UserPlus size={20} className="text-primary" />
             <span>Nueva Cita (Manual / Walk-in)</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -518,7 +518,7 @@ export function QuickWalkInModal({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-sm font-medium hover:bg-secondary rounded-xl transition-colors"
+              className="px-4 py-2 text-sm font-medium hover:bg-secondary hover:text-secondary-foreground rounded-xl transition-colors"
             >
               Cancelar
             </button>

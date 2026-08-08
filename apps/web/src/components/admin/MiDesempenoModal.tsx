@@ -66,7 +66,7 @@ export function MiDesempenoModal({ isOpen, onClose }: MiDesempenoModalProps) {
             <Award size={20} className="text-emerald-500" />
             <span>Mi Desempeño & Comisiones Ganadas</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -144,7 +144,7 @@ export function MiDesempenoModal({ isOpen, onClose }: MiDesempenoModalProps) {
                   <div className="max-h-56 overflow-y-auto border border-border rounded-xl">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-muted-foreground text-[10px]">
+                        <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-foreground text-[10px]">
                           <th className="py-2 px-3">Fecha</th>
                           <th className="py-2 px-3 text-center">Citas</th>
                           <th className="py-2 px-3 text-right">Facturado</th>

@@ -207,7 +207,7 @@ export default function MiSillaPage() {
               <span>Cola de {terminologiaCliente}s</span>
             </h2>
             {pendientes.length > 0 && (
-              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-secondary text-foreground border border-border">
+              <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-secondary text-secondary-foreground border border-border">
                 {pendientes.length} Pendiente{pendientes.length !== 1 ? 's' : ''}
               </span>
             )}
@@ -295,7 +295,7 @@ export default function MiSillaPage() {
                     )}
                     <button
                       onClick={() => setMenuAbierto(menuAbierto === cita.id ? null : cita.id)}
-                      className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+                      className="p-2 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground transition-colors"
                       title="Opciones"
                     >
                       <MoreVertical size={15} />
@@ -314,7 +314,7 @@ export default function MiSillaPage() {
                           </button>
                           <button
                             onClick={() => handleStatusChange(cita.id, 'cancelada')}
-                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg text-muted-foreground hover:bg-secondary transition-colors"
+                            className="w-full flex items-center gap-2 px-2 py-1.5 text-xs font-semibold rounded-lg text-muted-foreground hover:bg-secondary hover:text-secondary-foreground transition-colors"
                           >
                             <XCircle size={14} />
                             <span>Cancelar</span>
@@ -340,7 +340,7 @@ export default function MiSillaPage() {
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-muted-foreground text-[10px]">
+                  <tr className="bg-secondary/60 border-b border-border font-bold uppercase text-foreground text-[10px]">
                     <th className="py-2.5 px-4">{terminologiaCliente}</th>
                     <th className="py-2.5 px-4">{terminologiaServicio}</th>
                     <th className="py-2.5 px-4">Hora</th>

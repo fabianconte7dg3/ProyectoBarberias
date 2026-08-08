@@ -84,7 +84,7 @@ export function AdminSidebar() {
             className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
               active
                 ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                : 'text-muted-foreground hover:text-secondary-foreground hover:bg-secondary'
             }`}
           >
             <Icon size={18} className="shrink-0" />
@@ -102,14 +102,14 @@ export function AdminSidebar() {
           handleCopyLink();
           onNavigate?.();
         }}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-secondary-foreground hover:bg-secondary transition-colors"
       >
         {copiedLink ? <Check size={18} className="shrink-0 text-emerald-500" /> : <Link2 size={18} className="shrink-0" />}
         <span className="truncate">{copiedLink ? '¡Copiado!' : 'Copiar Link de Reservas'}</span>
       </button>
       <button
         onClick={handleLogout}
-        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-secondary transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-semibold text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
       >
         <LogOut size={18} className="shrink-0" />
         <span>Cerrar Sesión</span>

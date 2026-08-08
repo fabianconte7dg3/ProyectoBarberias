@@ -193,7 +193,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
             <DollarSign size={20} className="text-emerald-500" />
             <span>Cobrar Cita & Productos</span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -257,7 +257,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                       e.target.value = '';
                     }
                   }}
-                  className="px-2.5 py-1 bg-secondary border border-border rounded-lg text-xs font-semibold"
+                  className="px-2.5 py-1 bg-secondary text-secondary-foreground border border-border rounded-lg text-xs font-semibold"
                 >
                   <option value="">+ Añadir producto...</option>
                   {catalogProductos.map(p => (
@@ -279,7 +279,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                       <button
                         type="button"
                         onClick={() => handleRemoveProducto(p.productoId)}
-                        className="p-1 bg-secondary hover:bg-secondary/80 rounded"
+                        className="p-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded"
                       >
                         <Minus size={12} />
                       </button>
@@ -287,7 +287,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                       <button
                         type="button"
                         onClick={() => handleAddProducto(p.productoId)}
-                        className="p-1 bg-secondary hover:bg-secondary/80 rounded"
+                        className="p-1 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded"
                       >
                         <Plus size={12} />
                       </button>
@@ -322,7 +322,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'efectivo'
                     ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-xs'
-                    : 'border-border hover:bg-secondary text-muted-foreground'
+                    : 'border-border hover:bg-secondary text-muted-foreground hover:text-secondary-foreground'
                 }`}
               >
                 <DollarSign size={20} />
@@ -335,7 +335,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'yappy'
                     ? 'border-indigo-500 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 shadow-xs'
-                    : 'border-border hover:bg-secondary text-muted-foreground'
+                    : 'border-border hover:bg-secondary text-muted-foreground hover:text-secondary-foreground'
                 }`}
               >
                 <QrCode size={20} />
@@ -348,7 +348,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
                 className={`p-3 rounded-xl border flex flex-col items-center gap-1.5 transition-all text-xs font-semibold ${
                   metodoPago === 'mixto'
                     ? 'border-secondary bg-secondary/10 text-secondary shadow-xs'
-                    : 'border-border hover:bg-secondary text-muted-foreground'
+                    : 'border-border hover:bg-secondary text-muted-foreground hover:text-secondary-foreground'
                 }`}
               >
                 <CreditCard size={20} />
@@ -471,7 +471,7 @@ export function CobrarCitaModal({ cita, citasDelGrupo, isOpen, onClose, onSucces
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 py-3 px-4 bg-secondary hover:bg-secondary/80 text-foreground font-semibold rounded-xl text-sm transition-colors"
+              className="flex-1 py-3 px-4 bg-secondary hover:bg-secondary/80 text-secondary-foreground font-semibold rounded-xl text-sm transition-colors"
             >
               Cancelar
             </button>

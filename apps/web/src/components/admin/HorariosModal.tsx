@@ -207,7 +207,7 @@ export function HorariosModal({ isOpen, empleadoId, empleadoNombre, onClose }: H
             <Clock size={20} className="text-primary" />
             <span>Configuración de Horario: <strong>{empleadoNombre}</strong></span>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground">
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground">
             <X size={20} />
           </button>
         </div>
@@ -337,7 +337,7 @@ export function HorariosModal({ isOpen, empleadoId, empleadoNombre, onClose }: H
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 bg-secondary text-foreground text-xs font-semibold rounded-xl"
+                  className="px-4 py-2 bg-secondary text-secondary-foreground text-xs font-semibold rounded-xl"
                 >
                   Cancelar
                 </button>

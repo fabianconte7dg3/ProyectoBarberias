@@ -130,10 +130,10 @@ function ConfirmarContent() {
       <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b border-border/40 px-4 py-3 flex items-center gap-3">
         <button
           onClick={() => router.back()}
-          className="p-2 -ml-2 rounded-full hover:bg-secondary transition-colors"
+          className="group p-2 -ml-2 rounded-full hover:bg-secondary transition-colors"
           aria-label="Volver"
         >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
+          <ArrowLeft className="w-5 h-5 text-foreground group-hover:text-secondary-foreground" />
         </button>
         <div>
           <h1 className="text-base font-extrabold text-foreground">Confirmar Reserva</h1>

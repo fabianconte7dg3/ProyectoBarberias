@@ -175,7 +175,7 @@ export default function AdminLoginPage() {
             <button
               type="button"
               onClick={() => { setIsAdminMode(false); setIsError(false); }}
-              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors text-xs flex items-center gap-1"
+              className="p-1.5 rounded-lg hover:bg-secondary text-muted-foreground hover:text-secondary-foreground transition-colors text-xs flex items-center gap-1"
             >
               <ArrowLeft size={16} />
               <span>PIN Staff</span>
@@ -240,7 +240,7 @@ export default function AdminLoginPage() {
 
           <button
             onClick={() => setIsAdminMode(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-secondary/60 hover:bg-secondary border border-border text-xs font-semibold rounded-xl transition-all hover:scale-105 text-muted-foreground hover:text-foreground shadow-xs"
+            className="flex items-center gap-2 px-4 py-2 bg-secondary/60 hover:bg-secondary border border-border text-xs font-semibold rounded-xl transition-all hover:scale-105 text-foreground hover:text-secondary-foreground shadow-xs"
           >
             <Lock size={14} className="text-emerald-500" />
             <span>Iniciar Sesión como Administrador (Email / Contraseña)</span>

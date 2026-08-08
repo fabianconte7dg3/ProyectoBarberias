@@ -116,7 +116,7 @@ export default function AdminCajaPage() {
       <AdminPageHeader title="Caja" description="Auditoría financiera diaria · Exclusivo Administración">
         <button
           onClick={fetchBalance}
-          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-xs font-semibold bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-lg transition-colors"
         >
           <RefreshCw size={14} />
           <span>Actualizar</span>
@@ -284,7 +284,7 @@ export default function AdminCajaPage() {
             <button
               type="button"
               onClick={() => router.push(`/${tenantSlug}/admin/agenda`)}
-              className="px-5 py-2.5 text-sm font-medium hover:bg-secondary rounded-xl transition-colors"
+              className="px-5 py-2.5 text-sm font-medium hover:bg-secondary hover:text-secondary-foreground rounded-xl transition-colors"
             >
               Cancelar
             </button>
